@@ -1,0 +1,101 @@
+{
+  "brand": "Cheer Cheese",
+  "ecosystem": "Cheer Tec Protocol",
+  "currency": "EUR",
+  "tax_rate_standard": 0.20,
+  "categories": [
+    {
+      "category_id": "CAT-BURGERS",
+      "name": "Burgers Signature",
+      "items": [
+        {
+          "sku": "CC-BURG-01",
+          "name": "Cheer Classic Cheese Burger",
+          "description": "Bœuf charolais, cheddar affiné, sauce secrète Cheer, pain brioché artisanal",
+          "price_ht": 9.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        },
+        {
+          "sku": "CC-BURG-02",
+          "name": "Cheer Truffle Bacon Burger",
+          "description": "Bœuf, double cheddar, bacon croustillant, crème de truffe noire",
+          "price_ht": 12.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-BUCKETS",
+      "name": "Buckets & Poultry",
+      "items": [
+        {
+          "sku": "CC-BUCKET-01",
+          "name": "Bucket de Poulet Pané Croustillant (12 pcs)",
+          "description": "Tenders de poulet marinés, panure épicée maison, sauce au choix",
+          "price_ht": 16.00,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-STREET",
+      "name": "Street Food Signature (Salchipapa & Pepito)",
+      "items": [
+        {
+          "sku": "CC-STREET-01",
+          "name": "Salchipapa Premium Cheer",
+          "description": "Frites fraîches croustillantes, saucisses artisanales grillées, mélange de fromages fondus, sauces",
+          "price_ht": 10.00,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        },
+        {
+          "sku": "CC-STREET-02",
+          "name": "Pepito Traditionnel Vénézuélien",
+          "description": "Baguette longue, émincé de bœuf ou poulet grillé, fromage blanco, sauce ail et salsa rosada",
+          "price_ht": 11.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-CHEESE",
+      "name": "Planches & Plateaux de Fromages",
+      "items": [
+        {
+          "sku": "CC-CHEESE-01",
+          "name": "Plateau de Fromages Affinés du Terroir",
+          "description": "Sélection de 4 fromages affinés, confiture de figues, noix et pain aux fruits",
+          "price_ht": 14.00,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-BEVERAGES",
+      "name": "Boissons & Rafraîchissements",
+      "items": [
+        {
+          "sku": "CC-BEV-01",
+          "name": "Boisson Artisanale / Limonade Maison",
+          "description": "33cl - Recette artisanale du moment",
+          "price_ht": 3.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    }
+  ]
+}
