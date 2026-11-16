@@ -1,0 +1,14 @@
+{
+  "protocol": "Cheer Tec Protocol",
+  "environment": "production",
+  "gateways": {
+    "telemetry_and_compliance": "https://delegal.dev",
+    "pos_interface_wallet": "https://lexwallet.app",
+    "rwa_registry_vault": "https://lextrust.cloud"
+  },
+  "execution_target": {
+    "engine": "Rust/Anchor",
+    "pay_splitter_latency_ms": 400,
+    "state_isolation": "PDA"
+  }
+}
