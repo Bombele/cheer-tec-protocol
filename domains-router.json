@@ -1,0 +1,22 @@
+{
+  "project": "Cheer Tec Protocol",
+  "infrastructure": "Decentralized Sovereign Multi-Domain",
+  "domains": {
+    "pos_edge": {
+      "url": "https://lexwallet.app",
+      "role": "Interface opérateur, POS Edge, bornes tactiles et encaissement"
+    },
+    "kernel_os": {
+      "url": "https://delegal.dev",
+      "role": "Moteur d'exécution back-end, Pay-Splitter atomique (<400ms) et télémétrie"
+    },
+    "vitrine_institutional": {
+      "url": "https://lextrust.cloud",
+      "role": "Landing page, architecture de l'écosystème à 8 entités et documentation DoraHacks"
+    }
+  },
+  "security": {
+    "tls": "Cloudflare Edge",
+    "state_isolation": "PDA (Program Derived Addresses)"
+  }
+}
