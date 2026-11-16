@@ -22,4 +22,3 @@ cheer-tec-protocol/
 ├── 📁 2-pos-edge/           # DOMAIN 2: Point Zero (POS Edge & Interactive Kiosks, Offline-First)
 └── 📁 3-vitrine-web/        # DOMAIN 3: Institutional Vitrine & Protocol Presentation (lextrust.cloud)
 
-
