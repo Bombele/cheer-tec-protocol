@@ -1,3 +1,8 @@
+/**
+ * Cheer Tec Protocol - delegal.dev Kernel OS & Pay-Splitter
+ * Exécution atomique des flux financiers (<400ms)
+ */
+
 export default {
   async fetch(request, env, ctx) {
     const corsHeaders = {
