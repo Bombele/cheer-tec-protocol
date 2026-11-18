@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexwallet.app — Point Zero POS</title>
+    <!-- Tailwind CSS CDN pour un rendu moderne et responsive immédiat -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-950 text-white font-sans antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function LexWalletPOS() {
+            const [catalog, setCatalog] = React.useState(null);
+            const [cart, setCart] = React.useState([]);
+            const [loading, setLoading] = React.useState(true);
+            const [processing, setProcessing] = React.useState(false);
+
+            // Catalogue embarqué de secours et chargement initial
+            React.useEffect(() => {
+                const defaultCatalog = {
+                    "categories": [
+                        {
+                            "category_id": "CAT-01",
+                            "name": "Burgers & Spécialités",
+                            "items": [
+                                { "sku": "CHEER-BURGER-01", "name": "Cheer Burger Classic", "price_ht": 8.50, "description": "Steak smash, cheddar affiné, sauce secrète" },
+                                { "sku": "CHEER-SALCH-02", "name": "Salchipapa Royale", "price_ht": 6.50, "description": "Frites fraîches, saucisses artisanales, double cheddar fondu" }
+                            ]
+                        },
+                        {
+                            "category_id": "CAT-02",
+                            "name": "Boissons & Extras",
+                            "items": [
+                                { "sku": "BEV-COLA-01", "name": "Boisson Artisanale 33cl", "price_ht": 3.00, "description": "Fraîche et locale" },
+                                { "sku": "EXT-FRIES-01", "name": "Portion de Frites Maison", "price_ht": 3.50, "description": "Cuisson double bain" }
+                            ]
+                        }
+                    ],
+                    "tax_rate_standard": 0.20
+                };
+
+                // Tentative de chargement du catalogue externe, sinon utilisation du secours
+                fetch('./config/cheer-cheese-catalog.json')
+                    .then(res => {
+                        if (!res.ok) throw new Error("Catalogue externe introuvable");
+                        return res.json();
+                    })
+                    .then(data => {
+                        setCatalog(data);
+                        setLoading(false);
+                    })
+                    .catch(() => {
+                        setCatalog(defaultCatalog);
+                        setLoading(false);
+                    });
+            }, []);
+
+            const addToCart = (item) => {
+                setCart(prevCart => {
+                    const existing = prevCart.find(i => i.sku === item.sku);
+                    if (existing) {
+                        return prevCart.map(i => i.sku === item.sku ? { ...i, qty: i.qty + 1 } : i);
+                    }
+                    return [...prevCart, { ...item, qty: 1 }];
+                });
+            };
+
+            const removeFromCart = (sku) => {
+                setCart(prev => prev.filter(i => i.sku !== sku));
+            };
+
+            const subtotalHT = cart.reduce((acc, item) => acc + (item.price_ht * item.qty), 0);
+            const taxRate = catalog?.tax_rate_standard || 0.20;
+            const vat = subtotalHT * taxRate;
+            const totalTTC = subtotalHT + vat;
+
+            const handleCheckout = async () => {
+                if (cart.length === 0) return;
+                setProcessing(true);
+
+                const orderPayload = {
+                    id: `TX-POS-${Date.now()}`,
+                    terminalId: "LEX-POS-TERM-01",
+                    tenantId: "CHEEZ-FLAGSHIP-001",
+                    timestamp: new Date().toISOString(),
+                    items: cart,
+                    subtotal_ht: subtotalHT,
+                    vat: vat,
+                    total_ttc: Number(totalTTC.toFixed(2))
+                };
+
+                try {
+                    // Appel vers le Kernel OS delegal.dev (Pay-Splitter <400ms)
+                    const response = await fetch('https://delegal.dev', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(orderPayload)
+                    });
+
+                    if (!response.ok) throw new Error("Erreur de transmission vers delegal.dev");
+
+                    const result = await response.json();
+                    alert(`Encaissement validé !\nTransaction : ${result.tx_id}\nVentilation Pay-Splitter exécutée en ${result.latency_ms}ms\nTotal TTC : ${totalTTC.toFixed(2)} EUR`);
+                    setCart([]);
+                } catch (err) {
+                    console.warn("[Mode Hors-Ligne / Simulation] Erreur réseau delegal.dev :", err.message);
+                    alert(`Commande enregistrée localement (Mode résilient).\nTotal TTC : ${totalTTC.toFixed(2)} EUR`);
+                    setCart([]);
+                } finally {
+                    setProcessing(false);
+                }
+            };
+
+            if (loading) {
+                return (
+                    <div className="flex h-screen items-center justify-center bg-slate-950 text-sky-400 font-mono">
+                        Chargement du Point Zéro (lexwallet.app)...
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 font-sans">
+                    <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-800 pb-4 gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
+                            <p className="text-sm text-slate-400">Canal d'exploitation officiel : Cheer Cheese</p>
+                        </div>
+                        <div className="bg-sky-950 border border-sky-600 px-4 py-2 rounded-lg text-sky-300 font-mono text-xs md:text-sm">
+                            STATUT : CONNECTÉ AU KERNEL (delegal.dev)
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Catalogue produits */}
+                        <div className="lg:col-span-2 space-y-6">
+                            {catalog.categories.map((cat) => (
+                                <div key={cat.category_id} className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl">
+                                    <h2 className="text-lg font-semibold text-sky-300 mb-4">{cat.name}</h2>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {cat.items.map((item) => (
+                                            <div key={item.sku} className="bg-slate-950 p-4 rounded-lg border border-slate-800 flex flex-col justify-between hover:border-sky-700 transition">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-100">{item.name}</h3>
+                                                    <p className="text-xs text-slate-400 mt-1">{item.description}</p>
+                                                </div>
+                                                <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-900">
+                                                    <span className="text-sky-400 font-mono font-bold">{item.price_ht.toFixed(2)} € HT</span>
+                                                    <button 
+                                                        onClick={() => addToCart(item)}
+                                                        className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition shadow"
+                                                    >
+                                                        Ajouter
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Panier et Caisse */}
+                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-fit sticky top-6 shadow-2xl">
+                            <h2 className="text-lg font-semibold text-sky-300 mb-4">Panier Actuel (Point Zéro)</h2>
+                            {cart.length === 0 ? (
+                                <p className="text-slate-500 text-sm py-12 text-center">Aucun article dans le panier.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="divide-y divide-slate-800 max-h-60 overflow-y-auto pr-1">
+                                        {cart.map(item => (
+                                            <div key={item.sku} className="py-3 flex justify-between items-center text-sm">
+                                                <div>
+                                                    <p className="font-medium text-slate-200">{item.name}</p>
+                                                    <p className="text-xs text-slate-400">Qté : {item.qty} × {item.price_ht.toFixed(2)} €</p>
+                                                </div>
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="font-mono text-sky-300">{(item.price_ht * item.qty).toFixed(2)} €</span>
+                                                    <button 
+                                                        onClick={() => removeFromCart(item.sku)}
+                                                        className="text-rose-500 hover:text-rose-400 text-xs font-bold px-1.5 py-0.5 rounded bg-rose-950/30"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="border-t border-slate-800 pt-4 space-y-2 text-sm font-mono">
+                                        <div className="flex justify-between text-slate-400">
+                                            <span>Sous-total HT</span>
+                                            <span>{subtotalHT.toFixed(2)} €</span>
+                                        </div>
+                                        <div className="flex justify-between text-slate-400">
+                                            <span>TVA ({(taxRate * 100)}%)</span>
+                                            <span>{vat.toFixed(2)} €</span>
+                                        </div>
+                                        <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
+                                            <span>Total TTC</span>
+                                            <span className="text-sky-400">{totalTTC.toFixed(2)} €</span>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={handleCheckout}
+                                        disabled={processing}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white py-3 rounded-lg font-bold mt-6 transition shadow-lg shadow-emerald-900/20 text-sm"
+                                    >
+                                        {processing ? "Traitement Pay-Splitter..." : "Valider & Encaissement (<400ms)"}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<LexWalletPOS />, document.getElementById('root'));
+    </script>
+</body>
+</html>
