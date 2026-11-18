@@ -1,38 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Cheer Tec Protocol - Sovereign B2B SaaS Infrastructure</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; }
-        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155; }
-        h1 { color: #38bdf8; font-size: 2.5rem; margin-bottom: 10px; }
-        .subtitle { color: #94a3b8; font-size: 1.2rem; margin-bottom: 30px; }
-        .badge { background: #0284c7; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
-        .card { background: #0f172a; padding: 20px; border-radius: 8px; border-left: 4px solid #38bdf8; }
-        .card h3 { margin-top: 0; color: #38bdf8; }
-        p { line-height: 1.6; color: #cbd5e1; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lextrust.cloud — Gouvernance & Protocole Cheer Tec</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <span class="badge">DoraHacks Build #5120</span>
-        <h1>Cheer Tec Protocol</h1>
-        <div class="subtitle">Sovereign multi-tenant B2B SaaS infrastructure for multi-level commerce.</div>
-        
-        <p>Cheer Tec connects physical point-of-sale terminals and self-service kiosks (Point Zero) directly to a deterministic on-chain execution engine, eliminating operational silos and automating real-time revenue splitting.</p>
+<body class="bg-slate-950 text-white font-sans antialiased">
+    <div class="min-h-screen flex flex-col justify-between p-6 md:p-12">
+        <!-- En-tête institutionnel -->
+        <header class="max-w-6xl mx-auto w-full flex justify-between items-center border-b border-slate-800 pb-6">
+            <div>
+                <h1 class="text-xl font-bold tracking-wider text-sky-400">LEXTRUST.CLOUD</h1>
+                <p class="text-xs text-slate-400">Gouvernance, Conformité & Architecture Souveraine B2B SaaS</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-xs font-mono text-emerald-400">
+                PROCOTOL SUITE : ACTIF
+            </div>
+        </header>
 
-        <div class="grid">
-            <div class="card">
-                <h3>Domain 1: Kernel OS</h3>
-                <p>Rust / Anchor smart contracts managing tenant isolation via PDA and sub-400ms atomic pay-splitting across management, master franchises, and units.</p>
+        <!-- Contenu Principal -->
+        <main class="max-w-6xl mx-auto w-full my-12 space-y-12">
+            <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
+                <div class="inline-block bg-sky-950 text-sky-300 px-3 py-1 rounded text-xs font-mono mb-4">
+                    Cheer Tec Protocol — Master Framework
+                </div>
+                <h2 class="text-3xl font-extrabold text-white mb-4">
+                    Infrastructure Industrielle & Ventilation Fiscale en Temps Réel
+                </h2>
+                <p class="text-slate-300 leading-relaxed text-sm md:text-base mb-6">
+                    Le protocole Cheer Tec connecte les terminaux de point de vente (POS Edge <code class="text-sky-400">lexwallet.app</code>) 
+                    et le noyau de calcul (Kernel OS <code class="text-sky-400">delegal.dev</code>) pour automatiser sans silo la ventilation du CA, 
+                    la gestion des stocks (COGS), les programmes de fidélité et la conformité fiscale internationale.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-slate-800">
+                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800">
+                        <h3 class="font-bold text-sky-400 text-sm mb-2">1. Kernel OS (delegal.dev)</h3>
+                        <p class="text-xs text-slate-400">Pay-splitter atomique (5% redevance, 10% lease, 85% exploitation) et P&L en continu sous 400ms.</p>
+                    </div>
+                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800">
+                        <h3 class="font-bold text-sky-400 text-sm mb-2">2. Point Zero POS (lexwallet.app)</h3>
+                        <p class="text-xs text-slate-400">Interface tactile de caisse, décrémentation des nomenclatures de stock (BOM) et rapports Z fiscaux.</p>
+                    </div>
+                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800">
+                        <h3 class="font-bold text-sky-400 text-sm mb-2">3. Vitrine & Gouvernance (lextrust.cloud)</h3>
+                        <p class="text-xs text-slate-400">Portail institutionnel, conformité juridique, accords de franchise et supervision des master-franchisés.</p>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <h3>Domain 2: Point Zero (POS Edge)</h3>
-                <p>Tactile checkout terminals handling basket validation, VAT computation, inventory de-crementation, and offline-first asynchronous synchronization.</p>
+
+            <!-- Accès Directs / Hub Master Franchisés -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">Espace Exploitation & POS</h3>
+                        <p class="text-xs text-slate-400 mb-4">Accéder directement au terminal de caisse opérationnel pour le traitement des ventes et la génération des rapports Z.</p>
+                    </div>
+                    <a href="https://lexwallet.app" target="_blank" class="bg-sky-600 hover:bg-sky-500 text-white text-center py-2.5 rounded-lg text-xs font-bold transition">
+                        Lancer lexwallet.app →
+                    </a>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-white mb-2">Documentation API & Kernel</h3>
+                        <p class="text-xs text-slate-400 mb-4">Consulter les points de terminaison sécurisés et l'état de santé du noyau de calcul distribué.</p>
+                    </div>
+                    <a href="https://delegal.dev" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-sky-300 text-center py-2.5 rounded-lg text-xs font-bold transition">
+                        Inspecter delegal.dev →
+                    </a>
+                </div>
             </div>
-        </div>
+        </main>
+
+        <!-- Pied de page -->
+        <footer class="max-w-6xl mx-auto w-full text-center border-t border-slate-800 pt-6 text-xs text-slate-500">
+            <p>© 2026 Cheer Cheese Flagship & Cheer Tec Protocol. Tous droits réservés.</p>
+        </footer>
     </div>
 </body>
 </html>
