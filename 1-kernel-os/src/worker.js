@@ -1,13 +1,16 @@
 /**
- * Cheer Tec Protocol - delegal.dev Kernel OS & Pay-Splitter / P&L & Z-Report Engine
- * Architecture distribuée - Traitement temps réel et conformité fiscale
+ * Cheer Tec Protocol - delegal.dev Kernel OS & Ledger Engine
+ * Gestion des transactions réelles, P&L dynamique, Rapports Z et Purge Admin Holding
  */
+
+// Simulation d'une base de données mémoire persistante pour le PoC (ou liaison KV / D1 en production)
+let TRANSACTION_LEDGER = [];
 
 export default {
   async fetch(request, env, ctx) {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "https://lexwallet.app",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
 
@@ -15,105 +18,132 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    if (request.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed. Use POST." }), {
-        status: 405,
-        headers: { "Content-Type": "application/json", ...corsHeaders }
-      });
-    }
-
-    const startTime = Date.now();
     const url = new URL(request.url);
+    const startTime = Date.now();
 
     try {
-      const payload = await request.json();
+      // ROUTE 1 : PURGE / NETTOYAGE DES TESTS (Code Administrateur Holding)
+      if (request.method === "POST" && url.pathname === "/admin/purge") {
+        const payload = await request.json();
+        const ADMIN_HOLDING_CODE = "CHEEZ-ADMIN-2026"; // Code PIN maître de la holding
 
-      // Route 1 : Génération du Rapport Z (Clôture Fiscale de Caisse)
-      if (url.pathname === "/z-report" || payload.action === "CLOSE_Z_REPORT") {
-        const zReportData = {
+        if (payload.admin_code !== ADMIN_HOLDING_CODE) {
+          return new Response(JSON.stringify({ error: "Unauthorized: Invalid Holding Admin Code" }), {
+            status: 403,
+            headers: { "Content-Type": "application/json", ...corsHeaders }
+          });
+        }
+
+        const previousCount = TRANSACTION_LEDGER.length;
+        TRANSACTION_LEDGER = TRANSACTION_LEDGER.filter(tx => !tx.is_test);
+        
+        return new Response(JSON.stringify({
           status: "SUCCESS",
-          report_type: "Z_CLOSING",
-          kernel: "delegal.dev",
-          terminal_id: payload.terminal_id || "LEX-POS-TERM-01",
-          tenant_id: payload.tenant_id || "CHEEZ-FLAGSHIP-001",
-          z_sequence_number: payload.z_sequence_number || 1042,
-          timestamp_opening: payload.timestamp_opening || new Date(Date.now() - 28800000).toISOString(),
-          timestamp_closing: new Date().toISOString(),
-          fiscal_totals: {
-            grand_total_ttc: payload.grand_total_ttc || 1450.00,
-            total_ht: payload.total_ht || 1208.33,
-            total_vat: payload.total_vat || 241.67,
-            vat_breakdown: {
-              standard_20_percent: { base_ht: 1208.33, vat_amount: 241.67 }
-            }
-          },
-          payment_methods: {
-            cash: payload.cash_total || 450.00,
-            card: payload.card_total || 1000.00
-          },
-          audit_metrics: {
-            total_tickets: payload.total_tickets || 85,
-            voided_tickets: payload.voided_tickets || 2,
-            voided_amount_ttc: payload.voided_amount_ttc || 24.50
-          },
-          latency_ms: Date.now() - startTime
-        };
-
-        return new Response(JSON.stringify(zReportData), {
+          message: "Purge administrative effectuée avec succès. Les tests ont été retirés du CA.",
+          purged_entries: previousCount - TRANSACTION_LEDGER.length,
+          remaining_entries: TRANSACTION_LEDGER.length
+        }), {
           status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders }
         });
       }
 
-      // Route 2 : Traitement Transactionnel Standard & Pay-Splitter + P&L en continu
-      if (!payload.total_ttc || typeof payload.total_ttc !== 'number' || payload.total_ttc <= 0) {
-        return new Response(JSON.stringify({ error: "Invalid or missing total_ttc in transaction payload" }), {
-          status: 400,
+      // ROUTE 2 : ENREGISTREMENT D'UNE TRANSACTION POS
+      if (request.method === "POST" && (url.pathname === "/" || url.pathname === "/checkout")) {
+        const payload = await request.json();
+
+        if (!payload.total_ttc || typeof payload.total_ttc !== 'number' || payload.total_ttc <= 0) {
+          return new Response(JSON.stringify({ error: "Invalid transaction payload" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json", ...corsHeaders }
+          });
+        }
+
+        const txEntry = {
+          id: payload.id || `TX-${Date.now()}`,
+          timestamp: payload.timestamp || new Date().toISOString(),
+          date_key: new Date().toISOString().split('T')[0],
+          month_key: new Date().toISOString().slice(0, 7),
+          terminal_id: payload.terminalId || "LEX-POS-TERM-01",
+          is_test: payload.is_test || false,
+          subtotal_ht: payload.subtotal_ht,
+          vat: payload.vat,
+          total_ttc: payload.total_ttc,
+          cogs_total: payload.cogs_total,
+          gross_margin: Number((payload.subtotal_ht - payload.cogs_total).toFixed(2)),
+          splits: {
+            royalty_5_percent: Number((payload.total_ttc * 0.05).toFixed(2)),
+            lease_10_percent: Number((payload.total_ttc * 0.10).toFixed(2)),
+            operating_85_percent: Number((payload.total_ttc * 0.85).toFixed(2))
+          }
+        };
+
+        TRANSACTION_LEDGER.push(txEntry);
+
+        return new Response(JSON.stringify({
+          status: "SUCCESS",
+          kernel: "delegal.dev",
+          tx_id: txEntry.id,
+          latency_ms: Date.now() - startTime,
+          financial_ledger: txEntry
+        }), {
+          status: 200,
           headers: { "Content-Type": "application/json", ...corsHeaders }
         });
       }
 
-      const totalTTC = payload.total_ttc;
-      const subtotalHT = payload.subtotal_ht || Number((totalTTC / 1.20).toFixed(2));
-      const vat = payload.vat || Number((totalTTC - subtotalHT).toFixed(2));
-      
-      // Calcul du Coût des Marchandises Vendues (COGS) basé sur les items ou valeur par défaut (30% du HT)
-      const cogsTotal = payload.items ? payload.items.reduce((acc, item) => acc + ((item.unit_cogs || (item.price_ht * 0.3)) * item.qty), 0) : Number((subtotalHT * 0.3).toFixed(2));
-      
-      // Marge Brute Opérationnelle
-      const grossMargin = Number((subtotalHT - cogsTotal).toFixed(2));
+      // ROUTE 3 : CONSULTATION P&L ET RAPPORT Z FILTRÉ (Par Date / Mois)
+      if (request.method === "GET" || (request.method === "POST" && url.pathname === "/z-report")) {
+        let filterDate = url.searchParams.get("date");
+        let filterMonth = url.searchParams.get("month");
 
-      // Ventilation Pay-Splitter (5% Royalty, 10% Lease, 85% Operating)
-      const splitBreakdown = {
-        royalty_5_percent: Number((totalTTC * 0.05).toFixed(2)),
-        lease_10_percent: Number((totalTTC * 0.10).toFixed(2)),
-        operating_85_percent: Number((totalTTC * 0.85).toFixed(2))
-      };
+        let activeTxs = TRANSACTION_LEDGER.filter(tx => !tx.is_test);
 
-      const latency = Date.now() - startTime;
-      const responsePayload = {
-        status: "SUCCESS",
-        kernel: "delegal.dev",
-        tx_id: payload.id || `TX-KERNEL-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        latency_ms: latency,
-        financial_ledger: {
-          subtotal_ht: subtotalHT,
-          vat: vat,
-          total_ttc: totalTTC,
-          cogs: cogsTotal,
-          gross_margin: grossMargin,
-          splits: splitBreakdown
+        if (filterDate) {
+          activeTxs = activeTxs.filter(tx => tx.date_key === filterDate);
+        } else if (filterMonth) {
+          activeTxs = activeTxs.filter(tx => tx.month_key === filterMonth);
         }
-      };
 
-      return new Response(JSON.stringify(responsePayload), {
-        status: 200,
+        const totalTTC = activeTxs.reduce((acc, tx) => acc + tx.total_ttc, 0);
+        const totalHT = activeTxs.reduce((acc, tx) => acc + tx.subtotal_ht, 0);
+        const totalVAT = activeTxs.reduce((acc, tx) => acc + tx.vat, 0);
+        const totalCOGS = activeTxs.reduce((acc, tx) => acc + tx.cogs_total, 0);
+        const totalGrossMargin = activeTxs.reduce((acc, tx) => acc + tx.gross_margin, 0);
+
+        const report = {
+          status: "SUCCESS",
+          kernel: "delegal.dev",
+          filter_applied: filterDate ? `Date: ${filterDate}` : filterMonth ? `Month: ${filterMonth}` : "All Time / Real Ledger",
+          fiscal_totals: {
+            total_tickets: activeTxs.length,
+            grand_total_ttc: Number(totalTTC.toFixed(2)),
+            total_ht: Number(totalHT.toFixed(2)),
+            total_vat: Number(totalVAT.toFixed(2)),
+            total_cogs: Number(totalCOGS.toFixed(2)),
+            gross_margin: Number(totalGrossMargin.toFixed(2))
+          },
+          splits_consolidation: {
+            royalty_5_percent: Number((totalTTC * 0.05).toFixed(2)),
+            lease_10_percent: Number((totalTTC * 0.10).toFixed(2)),
+            operating_85_percent: Number((totalTTC * 0.85).toFixed(2))
+          },
+          transactions: activeTxs
+        };
+
+        return new Response(JSON.stringify(report), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        });
+      }
+
+      return new Response(JSON.stringify({ error: "Endpoint not found" }), {
+        status: 404,
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
 
     } catch (err) {
-      return new Response(JSON.stringify({ error: "Internal Kernel Error", details: err.message }), {
+      return new Response(JSON.stringify({ error: "Kernel Error", details: err.message }), {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders }
       });
