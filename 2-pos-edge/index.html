@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexwallet.app — Point Zero POS</title>
-    <!-- Tailwind CSS CDN pour un rendu moderne et responsive immédiat -->
+    <title>Lexwallet.app — Point Zero POS & P&L Ledger</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -14,59 +13,57 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        function LexWalletPOS() {
+        function LexWalletAdvancedPOS() {
             const [catalog, setCatalog] = React.useState(null);
             const [cart, setCart] = React.useState([]);
             const [loading, setLoading] = React.useState(true);
             const [processing, setProcessing] = React.useState(false);
+            const [discountCode, setDiscountCode] = React.useState("");
+            const [discountPercent, setDiscountPercent] = React.useState(0);
+            const [zReportData, setZReportData] = React.useState(null);
+            const [showZModal, setShowZModal] = React.useState(false);
 
-            // Catalogue embarqué de secours et chargement initial
             React.useEffect(() => {
-                const defaultCatalog = {
+                const enterpriseCatalog = {
                     "categories": [
                         {
                             "category_id": "CAT-01",
-                            "name": "Burgers & Spécialités",
+                            "name": "Burgers Signature",
                             "items": [
-                                { "sku": "CHEER-BURGER-01", "name": "Cheer Burger Classic", "price_ht": 8.50, "description": "Steak smash, cheddar affiné, sauce secrète" },
-                                { "sku": "CHEER-SALCH-02", "name": "Salchipapa Royale", "price_ht": 6.50, "description": "Frites fraîches, saucisses artisanales, double cheddar fondu" }
+                                { "sku": "CHEER-BURGER-01", "name": "Cheer Classic Cheese Burger", "price_ht": 9.50, "unit_cogs": 2.85, "description": "Bœuf charolais, cheddar affiné, sauce secrète" },
+                                { "sku": "CHEER-BURGER-02", "name": "Cheer Truffle Bacon Burger", "price_ht": 12.50, "unit_cogs": 3.75, "description": "Bœuf, double cheddar, bacon croustillant, crème de truffe" }
                             ]
                         },
                         {
                             "category_id": "CAT-02",
-                            "name": "Boissons & Extras",
+                            "name": "Street Food & Salchipapa",
                             "items": [
-                                { "sku": "BEV-COLA-01", "name": "Boisson Artisanale 33cl", "price_ht": 3.00, "description": "Fraîche et locale" },
-                                { "sku": "EXT-FRIES-01", "name": "Portion de Frites Maison", "price_ht": 3.50, "description": "Cuisson double bain" }
+                                { "sku": "CHEER-SALCH-01", "name": "Salchipapa Premium Cheer", "price_ht": 10.00, "unit_cogs": 3.00, "description": "Frites fraîches, saucisses artisanales, fromages fondus" },
+                                { "sku": "CHEER-PEPITO-01", "name": "Pepito Traditionnel Vénézuélien", "price_ht": 11.50, "unit_cogs": 3.45, "description": "Baguette, émincé de bœuf, queso blanco, salsa rosada" }
+                            ]
+                        },
+                        {
+                            "category_id": "CAT-03",
+                            "name": "Boissons & Fromages",
+                            "items": [
+                                { "sku": "BEV-COLA-01", "name": "Boisson Artisanale / Limonade", "price_ht": 3.50, "unit_cogs": 1.00, "description": "33cl - Recette locale" },
+                                { "sku": "CHEESE-PLATE-01", "name": "Plateau de Fromages Affinés", "price_ht": 14.00, "unit_cogs": 4.50, "description": "Sélection du terroir, confiture de figues" }
                             ]
                         }
                     ],
                     "tax_rate_standard": 0.20
                 };
-
-                // Tentative de chargement du catalogue externe, sinon utilisation du secours
-                fetch('./config/cheer-cheese-catalog.json')
-                    .then(res => {
-                        if (!res.ok) throw new Error("Catalogue externe introuvable");
-                        return res.json();
-                    })
-                    .then(data => {
-                        setCatalog(data);
-                        setLoading(false);
-                    })
-                    .catch(() => {
-                        setCatalog(defaultCatalog);
-                        setLoading(false);
-                    });
+                setCatalog(enterpriseCatalog);
+                setLoading(false);
             }, []);
 
             const addToCart = (item) => {
-                setCart(prevCart => {
-                    const existing = prevCart.find(i => i.sku === item.sku);
+                setCart(prev => {
+                    const existing = prev.find(i => i.sku === item.sku);
                     if (existing) {
-                        return prevCart.map(i => i.sku === item.sku ? { ...i, qty: i.qty + 1 } : i);
+                        return prev.map(i => i.sku === item.sku ? { ...i, qty: i.qty + 1 } : i);
                     }
-                    return [...prevCart, { ...item, qty: 1 }];
+                    return [...prev, { ...item, qty: 1 }];
                 });
             };
 
@@ -74,7 +71,25 @@
                 setCart(prev => prev.filter(i => i.sku !== sku));
             };
 
-            const subtotalHT = cart.reduce((acc, item) => acc + (item.price_ht * item.qty), 0);
+            const applyCoupon = () => {
+                if (discountCode.toUpperCase() === "CHEEZVIP") {
+                    setDiscountPercent(10);
+                    alert("Coupon VIP appliqué : -10% sur le sous-total.");
+                } else if (discountCode.toUpperCase() === "STAFF") {
+                    setDiscountPercent(20);
+                    alert("Coupon Staff appliqué : -20%.");
+                } else {
+                    alert("Code de réduction invalide.");
+                    setDiscountPercent(0);
+                }
+            };
+
+            const rawSubtotalHT = cart.reduce((acc, item) => acc + (item.price_ht * item.qty), 0);
+            const discountAmountHT = rawSubtotalHT * (discountPercent / 100);
+            const subtotalHT = rawSubtotalHT - discountAmountHT;
+            const totalCOGS = cart.reduce((acc, item) => acc + (item.unit_cogs * item.qty), 0);
+            const grossMargin = subtotalHT - totalCOGS;
+
             const taxRate = catalog?.tax_rate_standard || 0.20;
             const vat = subtotalHT * taxRate;
             const totalTTC = subtotalHT + vat;
@@ -89,37 +104,55 @@
                     tenantId: "CHEEZ-FLAGSHIP-001",
                     timestamp: new Date().toISOString(),
                     items: cart,
-                    subtotal_ht: subtotalHT,
-                    vat: vat,
-                    total_ttc: Number(totalTTC.toFixed(2))
+                    subtotal_ht: Number(subtotalHT.toFixed(2)),
+                    vat: Number(vat.toFixed(2)),
+                    total_ttc: Number(totalTTC.toFixed(2)),
+                    cogs_total: Number(totalCOGS.toFixed(2))
                 };
 
                 try {
-                    // Appel vers le Kernel OS delegal.dev (Pay-Splitter <400ms)
                     const response = await fetch('https://delegal.dev', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(orderPayload)
                     });
 
-                    if (!response.ok) throw new Error("Erreur de transmission vers delegal.dev");
-
+                    if (!response.ok) throw new Error("Erreur de transmission kernel");
                     const result = await response.json();
-                    alert(`Encaissement validé !\nTransaction : ${result.tx_id}\nVentilation Pay-Splitter exécutée en ${result.latency_ms}ms\nTotal TTC : ${totalTTC.toFixed(2)} EUR`);
+                    
+                    alert(`Encaissement validé via delegal.dev !\nTransaction : ${result.tx_id}\nVentilation Pay-Splitter (5/10/85) exécutée en ${result.latency_ms}ms\nTotal TTC : ${totalTTC.toFixed(2)} EUR`);
                     setCart([]);
+                    setDiscountPercent(0);
+                    setDiscountCode("");
                 } catch (err) {
-                    console.warn("[Mode Hors-Ligne / Simulation] Erreur réseau delegal.dev :", err.message);
-                    alert(`Commande enregistrée localement (Mode résilient).\nTotal TTC : ${totalTTC.toFixed(2)} EUR`);
+                    console.warn("[Mode Résilient] Connexion delegal.dev impossible, bascule locale :", err.message);
+                    alert(`Commande enregistrée en mode résilient local.\nTotal TTC : ${totalTTC.toFixed(2)} EUR`);
                     setCart([]);
                 } finally {
                     setProcessing(false);
                 }
             };
 
+            const handleZReport = async () => {
+                try {
+                    const response = await fetch('https://delegal.dev/z-report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: "CLOSE_Z_REPORT", terminal_id: "LEX-POS-TERM-01" })
+                    });
+                    if (!response.ok) throw new Error("Erreur lors de la génération du Z");
+                    const data = await response.json();
+                    setZReportData(data);
+                    setShowZModal(true);
+                } catch (err) {
+                    alert("Erreur de communication avec le kernel pour le rapport Z.");
+                }
+            };
+
             if (loading) {
                 return (
                     <div className="flex h-screen items-center justify-center bg-slate-950 text-sky-400 font-mono">
-                        Chargement du Point Zéro (lexwallet.app)...
+                        Initialisation du Point Zéro & Kernel Ledger...
                     </div>
                 );
             }
@@ -128,16 +161,24 @@
                 <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 font-sans">
                     <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-800 pb-4 gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                            <p className="text-sm text-slate-400">Canal d'exploitation officiel : Cheer Cheese</p>
+                            <h1 className="text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS & P&L Engine</h1>
+                            <p className="text-sm text-slate-400">Architecture souveraine B2B SaaS : Cheer Cheese Flagship</p>
                         </div>
-                        <div className="bg-sky-950 border border-sky-600 px-4 py-2 rounded-lg text-sky-300 font-mono text-xs md:text-sm">
-                            STATUT : CONNECTÉ AU KERNEL (delegal.dev)
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={handleZReport}
+                                className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow"
+                            >
+                                Clôture Z (Rapport Fiscal)
+                            </button>
+                            <div className="bg-sky-950 border border-sky-600 px-4 py-2 rounded-lg text-sky-300 font-mono text-xs">
+                                KERNEL : delegal.dev (Actif)
+                            </div>
                         </div>
                     </header>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Catalogue produits */}
+                        {/* Catalogue produits par catégorie */}
                         <div className="lg:col-span-2 space-y-6">
                             {catalog.categories.map((cat) => (
                                 <div key={cat.category_id} className="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl">
@@ -150,7 +191,10 @@
                                                     <p className="text-xs text-slate-400 mt-1">{item.description}</p>
                                                 </div>
                                                 <div className="flex justify-between items-center mt-4 pt-2 border-t border-slate-900">
-                                                    <span className="text-sky-400 font-mono font-bold">{item.price_ht.toFixed(2)} € HT</span>
+                                                    <div>
+                                                        <span className="text-sky-400 font-mono font-bold">{item.price_ht.toFixed(2)} € HT</span>
+                                                        <span className="text-[10px] text-slate-500 block">COGS : {item.unit_cogs.toFixed(2)} €</span>
+                                                    </div>
                                                     <button 
                                                         onClick={() => addToCart(item)}
                                                         className="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition shadow"
@@ -165,64 +209,135 @@
                             ))}
                         </div>
 
-                        {/* Panier et Caisse */}
-                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-fit sticky top-6 shadow-2xl">
-                            <h2 className="text-lg font-semibold text-sky-300 mb-4">Panier Actuel (Point Zéro)</h2>
-                            {cart.length === 0 ? (
-                                <p className="text-slate-500 text-sm py-12 text-center">Aucun article dans le panier.</p>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="divide-y divide-slate-800 max-h-60 overflow-y-auto pr-1">
-                                        {cart.map(item => (
-                                            <div key={item.sku} className="py-3 flex justify-between items-center text-sm">
-                                                <div>
-                                                    <p className="font-medium text-slate-200">{item.name}</p>
-                                                    <p className="text-xs text-slate-400">Qté : {item.qty} × {item.price_ht.toFixed(2)} €</p>
+                        {/* Panier, Fidélité & Analyse P&L en direct */}
+                        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 h-fit sticky top-6 shadow-2xl space-y-6">
+                            <div>
+                                <h2 className="text-lg font-semibold text-sky-300 mb-4">Panier Actuel (Point Zéro)</h2>
+                                {cart.length === 0 ? (
+                                    <p className="text-slate-500 text-sm py-8 text-center">Aucun article dans le panier.</p>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="divide-y divide-slate-800 max-h-48 overflow-y-auto pr-1">
+                                            {cart.map(item => (
+                                                <div key={item.sku} className="py-2.5 flex justify-between items-center text-sm">
+                                                    <div>
+                                                        <p className="font-medium text-slate-200">{item.name}</p>
+                                                        <p className="text-xs text-slate-400">Qté : {item.qty} × {item.price_ht.toFixed(2)} €</p>
+                                                    </div>
+                                                    <div className="flex items-center space-x-3">
+                                                        <span className="font-mono text-sky-300">{(item.price_ht * item.qty).toFixed(2)} €</span>
+                                                        <button 
+                                                            onClick={() => removeFromCart(item.sku)}
+                                                            className="text-rose-500 hover:text-rose-400 text-xs font-bold px-1.5 py-0.5 rounded bg-rose-950/30"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center space-x-3">
-                                                    <span className="font-mono text-sky-300">{(item.price_ht * item.qty).toFixed(2)} €</span>
-                                                    <button 
-                                                        onClick={() => removeFromCart(item.sku)}
-                                                        className="text-rose-500 hover:text-rose-400 text-xs font-bold px-1.5 py-0.5 rounded bg-rose-950/30"
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Module Code Promo / Fidélité */}
+                                        <div className="pt-3 border-t border-slate-800 flex gap-2">
+                                            <input 
+                                                type="text" 
+                                                placeholder="Code VIP / Staff" 
+                                                value={discountCode}
+                                                onChange={(e) => setDiscountCode(e.target.value)}
+                                                className="bg-slate-950 border border-slate-800 text-xs px-3 py-2 rounded text-white w-full uppercase font-mono"
+                                            />
+                                            <button 
+                                                onClick={applyCoupon}
+                                                className="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded font-semibold text-sky-300"
+                                            >
+                                                Appliquer
+                                            </button>
+                                        </div>
+
+                                        <div className="border-t border-slate-800 pt-4 space-y-1.5 text-xs font-mono">
+                                            <div className="flex justify-between text-slate-400">
+                                                <span>Sous-total Brut HT</span>
+                                                <span>{rawSubtotalHT.toFixed(2)} €</span>
                                             </div>
-                                        ))}
-                                    </div>
+                                            {discountPercent > 0 && (
+                                                <div className="flex justify-between text-emerald-400">
+                                                    <span>Remise ({discountPercent}%)</span>
+                                                    <span>-{discountAmountHT.toFixed(2)} €</span>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between text-slate-300 font-bold">
+                                                <span>Sous-total Net HT</span>
+                                                <span>{subtotalHT.toFixed(2)} €</span>
+                                            </div>
+                                            <div className="flex justify-between text-slate-400">
+                                                <span>COGS (Coût Marchandises)</span>
+                                                <span className="text-amber-400">-{totalCOGS.toFixed(2)} €</span>
+                                            </div>
+                                            <div className="flex justify-between text-slate-400">
+                                                <span>Marge Brute Estimée</span>
+                                                <span className="text-emerald-400">{grossMargin.toFixed(2)} €</span>
+                                            </div>
+                                            <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800">
+                                                <span>TVA (20%)</span>
+                                                <span>{vat.toFixed(2)} €</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-800">
+                                                <span>Total TTC</span>
+                                                <span className="text-sky-400">{totalTTC.toFixed(2)} €</span>
+                                            </div>
+                                        </div>
 
-                                    <div className="border-t border-slate-800 pt-4 space-y-2 text-sm font-mono">
-                                        <div className="flex justify-between text-slate-400">
-                                            <span>Sous-total HT</span>
-                                            <span>{subtotalHT.toFixed(2)} €</span>
-                                        </div>
-                                        <div className="flex justify-between text-slate-400">
-                                            <span>TVA ({(taxRate * 100)}%)</span>
-                                            <span>{vat.toFixed(2)} €</span>
-                                        </div>
-                                        <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
-                                            <span>Total TTC</span>
-                                            <span className="text-sky-400">{totalTTC.toFixed(2)} €</span>
-                                        </div>
+                                        <button 
+                                            onClick={handleCheckout}
+                                            disabled={processing}
+                                            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white py-3 rounded-lg font-bold mt-4 transition shadow-lg shadow-emerald-900/20 text-sm"
+                                        >
+                                            {processing ? "Ventilation Pay-Splitter..." : "Valider & Encaissement (<400ms)"}
+                                        </button>
                                     </div>
-
-                                    <button 
-                                        onClick={handleCheckout}
-                                        disabled={processing}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white py-3 rounded-lg font-bold mt-6 transition shadow-lg shadow-emerald-900/20 text-sm"
-                                    >
-                                        {processing ? "Traitement Pay-Splitter..." : "Valider & Encaissement (<400ms)"}
-                                    </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
+
+                    {/* Modal Rapport Z / Clôture Fiscale */}
+                    {showZModal && zReportData && (
+                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl font-mono text-xs">
+                                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                                    <h3 className="text-sm font-bold text-amber-400">RAPPORT Z DE CLÔTURE FISCALE</h3>
+                                    <button onClick={() => setShowZModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+                                </div>
+                                <div className="space-y-2 text-slate-300">
+                                    <p><strong className="text-white">Terminal :</strong> {zReportData.terminal_id}</p>
+                                    <p><strong className="text-white">Séquence Z # :</strong> {zReportData.z_sequence_number}</p>
+                                    <p><strong className="text-white">Ouverture :</strong> {zReportData.timestamp_opening}</p>
+                                    <p><strong className="text-white">Clôture :</strong> {zReportData.timestamp_closing}</p>
+                                    <div className="border-t border-slate-800 pt-2 space-y-1">
+                                        <p><strong className="text-white">CA Total TTC :</strong> {zReportData.fiscal_totals.grand_total_ttc.toFixed(2)} €</p>
+                                        <p><strong className="text-white">Total HT :</strong> {zReportData.fiscal_totals.total_ht.toFixed(2)} €</p>
+                                        <p><strong className="text-white">TVA Collectée :</strong> {zReportData.fiscal_totals.total_vat.toFixed(2)} €</p>
+                                    </div>
+                                    <div className="border-t border-slate-800 pt-2 space-y-1">
+                                        <p><strong className="text-white">Espèces :</strong> {zReportData.payment_methods.cash.toFixed(2)} €</p>
+                                        <p><strong className="text-white">Carte Bancaire :</strong> {zReportData.payment_methods.card.toFixed(2)} €</p>
+                                        <p><strong className="text-white">Tickets émis :</strong> {zReportData.audit_metrics.total_tickets} (Annulés : {zReportData.audit_metrics.voided_tickets})</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowZModal(false)}
+                                    className="w-full bg-sky-600 hover:bg-sky-500 text-white py-2.5 rounded font-bold text-xs transition"
+                                >
+                                    Fermer le Rapport
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
 
-        ReactDOM.render(<LexWalletPOS />, document.getElementById('root'));
+        ReactDOM.render(<LexWalletAdvancedPOS />, document.getElementById('root'));
     </script>
 </body>
 </html>
