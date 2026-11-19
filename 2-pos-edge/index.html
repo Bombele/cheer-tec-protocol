@@ -12,12 +12,13 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé & Contrôle Fiscal</p>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé, Stocks & Contrôle Fiscal</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
                 <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
                 <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique Commandes</button>
+                <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Gestion des Stocks</button>
                 <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
             </div>
         </header>
@@ -43,7 +44,6 @@
                             <p class="text-slate-500 text-center py-6">Panier vide.</p>
                         </div>
 
-                        <!-- Remises rapides 5% / 10% -->
                         <div class="space-y-1.5 pt-2 border-t border-slate-800">
                             <span class="text-[11px] text-slate-400 block">Réduction spéciale :</span>
                             <div class="grid grid-cols-3 gap-2 text-xs font-mono">
@@ -53,7 +53,6 @@
                             </div>
                         </div>
 
-                        <!-- Bons de réduction / codes -->
                         <div class="space-y-1.5 pt-2 border-t border-slate-800">
                             <span class="text-[11px] text-slate-400 block">Bon de réduction / Code (ex: BON15, CHEEZVIP, STAFF) :</span>
                             <div class="flex gap-2">
@@ -110,7 +109,6 @@
                     </div>
                 </div>
 
-                <!-- Ventilation par rubriques & taux TVA -->
                 <div class="space-y-3">
                     <h3 class="text-sm font-bold text-sky-300">Ventilation Fiscale par Rubrique & Taux TVA</h3>
                     <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
@@ -131,7 +129,6 @@
                     </div>
                 </div>
 
-                <!-- Analyse par produit (meilleures ventes) -->
                 <div class="space-y-3">
                     <h3 class="text-sm font-bold text-emerald-300">Analyse par Produit (Classement par Volume Vendu)</h3>
                     <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
@@ -167,6 +164,46 @@
                 </div>
                 <div id="history-container" class="space-y-2 font-mono text-xs">
                     <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- VUE 4 : GESTION DES STOCKS (MATIÈRES PREMIÈRES PAR ARTICLE) -->
+        <div id="view-stock" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-emerald-400">Gestion des Stocks & Recettes Articles</h2>
+                        <p class="text-xs text-slate-400 font-mono">Déduction automatique sur ventes réelles (ex: 100 burgers = -100 pains, -100 viandes de bœuf...)</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs font-mono">
+                        <button onclick="exportBackupJson()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Export JSON</button>
+                        <label class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded font-bold cursor-pointer">
+                            Import JSON
+                            <input type="file" accept=".json" onchange="importBackupJson(event)" class="hidden"/>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
+                    <table class="w-full text-left font-mono text-xs">
+                        <thead class="border-b border-slate-800 text-slate-400">
+                            <tr>
+                                <th class="p-3">Ingrédient / Produit</th>
+                                <th class="p-3">Unité</th>
+                                <th class="p-3">Stock Initial</th>
+                                <th class="p-3">Consommé (Ventes)</th>
+                                <th class="p-3">Stock Actuel</th>
+                                <th class="p-3">Réapprovisionner</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-table-body" class="divide-y divide-slate-900"></tbody>
+                    </table>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold text-sky-300">Correspondance Articles ↔ Ingrédients</h3>
+                    <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs"></div>
                 </div>
             </div>
         </div>
@@ -232,13 +269,10 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'lexwallet_pos_tx_v1';
+        const TX_STORAGE_KEY = 'lexwallet_pos_tx_v1';
+        const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v1';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
 
-        // Rubriques fiscales et taux de TVA par régime
-        // plats: 10% sur place / 10% à emporter (ou 20% / 10% selon règle métier)
-        // boissons_soft: 20% sur place / 10% ou 20% selon configuration
-        // vins_alcools: 20% sur place / 20% à emporter
         const RUBRICS = {
             plats_emporter: { label: 'Plats à Emporter', vatPlace: 0.10, vatTakeout: 0.10 },
             plats_sur_place: { label: 'Plats Sur Place', vatPlace: 0.20, vatTakeout: 0.10 },
@@ -246,31 +280,109 @@
             vins_alcools: { label: 'Vins, Alcools & Spiritueux', vatPlace: 0.20, vatTakeout: 0.20 }
         };
 
+        const DEFAULT_INGREDIENTS = [
+            { id: 'ING-PAIN', name: 'Pain Burger', unit: 'unité', initialQty: 250 },
+            { id: 'ING-BOEUF', name: 'Viande de Bœuf', unit: 'portion', initialQty: 250 },
+            { id: 'ING-CHEDDAR', name: 'Cheddar Affiné', unit: 'tranche', initialQty: 300 },
+            { id: 'ING-SAUCE', name: 'Sauce Signature', unit: 'dose', initialQty: 400 },
+            { id: 'ING-SALADE', name: 'Salade Fraîche', unit: 'portion', initialQty: 250 },
+            { id: 'ING-BACON', name: 'Bacon Fumé', unit: 'tranche', initialQty: 200 },
+            { id: 'ING-TRUFFE', name: 'Crème Truffe', unit: 'dose', initialQty: 150 },
+            { id: 'ING-FRITES', name: 'Pommes de Terre / Frites', unit: 'portion', initialQty: 300 },
+            { id: 'ING-FROMAGE', name: 'Assortiment Fromages', unit: 'plateau', initialQty: 80 },
+            { id: 'ING-SOFT', name: 'Boisson Soft / Jus', unit: 'unité', initialQty: 200 },
+            { id: 'ING-VIN', name: 'Vin / Spiritueux', unit: 'verre/dose', initialQty: 150 }
+        ];
+
         const CATALOG_CATEGORIES = [
             {
                 id: 'CAT-PLATS',
                 title: 'Plats & Burgers',
                 items: [
-                    { sku: 'CHEER-BURGER-01', name: 'Cheer Classic Cheese Burger', desc: 'Bœuf charolais, cheddar affiné', price_ht: 9.50, unit_cogs: 2.85, baseGroup: 'plats_sur_place' },
-                    { sku: 'CHEER-BURGER-02', name: 'Cheer Truffle Bacon Burger', desc: 'Bœuf, double cheddar, truffe', price_ht: 12.50, unit_cogs: 3.75, baseGroup: 'plats_sur_place' },
-                    { sku: 'CHEER-BOX-01', name: 'Box Frites & Cheese Emporter', desc: 'Format emballage thermique', price_ht: 8.50, unit_cogs: 2.30, baseGroup: 'plats_emporter' },
-                    { sku: 'CHEESE-PLATE-01', name: 'Plateau de Fromages Affinés', desc: 'Sélection du terroir', price_ht: 14.00, unit_cogs: 4.50, baseGroup: 'plats_sur_place' }
+                    {
+                        sku: 'CHEER-BURGER-01',
+                        name: 'Cheer Classic Cheese Burger',
+                        desc: 'Pain, viande de bœuf, cheddar, sauce, salade',
+                        price_ht: 9.50,
+                        unit_cogs: 2.85,
+                        baseGroup: 'plats_sur_place',
+                        recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1, 'ING-SALADE': 1 }
+                    },
+                    {
+                        sku: 'CHEER-BURGER-02',
+                        name: 'Cheer Truffle Bacon Burger',
+                        desc: 'Pain, viande de bœuf, double cheddar, bacon, truffe, sauce',
+                        price_ht: 12.50,
+                        unit_cogs: 3.75,
+                        baseGroup: 'plats_sur_place',
+                        recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 2, 'ING-BACON': 2, 'ING-TRUFFE': 1, 'ING-SAUCE': 1 }
+                    },
+                    {
+                        sku: 'CHEER-BOX-01',
+                        name: 'Box Frites & Cheese Emporter',
+                        desc: 'Frites, cheddar, sauce emballage thermique',
+                        price_ht: 8.50,
+                        unit_cogs: 2.30,
+                        baseGroup: 'plats_emporter',
+                        recipe: { 'ING-FRITES': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1 }
+                    },
+                    {
+                        sku: 'CHEESE-PLATE-01',
+                        name: 'Plateau de Fromages Affinés',
+                        desc: 'Sélection du terroir',
+                        price_ht: 14.00,
+                        unit_cogs: 4.50,
+                        baseGroup: 'plats_sur_place',
+                        recipe: { 'ING-FROMAGE': 1 }
+                    }
                 ]
             },
             {
                 id: 'CAT-SOFT',
                 title: 'Boissons Normal / Soft',
                 items: [
-                    { sku: 'BEV-COLA-01', name: 'Boisson Artisanale / Limonade', desc: '33cl', price_ht: 3.50, unit_cogs: 1.00, baseGroup: 'boissons_soft' },
-                    { sku: 'BEV-JUICE-01', name: 'Jus Pressé Maison', desc: '25cl frais', price_ht: 4.20, unit_cogs: 1.25, baseGroup: 'boissons_soft' }
+                    {
+                        sku: 'BEV-COLA-01',
+                        name: 'Boisson Artisanale / Limonade',
+                        desc: '33cl',
+                        price_ht: 3.50,
+                        unit_cogs: 1.00,
+                        baseGroup: 'boissons_soft',
+                        recipe: { 'ING-SOFT': 1 }
+                    },
+                    {
+                        sku: 'BEV-JUICE-01',
+                        name: 'Jus Pressé Maison',
+                        desc: '25cl frais',
+                        price_ht: 4.20,
+                        unit_cogs: 1.25,
+                        baseGroup: 'boissons_soft',
+                        recipe: { 'ING-SOFT': 1 }
+                    }
                 ]
             },
             {
                 id: 'CAT-ALCOOL',
                 title: 'Vins, Alcools & Spiritueux',
                 items: [
-                    { sku: 'BEV-WINE-01', name: 'Verre de Vin Sélection', desc: 'Rouge / Blanc / Rosé', price_ht: 6.00, unit_cogs: 2.00, baseGroup: 'vins_alcools' },
-                    { sku: 'SPIRIT-01', name: 'Spiritueux Signature (4cl)', desc: 'Service bar', price_ht: 8.50, unit_cogs: 2.60, baseGroup: 'vins_alcools' }
+                    {
+                        sku: 'BEV-WINE-01',
+                        name: 'Verre de Vin Sélection',
+                        desc: 'Rouge / Blanc / Rosé',
+                        price_ht: 6.00,
+                        unit_cogs: 2.00,
+                        baseGroup: 'vins_alcools',
+                        recipe: { 'ING-VIN': 1 }
+                    },
+                    {
+                        sku: 'SPIRIT-01',
+                        name: 'Spiritueux Signature (4cl)',
+                        desc: 'Service bar',
+                        price_ht: 8.50,
+                        unit_cogs: 2.60,
+                        baseGroup: 'vins_alcools',
+                        recipe: { 'ING-VIN': 1 }
+                    }
                 ]
             }
         ];
@@ -284,6 +396,7 @@
 
         let cart = [];
         let transactions = loadTransactions();
+        let stockInitialMap = loadStockInitialMap();
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
         let activeVoucher = null;
@@ -297,7 +410,7 @@
 
         function loadTransactions() {
             try {
-                const raw = localStorage.getItem(STORAGE_KEY);
+                const raw = localStorage.getItem(TX_STORAGE_KEY);
                 return raw ? JSON.parse(raw) : [];
             } catch (_) {
                 return [];
@@ -306,8 +419,57 @@
 
         function persistTransactions() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+                localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(transactions));
             } catch (_) {}
+        }
+
+        function loadStockInitialMap() {
+            const defaults = {};
+            DEFAULT_INGREDIENTS.forEach(ing => { defaults[ing.id] = ing.initialQty; });
+            try {
+                const raw = localStorage.getItem(STOCK_STORAGE_KEY);
+                if (!raw) return defaults;
+                const parsed = JSON.parse(raw);
+                return { ...defaults, ...parsed };
+            } catch (_) {
+                return defaults;
+            }
+        }
+
+        function persistStockInitialMap() {
+            try {
+                localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stockInitialMap));
+            } catch (_) {}
+        }
+
+        function findCatalogItem(sku) {
+            for (const cat of CATALOG_CATEGORIES) {
+                const found = cat.items.find(i => i.sku === sku);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function getRecipeForItem(item) {
+            if (item.recipe && typeof item.recipe === 'object') return item.recipe;
+            const catItem = findCatalogItem(item.sku);
+            return (catItem && catItem.recipe) ? catItem.recipe : {};
+        }
+
+        function computeConsumedIngredients() {
+            const consumed = {};
+            DEFAULT_INGREDIENTS.forEach(ing => { consumed[ing.id] = 0; });
+
+            transactions.filter(t => !t.is_test).forEach(tx => {
+                (tx.items || []).forEach(line => {
+                    const rec = getRecipeForItem(line);
+                    Object.keys(rec).forEach(ingId => {
+                        consumed[ingId] = (consumed[ingId] || 0) + (rec[ingId] * line.qty);
+                    });
+                });
+            });
+
+            return consumed;
         }
 
         function getItemRubricKey(baseGroup, currentSaleType) {
@@ -424,16 +586,8 @@
             `).join('');
         }
 
-        function findCatalogItem(sku) {
-            for (const cat of CATALOG_CATEGORIES) {
-                const found = cat.items.find(i => i.sku === sku);
-                if (found) return found;
-            }
-            return null;
-        }
-
         function switchTab(tab) {
-            ['pos', 'pnl', 'history'].forEach(t => {
+            ['pos', 'pnl', 'history', 'stock'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('tab-btn-' + t).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
             });
@@ -445,6 +599,7 @@
         function refreshActiveViews() {
             if (!document.getElementById('view-pnl').classList.contains('hidden')) updatePnL();
             if (!document.getElementById('view-history').classList.contains('hidden')) updateHistory();
+            if (!document.getElementById('view-stock').classList.contains('hidden')) updateStockView();
         }
 
         function setSaleType(type) {
@@ -593,6 +748,7 @@
             setQuickDiscount(0);
             clearCoupon();
             updateCartUI();
+            refreshActiveViews();
 
             alert(isTest ? "[MODE TEST] Enregistré hors CA." : `Encaissement validé !\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
         }
@@ -762,6 +918,93 @@
             }).join('');
         }
 
+        function updateStockView() {
+            const consumed = computeConsumedIngredients();
+            const ingNameMap = {};
+            DEFAULT_INGREDIENTS.forEach(i => { ingNameMap[i.id] = i.name; });
+
+            document.getElementById('stock-table-body').innerHTML = DEFAULT_INGREDIENTS.map(ing => {
+                const initQty = Number(stockInitialMap[ing.id] ?? ing.initialQty);
+                const usedQty = Number(consumed[ing.id] || 0);
+                const currentQty = initQty - usedQty;
+                const stockColor = currentQty <= 20 ? 'text-rose-400' : 'text-emerald-400';
+
+                return `
+                    <tr>
+                        <td class="p-3 text-slate-100 font-bold">${ing.name}</td>
+                        <td class="p-3 text-slate-400">${ing.unit}</td>
+                        <td class="p-3 text-slate-200">${initQty}</td>
+                        <td class="p-3 text-amber-400">-${usedQty}</td>
+                        <td class="p-3 font-bold ${stockColor}">${currentQty}</td>
+                        <td class="p-3">
+                            <div class="flex gap-1">
+                                <button onclick="restockIngredient('${ing.id}', 50)" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-sky-300">+50</button>
+                                <button onclick="restockIngredient('${ing.id}', 100)" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-emerald-300">+100</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const allItems = [];
+            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push(i)));
+
+            document.getElementById('recipes-grid').innerHTML = allItems.map(item => {
+                const recEntries = Object.entries(item.recipe || {}).map(([ingId, q]) => `${ingNameMap[ingId] || ingId} (x${q})`).join(', ');
+                return `
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl">
+                        <p class="font-bold text-sky-300">${item.name}</p>
+                        <p class="text-[11px] text-slate-400 mt-1">${recEntries || 'Aucun ingrédient lié'}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function restockIngredient(ingId, delta) {
+            stockInitialMap[ingId] = Number(stockInitialMap[ingId] || 0) + delta;
+            persistStockInitialMap();
+            updateStockView();
+        }
+
+        function exportBackupJson() {
+            const payload = {
+                exported_at: new Date().toISOString(),
+                transactions,
+                stockInitialMap
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lexwallet-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importBackupJson(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(String(reader.result || '{}'));
+                    if (Array.isArray(data.transactions)) {
+                        transactions = data.transactions;
+                        persistTransactions();
+                    }
+                    if (data.stockInitialMap && typeof data.stockInitialMap === 'object') {
+                        stockInitialMap = { ...stockInitialMap, ...data.stockInitialMap };
+                        persistStockInitialMap();
+                    }
+                    refreshActiveViews();
+                    alert("Sauvegarde JSON importée avec succès.");
+                } catch (_) {
+                    alert("Fichier JSON invalide.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function openTicketModal(index) {
             selectedTicketIndex = index;
             const tx = transactions[index];
@@ -896,7 +1139,7 @@
             persistTransactions();
             closeEditTicketModal();
             refreshActiveViews();
-            alert("Ticket mis à jour et P&L recalculé.");
+            alert("Ticket mis à jour, P&L et stocks recalculés.");
         }
     </script>
 </body>
