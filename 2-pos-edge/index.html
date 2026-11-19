@@ -33,7 +33,7 @@
                     <button onclick="setSaleType('sur_place')" id="btn-sur-place" class="px-3 py-1.5 rounded text-xs font-bold bg-sky-600 text-white transition">Sur Place</button>
                     <button onclick="setSaleType('emporter')" id="btn-emporter" class="px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition">À Emporter</button>
                 </div>
-                <input type="date" id="pos-date-input" onchange="refreshActiveViews()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
+                <input type="date" id="pos-date-input" onchange="syncAllTabs()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -159,18 +159,23 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
                         <h2 class="text-base font-bold text-emerald-400">Analyse des Coûts, Charges & Ventilation Trésorerie</h2>
-                        <p class="text-xs text-slate-400 font-mono">Date ciblée : <span id="costs-date-label"></span> • COGS, Loyer, Royalties, Personnel & Mise de côté</p>
+                        <p class="text-xs text-slate-400 font-mono">Date ciblée : <span id="costs-date-label"></span> • Modèle Cheer Cheese (% CA Net HT & €)</p>
                     </div>
-                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold font-mono">Export CSV Financier</button>
+                    <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+                        <button onclick="setCostPeriodMode('daily')" id="period-btn-daily" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Journalier</button>
+                        <button onclick="setCostPeriodMode('monthly')" id="period-btn-monthly" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Mensuel (×30j)</button>
+                        <button onclick="generateRndGrantDossier()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded font-bold">Dossier Subvention / R&D</button>
+                        <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold">Export CSV Financier</button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">COGS Matières (Ventes)</p>
+                        <p class="text-xs text-slate-400">COGS Matières (Ventes + Casse)</p>
                         <p id="cost-cogs-val" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">Charges fixes / variables</p>
+                        <p class="text-xs text-slate-400">Charges (Loyer, Royalties, Staff, Autres)</p>
                         <p id="cost-opex-val" class="text-xl font-bold text-rose-400 mt-1">0.00 €</p>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -185,29 +190,36 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono text-xs">
                     <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <h3 class="text-sm font-bold text-sky-300">Paramètres de Charges (sur la période / journée)</h3>
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-sky-300">Charges en % du CA Net HT (Pilotage Modèle)</h3>
+                            <button onclick="applyCheerCheeseDefaults()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded font-bold">Repères Cheer Cheese</button>
+                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Loyer (€)</label>
-                                <input type="number" step="0.01" min="0" id="cfg-rent" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <label class="text-[11px] text-slate-400 block mb-1">Loyer (% Net HT) — Cible 10%</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-rent-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <span id="calc-rent-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
                             </div>
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Royalties (€)</label>
-                                <input type="number" step="0.01" min="0" id="cfg-royalties" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <label class="text-[11px] text-slate-400 block mb-1">Royalties Holding (% Net HT) — Cible 5%</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-royalties-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <span id="calc-royalties-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
                             </div>
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Frais de Personnel (€)</label>
-                                <input type="number" step="0.01" min="0" id="cfg-staff" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <label class="text-[11px] text-slate-400 block mb-1">Frais de Personnel (% Net HT) — Cible 25%</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-staff-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <span id="calc-staff-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
                             </div>
                             <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (Assurance, Fluides...) (€)</label>
-                                <input type="number" step="0.01" min="0" id="cfg-other" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (% Net HT) — Cible 5%</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-other-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <span id="calc-other-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <h3 class="text-sm font-bold text-amber-300">Répartition & Mise de Côté (sur CA Net HT)</h3>
+                        <h3 class="text-sm font-bold text-amber-300">Mise de Côté & Point Mort (Seuil de Rentabilité)</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="text-[11px] text-slate-400 block mb-1">Provision Fiscalité / Impôts (% Net HT)</label>
@@ -220,6 +232,11 @@
                         </div>
                         <div id="cost-breakdown-summary" class="space-y-1 pt-2 border-t border-slate-800 text-slate-300"></div>
                     </div>
+                </div>
+
+                <div id="rnd-grant-card" class="hidden bg-slate-950 border border-emerald-700/50 p-5 rounded-xl space-y-2 font-mono text-xs">
+                    <h3 class="text-sm font-bold text-emerald-400">Synthèse Preuve R&D / Subvention (Traçabilité, Pilier Financier & Intégrité)</h3>
+                    <div id="rnd-grant-content" class="space-y-1 text-slate-300"></div>
                 </div>
             </div>
         </div>
@@ -237,13 +254,13 @@
             </div>
         </div>
 
-        <!-- VUE 5 : GESTION DES STOCKS, FOURNISSEURS & BONS DE COMMANDE -->
+        <!-- VUE 5 : GESTION DES STOCKS, CASSE, FOURNISSEURS & BONS DE COMMANDE -->
         <div id="view-stock" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
-                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé, Fournisseurs & Bons de Commande</h2>
-                        <p class="text-xs text-slate-400 font-mono">Stock de départ éditable • Sélecteur fournisseur par ingrédient • Validation superviseur</p>
+                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé, Casse/Pertes, Fournisseurs & Bons</h2>
+                        <p class="text-xs text-slate-400 font-mono">Stock théorique vs casse réelle • Sélecteur fournisseur • Validation superviseur</p>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs font-mono">
                         <button onclick="exportAuditCsv()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export CSV</button>
@@ -263,6 +280,7 @@
                                 <th class="p-3">Fournisseur Assigné</th>
                                 <th class="p-3">Stock Départ</th>
                                 <th class="p-3">Consommé</th>
+                                <th class="p-3">Casse / Perte</th>
                                 <th class="p-3">Stock Actuel</th>
                                 <th class="p-3">Seuil Min</th>
                             </tr>
@@ -409,7 +427,7 @@
         const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
         const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
         const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
-        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v1';
+        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v3';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
 
         const RUBRICS = {
@@ -450,17 +468,17 @@
         ];
 
         const DEFAULT_INGREDIENTS = [
-            { id: 'ING-PAIN', name: 'Pain Burger', unit: 'unité', initialQty: 250, minThreshold: 60, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-PAIN-1126', orderQty: 200 },
-            { id: 'ING-BOEUF', name: 'Viande de Bœuf', unit: 'portion', initialQty: 250, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BOEUF-1126', orderQty: 200 },
-            { id: 'ING-CHEDDAR', name: 'Cheddar Affiné', unit: 'tranche', initialQty: 300, minThreshold: 80, supplierId: 'SUP-ELEVAGE', lot: 'LOT-CHED-1126', orderQty: 250 },
-            { id: 'ING-SAUCE', name: 'Sauce Signature', unit: 'dose', initialQty: 400, minThreshold: 90, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-SAUC-1126', orderQty: 300 },
-            { id: 'ING-SALADE', name: 'Salade Fraîche', unit: 'portion', initialQty: 250, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-SALA-1126', orderQty: 200 },
-            { id: 'ING-BACON', name: 'Bacon Fumé', unit: 'tranche', initialQty: 200, minThreshold: 50, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BACO-1126', orderQty: 150 },
-            { id: 'ING-TRUFFE', name: 'Crème Truffe', unit: 'dose', initialQty: 150, minThreshold: 40, supplierId: 'SUP-ELEVAGE', lot: 'LOT-TRUF-1126', orderQty: 120 },
-            { id: 'ING-FRITES', name: 'Pommes de Terre / Frites', unit: 'portion', initialQty: 300, minThreshold: 75, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-FRIT-1126', orderQty: 250 },
-            { id: 'ING-FROMAGE', name: 'Assortiment Fromages', unit: 'plateau', initialQty: 80, minThreshold: 20, supplierId: 'SUP-ELEVAGE', lot: 'LOT-FROM-1126', orderQty: 60 },
-            { id: 'ING-SOFT', name: 'Boisson Soft / Jus', unit: 'unité', initialQty: 200, minThreshold: 50, supplierId: 'SUP-CAVE', lot: 'LOT-SOFT-1126', orderQty: 180 },
-            { id: 'ING-VIN', name: 'Vin / Spiritueux', unit: 'verre/dose', initialQty: 150, minThreshold: 40, supplierId: 'SUP-CAVE', lot: 'LOT-VINS-1126', orderQty: 120 }
+            { id: 'ING-PAIN', name: 'Pain Burger', unit: 'unité', unitCost: 0.55, initialQty: 250, wasteQty: 0, minThreshold: 60, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-PAIN-1126', orderQty: 200 },
+            { id: 'ING-BOEUF', name: 'Viande de Bœuf', unit: 'portion', unitCost: 1.40, initialQty: 250, wasteQty: 0, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BOEUF-1126', orderQty: 200 },
+            { id: 'ING-CHEDDAR', name: 'Cheddar Affiné', unit: 'tranche', unitCost: 0.45, initialQty: 300, wasteQty: 0, minThreshold: 80, supplierId: 'SUP-ELEVAGE', lot: 'LOT-CHED-1126', orderQty: 250 },
+            { id: 'ING-SAUCE', name: 'Sauce Signature', unit: 'dose', unitCost: 0.25, initialQty: 400, wasteQty: 0, minThreshold: 90, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-SAUC-1126', orderQty: 300 },
+            { id: 'ING-SALADE', name: 'Salade Fraîche', unit: 'portion', unitCost: 0.20, initialQty: 250, wasteQty: 0, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-SALA-1126', orderQty: 200 },
+            { id: 'ING-BACON', name: 'Bacon Fumé', unit: 'tranche', unitCost: 0.40, initialQty: 200, wasteQty: 0, minThreshold: 50, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BACO-1126', orderQty: 150 },
+            { id: 'ING-TRUFFE', name: 'Crème Truffe', unit: 'dose', unitCost: 0.70, initialQty: 150, wasteQty: 0, minThreshold: 40, supplierId: 'SUP-ELEVAGE', lot: 'LOT-TRUF-1126', orderQty: 120 },
+            { id: 'ING-FRITES', name: 'Pommes de Terre / Frites', unit: 'portion', unitCost: 0.85, initialQty: 300, wasteQty: 0, minThreshold: 75, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-FRIT-1126', orderQty: 250 },
+            { id: 'ING-FROMAGE', name: 'Assortiment Fromages', unit: 'plateau', unitCost: 4.50, initialQty: 80, wasteQty: 0, minThreshold: 20, supplierId: 'SUP-ELEVAGE', lot: 'LOT-FROM-1126', orderQty: 60 },
+            { id: 'ING-SOFT', name: 'Boisson Soft / Jus', unit: 'unité', unitCost: 1.00, initialQty: 200, wasteQty: 0, minThreshold: 50, supplierId: 'SUP-CAVE', lot: 'LOT-SOFT-1126', orderQty: 180 },
+            { id: 'ING-VIN', name: 'Vin / Spiritueux', unit: 'verre/dose', unitCost: 2.00, initialQty: 150, wasteQty: 0, minThreshold: 40, supplierId: 'SUP-CAVE', lot: 'LOT-VINS-1126', orderQty: 120 }
         ];
 
         const CATALOG_CATEGORIES = [
@@ -505,6 +523,7 @@
         let suppliers = loadSuppliers();
         let validatedPOs = loadValidatedPOs();
         let costConfig = loadCostConfig();
+        let costPeriodMode = 'daily';
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
         let activeVoucher = null;
@@ -518,12 +537,35 @@
         hydrateCostInputs();
         renderCatalog();
         updateCartUI();
+        syncAllTabs();
+
+        window.addEventListener('storage', () => {
+            transactions = loadTransactions();
+            ingredientsConfig = loadIngredientsConfig();
+            suppliers = loadSuppliers();
+            validatedPOs = loadValidatedPOs();
+            costConfig = loadCostConfig();
+            hydrateCostInputs();
+            syncAllTabs();
+        });
 
         function formatNowDateTime() {
             const now = new Date();
             const date = now.toISOString().split('T')[0];
             const time = now.toLocaleTimeString('fr-FR', { hour12: false });
             return { date, time, full: `${date} ${time}` };
+        }
+
+        function computeIntegrityHash(inputStr) {
+            let h1 = 0x811c9dc5;
+            let h2 = 0x01000193;
+            for (let i = 0; i < inputStr.length; i++) {
+                const ch = inputStr.charCodeAt(i);
+                h1 ^= ch;
+                h1 = Math.imul(h1, 0x01000193) >>> 0;
+                h2 = ((h2 << 5) - h2 + ch) >>> 0;
+            }
+            return `LXT-${h1.toString(16).padStart(8, '0')}-${h2.toString(16).padStart(8, '0')}`.toUpperCase();
         }
 
         function loadTransactions() {
@@ -583,7 +625,7 @@
         }
 
         function loadCostConfig() {
-            const defaults = { rent: 0, royalties: 0, staff: 0, other: 0, taxReservePct: 15, capReservePct: 10 };
+            const defaults = { rentPct: 10, royaltiesPct: 5, staffPct: 25, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
             try {
                 const raw = localStorage.getItem(COST_CFG_STORAGE_KEY);
                 return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
@@ -595,25 +637,43 @@
         }
 
         function hydrateCostInputs() {
-            document.getElementById('cfg-rent').value = costConfig.rent;
-            document.getElementById('cfg-royalties').value = costConfig.royalties;
-            document.getElementById('cfg-staff').value = costConfig.staff;
-            document.getElementById('cfg-other').value = costConfig.other;
+            document.getElementById('cfg-rent-pct').value = costConfig.rentPct;
+            document.getElementById('cfg-royalties-pct').value = costConfig.royaltiesPct;
+            document.getElementById('cfg-staff-pct').value = costConfig.staffPct;
+            document.getElementById('cfg-other-pct').value = costConfig.otherPct;
             document.getElementById('cfg-tax-reserve-pct').value = costConfig.taxReservePct;
             document.getElementById('cfg-cap-reserve-pct').value = costConfig.capReservePct;
         }
 
+        function applyCheerCheeseDefaults() {
+            costConfig = { rentPct: 10, royaltiesPct: 5, staffPct: 25, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
+            persistCostConfig();
+            hydrateCostInputs();
+            syncAllTabs();
+        }
+
+        function setCostPeriodMode(mode) {
+            costPeriodMode = mode;
+            document.getElementById('period-btn-daily').className = mode === 'daily'
+                ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white"
+                : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
+            document.getElementById('period-btn-monthly').className = mode === 'monthly'
+                ? "px-3 py-1.5 rounded font-bold bg-amber-600 text-white"
+                : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
+            syncAllTabs();
+        }
+
         function saveCostConfig() {
             costConfig = {
-                rent: Math.max(0, parseFloat(document.getElementById('cfg-rent').value) || 0),
-                royalties: Math.max(0, parseFloat(document.getElementById('cfg-royalties').value) || 0),
-                staff: Math.max(0, parseFloat(document.getElementById('cfg-staff').value) || 0),
-                other: Math.max(0, parseFloat(document.getElementById('cfg-other').value) || 0),
+                rentPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)),
+                royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)),
+                staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)),
+                otherPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-other-pct').value) || 0)),
                 taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)),
                 capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0))
             };
             persistCostConfig();
-            refreshActiveViews();
+            syncAllTabs();
         }
 
         function findCatalogItem(sku) {
@@ -646,11 +706,13 @@
             return ingredientsConfig.map(ing => {
                 const initialQty = Number(ing.initialQty || 0);
                 const consumedQty = Number(consumedMap[ing.id] || 0);
-                const currentQty = initialQty - consumedQty;
+                const wasteQty = Math.max(0, Number(ing.wasteQty || 0));
+                const currentQty = initialQty - consumedQty - wasteQty;
                 const minThreshold = Number(ing.minThreshold || 0);
                 const needsOrder = currentQty < minThreshold;
                 const suggestedQty = needsOrder ? Math.max(Number(ing.orderQty || 50), (minThreshold - currentQty) + Number(ing.orderQty || 50)) : 0;
-                return { ...ing, initialQty, consumedQty, currentQty, minThreshold, needsOrder, suggestedQty };
+                const wasteCost = wasteQty * Number(ing.unitCost || 0);
+                return { ...ing, initialQty, consumedQty, wasteQty, wasteCost, currentQty, minThreshold, needsOrder, suggestedQty };
             });
         }
 
@@ -753,15 +815,15 @@
             });
             document.getElementById('view-' + tab).classList.remove('hidden');
             document.getElementById('tab-btn-' + tab).className = "px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition";
-            refreshActiveViews();
+            syncAllTabs();
         }
 
-        function refreshActiveViews() {
-            if (!document.getElementById('view-pnl').classList.contains('hidden')) updatePnL();
-            if (!document.getElementById('view-costs').classList.contains('hidden')) updateCostsView();
-            if (!document.getElementById('view-history').classList.contains('hidden')) updateHistory();
-            if (!document.getElementById('view-stock').classList.contains('hidden')) updateStockView();
-            if (!document.getElementById('view-recipes').classList.contains('hidden')) updateRecipesView();
+        function syncAllTabs() {
+            updatePnL();
+            updateCostsView();
+            updateHistory();
+            updateStockView();
+            updateRecipesView();
         }
 
         function setSaleType(type) {
@@ -898,7 +960,7 @@
             setQuickDiscount(0);
             clearCoupon();
             updateCartUI();
-            refreshActiveViews();
+            syncAllTabs();
             alert(isTest ? `[MODE TEST] ${stamp.full} — Enregistré hors CA et hors stock.` : `Encaissement validé (${stamp.full})\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
         }
 
@@ -907,13 +969,14 @@
             const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
             const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
             const vat = activeTxs.reduce((acc, t) => acc + t.vat, 0);
-            const cogs = activeTxs.reduce((acc, t) => acc + t.cogs, 0);
-            const margin = ht - cogs;
+            const salesCogs = activeTxs.reduce((acc, t) => acc + t.cogs, 0);
+            const wasteCogs = computeStockState().reduce((acc, s) => acc + Number(s.wasteCost || 0), 0);
+            const totalCogs = salesCogs + wasteCogs;
 
             const bucketTotals = {};
             Object.keys(RUBRICS).forEach(k => {
                 const r = RUBRICS[k];
-                bucketTotals[k] = { key: k, label: r.label, rateLabel: `${(r.vatPlace * 100).toFixed(0)}% / ${(r.vatTakeout * 100).toFixed(0)}%`, ht: 0, vat: 0, ttc: 0, cogs: 0, margin: 0 };
+                bucketTotals[k] = { key: k, label: r.label, rateLabel: `${(r.vatPlace * 100).toFixed(0)}% / ${(r.vatTakeout * 100).toFixed(0)}%`, ht: 0, vat: 0, ttc: 0 };
             });
 
             const productMap = {};
@@ -921,21 +984,19 @@
                 const recomputed = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
                 recomputed.buckets.forEach(b => {
                     const target = bucketTotals[b.key];
-                    if (target) { target.ht += b.ht; target.vat += b.vat; target.ttc += b.ttc; target.cogs += b.cogs; target.margin += b.margin; }
+                    if (target) { target.ht += b.ht; target.vat += b.vat; target.ttc += b.ttc; }
                 });
                 recomputed.lines.forEach(line => {
                     if (!productMap[line.sku]) {
-                        productMap[line.sku] = { sku: line.sku, name: line.name, rubricLabel: line.rubricLabel, qty: 0, ht: 0, ttc: 0, cogs: 0, margin: 0 };
+                        productMap[line.sku] = { sku: line.sku, name: line.name, rubricLabel: line.rubricLabel, qty: 0, ht: 0, ttc: 0 };
                     }
                     productMap[line.sku].qty += line.qty;
                     productMap[line.sku].ht += line.lineNetHt;
                     productMap[line.sku].ttc += line.lineTtc;
-                    productMap[line.sku].cogs += line.lineCogs;
-                    productMap[line.sku].margin += line.lineMargin;
                 });
             });
 
-            return { activeTxs, ca, ht, vat, cogs, margin, buckets: Object.values(bucketTotals), topProducts: Object.values(productMap).sort((a, b) => b.qty - a.qty) };
+            return { activeTxs, ca, ht, vat, salesCogs, wasteCogs, totalCogs, buckets: Object.values(bucketTotals), topProducts: Object.values(productMap).sort((a, b) => b.qty - a.qty) };
         }
 
         function updatePnL() {
@@ -978,6 +1039,9 @@
             zSequenceCounter += 1;
             const bucketLines = data.buckets.map(b => `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`).join('');
             const topProductLines = data.topProducts.slice(0, 5).map(p => `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (TTC ${p.ttc.toFixed(2)} €)</p>`).join('');
+            const rawSummary = `Z#${zSequenceCounter}|${selectedDate}|${data.ht.toFixed(2)}|${data.vat.toFixed(2)}|${data.ca.toFixed(2)}`;
+            const zHash = computeIntegrityHash(rawSummary);
+
             document.getElementById('z-report-card').classList.remove('hidden');
             document.getElementById('z-report-content').innerHTML = `
                 <p><strong>Terminal ID :</strong> LEX-POS-TERM-01</p>
@@ -992,30 +1056,67 @@
                     <p><strong>Total Net HT :</strong> ${data.ht.toFixed(2)} €</p>
                     <p><strong>TVA Totale Collectée :</strong> ${data.vat.toFixed(2)} €</p>
                     <p class="text-sky-400"><strong>Grand Total TTC :</strong> ${data.ca.toFixed(2)} €</p>
+                    <p class="text-emerald-400 text-[11px] pt-1"><strong>Empreinte Intégrité :</strong> ${zHash}</p>
                 </div>
             `;
+        }
+
+        function computeFinancialSnapshot(dateStr) {
+            const dayData = aggregateDayData(dateStr);
+            const mult = costPeriodMode === 'monthly' ? 30 : 1;
+            const periodHt = dayData.ht * mult;
+            const periodVat = dayData.vat * mult;
+            const periodCogs = dayData.totalCogs * mult;
+            const rentEur = periodHt * (Number(costConfig.rentPct || 0) / 100);
+            const royaltiesEur = periodHt * (Number(costConfig.royaltiesPct || 0) / 100);
+            const staffEur = periodHt * (Number(costConfig.staffPct || 0) / 100);
+            const otherEur = periodHt * (Number(costConfig.otherPct || 0) / 100);
+            const totalChargesEur = rentEur + royaltiesEur + staffEur + otherEur;
+            const taxReserve = periodHt * (Number(costConfig.taxReservePct || 0) / 100);
+            const capReserve = periodHt * (Number(costConfig.capReservePct || 0) / 100);
+            const totalSetAside = periodVat + taxReserve + capReserve;
+            const netGain = periodHt - periodCogs - totalChargesEur - taxReserve - capReserve;
+            const cogsRatio = periodHt > 0 ? (periodCogs / periodHt) : 0.30;
+            const varCostRatio = Math.min(0.95, cogsRatio + ((Number(costConfig.royaltiesPct || 0) + Number(costConfig.otherPct || 0)) / 100));
+            const contribMargin = Math.max(0.05, 1 - varCostRatio);
+            const breakEvenHt = (rentEur + staffEur) / contribMargin;
+            return { dayData, mult, periodHt, periodVat, periodCogs, rentEur, royaltiesEur, staffEur, otherEur, totalChargesEur, taxReserve, capReserve, totalSetAside, netGain, breakEvenHt };
         }
 
         function updateCostsView() {
             const selectedDate = document.getElementById('pos-date-input').value;
             document.getElementById('costs-date-label').innerText = selectedDate;
-            const data = aggregateDayData(selectedDate);
+            const snap = computeFinancialSnapshot(selectedDate);
 
-            const totalOpex = Number(costConfig.rent || 0) + Number(costConfig.royalties || 0) + Number(costConfig.staff || 0) + Number(costConfig.other || 0);
-            const taxReserve = data.ht * (Number(costConfig.taxReservePct || 0) / 100);
-            const capReserve = data.ht * (Number(costConfig.capReservePct || 0) / 100);
-            const totalSetAside = data.vat + taxReserve + capReserve;
-            const netGain = data.ht - data.cogs - totalOpex - taxReserve - capReserve;
+            document.getElementById('calc-rent-eur').innerText = `${snap.rentEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
+            document.getElementById('calc-royalties-eur').innerText = `${snap.royaltiesEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
+            document.getElementById('calc-staff-eur').innerText = `${snap.staffEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
+            document.getElementById('calc-other-eur').innerText = `${snap.otherEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
 
-            document.getElementById('cost-cogs-val').innerText = '-' + data.cogs.toFixed(2) + ' €';
-            document.getElementById('cost-opex-val').innerText = '-' + totalOpex.toFixed(2) + ' €';
-            document.getElementById('cost-reserve-val').innerText = totalSetAside.toFixed(2) + ' €';
-            document.getElementById('cost-net-gain-val').innerText = netGain.toFixed(2) + ' €';
+            document.getElementById('cost-cogs-val').innerText = '-' + snap.periodCogs.toFixed(2) + ' €';
+            document.getElementById('cost-opex-val').innerText = '-' + snap.totalChargesEur.toFixed(2) + ' €';
+            document.getElementById('cost-reserve-val').innerText = snap.totalSetAside.toFixed(2) + ' €';
+            document.getElementById('cost-net-gain-val').innerText = snap.netGain.toFixed(2) + ' €';
 
             document.getElementById('cost-breakdown-summary').innerHTML = `
-                <p>• TVA collectée à isoler : <strong>${data.vat.toFixed(2)} €</strong></p>
-                <p>• Loyer (${costConfig.rent.toFixed(2)} €) + Royalties (${costConfig.royalties.toFixed(2)} €) + Personnel (${costConfig.staff.toFixed(2)} €) + Autres (${costConfig.other.toFixed(2)} €) = <strong>${totalOpex.toFixed(2)} €</strong></p>
-                <p>• Réserve fiscale (${costConfig.taxReservePct}%) : <strong>${taxReserve.toFixed(2)} €</strong> • Réserve Trésorerie/R&D (${costConfig.capReservePct}%) : <strong>${capReserve.toFixed(2)} €</strong></p>
+                <p>• Base CA Net HT (${costPeriodMode === 'monthly' ? 'Mensuel ×30j' : 'Journalier'}) : <strong>${snap.periodHt.toFixed(2)} €</strong> (dont Casse stock : <strong>${(snap.dayData.wasteCogs * snap.mult).toFixed(2)} €</strong>)</p>
+                <p>• TVA collectée (${snap.periodVat.toFixed(2)} €) + Fiscalité (${snap.taxReserve.toFixed(2)} €) + Réserve R&D/Trésorerie (${snap.capReserve.toFixed(2)} €) = <strong>${snap.totalSetAside.toFixed(2)} € à isoler</strong></p>
+                <p class="text-sky-300">• Point mort estimé (seuil de rentabilité HT) : <strong>${snap.breakEvenHt.toFixed(2)} €</strong></p>
+            `;
+        }
+
+        function generateRndGrantDossier() {
+            const selectedDate = document.getElementById('pos-date-input').value;
+            const snap = computeFinancialSnapshot(selectedDate);
+            const stockState = computeStockState();
+            const totalWasteUnits = stockState.reduce((a, b) => a + b.wasteQty, 0);
+            const dossierHash = computeIntegrityHash(`${selectedDate}|${snap.periodHt.toFixed(2)}|${snap.periodCogs.toFixed(2)}|${totalWasteUnits}|${suppliers.length}`);
+            document.getElementById('rnd-grant-card').classList.remove('hidden');
+            document.getElementById('rnd-grant-content').innerHTML = `
+                <p><strong>Périmètre :</strong> Cheer Cheese Flagship • LexCore™ / delegal.dev / lexwallet.app</p>
+                <p><strong>Traçabilité & Qualité :</strong> ${suppliers.length} fournisseur(s) référencé(s), ${stockState.length} lot(s) actifs, perte/casse enregistrée : ${totalWasteUnits} unité(s) (${snap.dayData.wasteCogs.toFixed(2)} €).</p>
+                <p><strong>Moteur Financier & R&D :</strong> Net HT ${snap.periodHt.toFixed(2)} € • COGS ${snap.periodCogs.toFixed(2)} € • Charges ${snap.totalChargesEur.toFixed(2)} € • Réserves/TVA ${snap.totalSetAside.toFixed(2)} € • Gain Net ${snap.netGain.toFixed(2)} €.</p>
+                <p class="text-emerald-400 pt-1"><strong>Empreinte Preuve R&D :</strong> ${dossierHash}</p>
             `;
         }
 
@@ -1201,7 +1302,7 @@
             if (mode === 'purge') {
                 transactions = transactions.filter(t => !t.is_test);
                 persistTransactions();
-                refreshActiveViews();
+                syncAllTabs();
                 alert("Purge des transactions de test effectuée.");
             } else if (mode === 'edit_ticket' && selectedTicketIndex !== null) {
                 openEditTicketModal(selectedTicketIndex);
@@ -1209,7 +1310,7 @@
                 transactions[selectedTicketIndex].cancelled = true;
                 transactions[selectedTicketIndex].cancelled_at = stamp.full;
                 persistTransactions();
-                refreshActiveViews();
+                syncAllTabs();
                 alert(`Ticket annulé (${stamp.full}) : P&L et stocks synchronisés.`);
             } else if (mode === 'validate_po' && supId) {
                 validateSupplierPurchaseOrder(supId);
@@ -1267,7 +1368,7 @@
 
             persistTransactions();
             closeEditTicketModal();
-            refreshActiveViews();
+            syncAllTabs();
             alert(`Ticket mis à jour (${stamp.full}) : P&L et stocks synchronisés.`);
         }
 
@@ -1317,7 +1418,7 @@
             }
             persistSuppliers();
             if (editingSupplierId === supId) resetSupplierForm();
-            refreshActiveViews();
+            syncAllTabs();
         }
 
         function saveSupplierForm() {
@@ -1361,7 +1462,7 @@
 
             persistSuppliers();
             resetSupplierForm();
-            refreshActiveViews();
+            syncAllTabs();
         }
 
         function updateStockView() {
@@ -1387,6 +1488,9 @@
                             <input type="number" min="0" value="${st.initialQty}" onchange="updateInitialStock('${st.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
                         </td>
                         <td class="p-3 text-amber-400">-${st.consumedQty}</td>
+                        <td class="p-3">
+                            <input type="number" min="0" value="${st.wasteQty}" onchange="updateWasteQty('${st.id}', this.value)" class="w-16 bg-slate-900 border border-rose-900/70 px-2 py-1 rounded text-rose-300 text-right"/>
+                        </td>
                         <td class="p-3 font-bold ${stockColor}">${st.currentQty}</td>
                         <td class="p-3">
                             <input type="number" min="0" value="${st.minThreshold}" onchange="updateMinThreshold('${st.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/>
@@ -1492,21 +1596,28 @@
         function assignIngredientSupplier(ingId, supId) {
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, supplierId: supId } : i);
             persistIngredientsConfig();
-            refreshActiveViews();
+            syncAllTabs();
         }
 
         function updateInitialStock(ingId, val) {
             const num = Math.max(0, parseInt(val, 10) || 0);
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, initialQty: num } : i);
             persistIngredientsConfig();
-            refreshActiveViews();
+            syncAllTabs();
+        }
+
+        function updateWasteQty(ingId, val) {
+            const num = Math.max(0, parseInt(val, 10) || 0);
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, wasteQty: num } : i);
+            persistIngredientsConfig();
+            syncAllTabs();
         }
 
         function updateMinThreshold(ingId, val) {
             const num = Math.max(0, parseInt(val, 10) || 0);
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: num } : i);
             persistIngredientsConfig();
-            refreshActiveViews();
+            syncAllTabs();
         }
 
         function validateSupplierPurchaseOrder(supId) {
@@ -1530,7 +1641,7 @@
                 lines: needed.map(n => ({ name: n.name, qty: n.suggestedQty }))
             });
             persistValidatedPOs();
-            refreshActiveViews();
+            syncAllTabs();
             alert(`Bon de commande ${sup.name} validé par superviseur (${stamp.full}) et stock réapprovisionné.`);
         }
 
@@ -1556,7 +1667,9 @@
                 ]);
             });
 
-            const csvContent = rows.map(r => r.join(';')).join('\n');
+            const csvBody = rows.map(r => r.join(';')).join('\n');
+            const integrityHash = computeIntegrityHash(csvBody);
+            const csvContent = `${csvBody}\n# INTEGRITY_HASH;${integrityHash}`;
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1567,7 +1680,7 @@
         }
 
         function exportBackupJson() {
-            const payload = {
+            const basePayload = {
                 exported_at: formatNowDateTime().full,
                 transactions,
                 ingredientsConfig,
@@ -1575,6 +1688,8 @@
                 validatedPOs,
                 costConfig
             };
+            const integrityHash = computeIntegrityHash(JSON.stringify(basePayload));
+            const payload = { ...basePayload, integrity_hash: integrityHash };
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1596,7 +1711,7 @@
                     if (Array.isArray(data.suppliers)) { suppliers = data.suppliers; persistSuppliers(); }
                     if (Array.isArray(data.validatedPOs)) { validatedPOs = data.validatedPOs; persistValidatedPOs(); }
                     if (data.costConfig && typeof data.costConfig === 'object') { costConfig = { ...costConfig, ...data.costConfig }; persistCostConfig(); hydrateCostInputs(); }
-                    refreshActiveViews();
+                    syncAllTabs();
                     alert("Sauvegarde complète importée et synchronisée.");
                 } catch (_) {
                     alert("Fichier JSON invalide.");
