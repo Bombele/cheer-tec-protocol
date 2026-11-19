@@ -159,11 +159,11 @@
             </div>
         </div>
 
-        <!-- VUE 3 : HISTORIQUE DES COMMANDES & TRAÇABILITÉ QR -->
+        <!-- VUE 3 : HISTORIQUE DES COMMANDES & QR -->
         <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <h2 class="text-base font-bold text-sky-300">Registre, Traçabilité QR & Historique Horodaté</h2>
+                    <h2 class="text-base font-bold text-sky-300">Registre, QR Traçabilité & Historique Horodaté</h2>
                     <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR traçabilité, modification ou annulation</span>
                 </div>
                 <div id="history-container" class="space-y-2 font-mono text-xs">
@@ -207,17 +207,25 @@
                     </table>
                 </div>
 
-                <!-- Fiches Fournisseurs Complètes & Portefeuille Produits -->
+                <!-- Fiches Fournisseurs Complètes, Portefeuille, Édition & Suppression -->
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
-                    <h3 class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                    <div class="flex justify-between items-center">
+                        <h3 id="supplier-form-title" class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
+                        <button id="cancel-sup-edit-btn" onclick="resetSupplierForm()" class="hidden text-[11px] text-amber-400 underline">Annuler modification</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                         <input type="text" id="new-sup-name" placeholder="Nom fournisseur*" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
                         <input type="text" id="new-sup-address" placeholder="Adresse complète" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
                         <input type="text" id="new-sup-contact" placeholder="Contact (tél / email)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
                         <input type="text" id="new-sup-vat-reg" placeholder="N° TVA & N° Entreprise" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <button onclick="addSupplier()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
                     </div>
-                    <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+                    <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-2">
+                        <span class="text-[11px] text-sky-300 font-bold block">Produits en portefeuille pour ce fournisseur :</span>
+                        <div id="supplier-portfolio-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-[11px]"></div>
+                    </div>
+                    <button onclick="saveSupplierForm()" id="save-sup-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
+
+                    <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2"></div>
                 </div>
 
                 <!-- Suggestions Automatiques de Bons de Commande à Valider par le Superviseur -->
@@ -232,7 +240,7 @@
             </div>
         </div>
 
-        <!-- VUE 5 : RECETTES ARTICLES & TRAÇABILITÉ MATIÈRES (ONGLET DÉDIÉ) -->
+        <!-- VUE 5 : RECETTES ARTICLES & TRAÇABILITÉ MATIÈRES -->
         <div id="view-recipes" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
@@ -267,24 +275,23 @@
 
     </div>
 
-    <!-- MODAL DÉTAIL TICKET + QR CODE TRAÇABILITÉ -->
-    <div id="ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 font-mono text-xs my-8">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sky-400 text-sm">Ticket & Traçabilité : <span id="modal-tx-id"></span></h3>
-                <button onclick="closeTicketModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+    <!-- MODAL DÉTAIL TICKET + QR CODE UNIQUE (SCROLL SAFE MOBILE) -->
+    <div id="ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-6 z-50 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 font-mono text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 sticky top-0 bg-slate-900 z-10">
+                <h3 class="font-bold text-sky-400 text-sm">Ticket & QR : <span id="modal-tx-id"></span></h3>
+                <button onclick="closeTicketModal()" class="text-slate-400 hover:text-white font-bold px-2 py-1">✕</button>
             </div>
             <div id="modal-tx-meta" class="text-slate-400 space-y-1"></div>
             <div id="modal-tx-items" class="divide-y divide-slate-800 bg-slate-950 p-3 rounded-lg border border-slate-800"></div>
-            <div id="modal-tx-traceability" class="bg-slate-950 p-3 rounded-lg border border-emerald-900/50 space-y-1 text-[11px]"></div>
-            <div class="flex flex-col sm:flex-row items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+            <div id="modal-tx-totals" class="space-y-1 pt-2 border-t border-slate-800"></div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 bg-slate-950 p-3 rounded-xl border border-emerald-900/50">
                 <div id="modal-qr-container" class="bg-white p-2 rounded-lg shrink-0"></div>
                 <div class="space-y-1 text-[11px] text-slate-300">
-                    <p class="font-bold text-sky-300">QR Code Provenance & Lot</p>
+                    <p class="font-bold text-emerald-400">QR Code Traçabilité Cheer-Tec</p>
                     <p id="modal-qr-summary" class="text-slate-400 break-all"></p>
                 </div>
             </div>
-            <div id="modal-tx-totals" class="space-y-1 pt-2 border-t border-slate-800"></div>
             <div class="flex flex-wrap gap-2 pt-2">
                 <button onclick="requestEditCurrentTicket()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded font-bold flex-1">Modifier (PIN)</button>
                 <button onclick="requestCancelCurrentTicket()" class="bg-rose-800 hover:bg-rose-700 text-white px-3 py-2 rounded font-bold">Annuler Ticket</button>
@@ -294,8 +301,8 @@
     </div>
 
     <!-- MODAL ÉDITION TICKET -->
-    <div id="edit-ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
-        <div class="bg-slate-900 border border-amber-700/60 p-6 rounded-2xl max-w-lg w-full space-y-4 font-mono text-xs my-8">
+    <div id="edit-ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-6 z-50 overflow-y-auto">
+        <div class="bg-slate-900 border border-amber-700/60 p-5 sm:p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 font-mono text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <h3 class="font-bold text-amber-400 text-sm">Correction Ticket : <span id="edit-tx-id"></span></h3>
                 <button onclick="closeEditTicketModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
@@ -322,7 +329,7 @@
     </div>
 
     <!-- MODAL SÉCURITÉ ADMIN / SUPERVISEUR -->
-    <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-8 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 font-mono text-xs">
             <h3 id="admin-modal-title" class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN / SUPERVISEUR</h3>
             <p id="admin-modal-desc" class="text-slate-400">Entrez le code PIN :</p>
@@ -471,6 +478,7 @@
         let activeVoucher = null;
         let adminActionMode = null;
         let pendingSupplierId = null;
+        let editingSupplierId = null;
         let selectedTicketIndex = null;
         let zSequenceCounter = 1050;
 
@@ -491,16 +499,13 @@
                 const v1Raw = localStorage.getItem(TX_STORAGE_KEY_V1);
                 const v2List = v2Raw ? JSON.parse(v2Raw) : [];
                 const v1List = v1Raw ? JSON.parse(v1Raw) : [];
-
                 if (Array.isArray(v2List) && v2List.length > 0) return v2List;
                 if (Array.isArray(v1List) && v1List.length > 0) {
                     localStorage.setItem(TX_STORAGE_KEY_V2, JSON.stringify(v1List));
                     return v1List;
                 }
                 return [];
-            } catch (_) {
-                return [];
-            }
+            } catch (_) { return []; }
         }
 
         function persistTransactions() {
@@ -1041,28 +1046,21 @@
                 </div>
             `).join('');
 
-            document.getElementById('modal-tx-traceability').innerHTML = `
-                <p class="font-bold text-emerald-400">Traçabilité Provenance & Lots :</p>
-                ${traceList.length === 0
-                    ? '<p class="text-slate-500">Aucun ingrédient tracé.</p>'
-                    : traceList.map(tr => `<p>• ${tr.ingName} (${tr.qty} ${tr.unit}) — ${tr.supName} [${tr.vatNumber}] | Lot: ${tr.lot}</p>`).join('')
-                }
+            document.getElementById('modal-tx-totals').innerHTML = `
+                <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
+                <div class="flex justify-between"><span>TVA :</span><span>${bd.totalVat.toFixed(2)} €</span></div>
+                <div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${bd.totalTtc.toFixed(2)} €</span></div>
             `;
 
             const qrPayload = JSON.stringify({
+                eco: 'cheer-tec',
                 tx: tx.id,
                 dt: dtLabel,
                 ttc: tx.total_ttc,
                 lots: traceList.map(t => `${t.ingName}:${t.lot}:${t.supName}`)
             });
             document.getElementById('modal-qr-container').innerHTML = buildQrSvg(qrPayload);
-            document.getElementById('modal-qr-summary').innerText = `${tx.id} | ${dtLabel} | ${traceList.length} lot(s) | ${Number(tx.total_ttc).toFixed(2)} €`;
-
-            document.getElementById('modal-tx-totals').innerHTML = `
-                <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
-                <div class="flex justify-between"><span>TVA :</span><span>${bd.totalVat.toFixed(2)} €</span></div>
-                <div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${bd.totalTtc.toFixed(2)} €</span></div>
-            `;
+            document.getElementById('modal-qr-summary').innerText = `cheer-tec://${tx.id} • ${traceList.length} lot(s) encodé(s) dans le QR`;
 
             document.getElementById('ticket-modal').classList.remove('hidden');
         }
@@ -1187,8 +1185,106 @@
             alert(`Ticket mis à jour (${stamp.full}) : P&L et stocks synchronisés.`);
         }
 
+        function renderSupplierPortfolioCheckboxes(selectedIngIds = []) {
+            const setIds = new Set(selectedIngIds);
+            document.getElementById('supplier-portfolio-checkboxes').innerHTML = ingredientsConfig.map(ing => `
+                <label class="flex items-center gap-1.5 text-slate-200 cursor-pointer">
+                    <input type="checkbox" class="sup-ing-chk accent-sky-500" value="${ing.id}" ${setIds.has(ing.id) ? 'checked' : ''}/>
+                    <span>${ing.name}</span>
+                </label>
+            `).join('');
+        }
+
+        function startEditSupplier(supId) {
+            const sup = suppliers.find(s => s.id === supId);
+            if (!sup) return;
+            editingSupplierId = supId;
+            document.getElementById('supplier-form-title').innerText = `Modifier Fournisseur — ${sup.name}`;
+            document.getElementById('cancel-sup-edit-btn').classList.remove('hidden');
+            document.getElementById('new-sup-name').value = sup.name || '';
+            document.getElementById('new-sup-address').value = sup.address || '';
+            document.getElementById('new-sup-contact').value = sup.contact || '';
+            document.getElementById('new-sup-vat-reg').value = `${sup.vatNumber || ''} / ${sup.companyNumber || ''}`;
+            document.getElementById('save-sup-btn').innerText = 'Enregistrer Modifications';
+            const assignedIds = ingredientsConfig.filter(i => i.supplierId === supId).map(i => i.id);
+            renderSupplierPortfolioCheckboxes(assignedIds);
+        }
+
+        function resetSupplierForm() {
+            editingSupplierId = null;
+            document.getElementById('supplier-form-title').innerText = 'Répertoire & Portefeuille Fournisseurs';
+            document.getElementById('cancel-sup-edit-btn').classList.add('hidden');
+            ['new-sup-name', 'new-sup-address', 'new-sup-contact', 'new-sup-vat-reg'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('save-sup-btn').innerText = '+ Ajouter Fournisseur';
+            renderSupplierPortfolioCheckboxes([]);
+        }
+
+        function deleteSupplier(supId) {
+            if (suppliers.length <= 1) return alert("Impossible de supprimer le dernier fournisseur actif.");
+            const fallbackSup = suppliers.find(s => s.id !== supId);
+            suppliers = suppliers.filter(s => s.id !== supId);
+            if (fallbackSup) {
+                ingredientsConfig = ingredientsConfig.map(ing => ing.supplierId === supId ? { ...ing, supplierId: fallbackSup.id } : ing);
+                persistIngredientsConfig();
+            }
+            persistSuppliers();
+            if (editingSupplierId === supId) resetSupplierForm();
+            refreshActiveViews();
+        }
+
+        function saveSupplierForm() {
+            const name = document.getElementById('new-sup-name').value.trim();
+            const address = document.getElementById('new-sup-address').value.trim();
+            const contact = document.getElementById('new-sup-contact').value.trim();
+            const vatReg = document.getElementById('new-sup-vat-reg').value.trim();
+            if (!name) return alert("Saisissez le nom du fournisseur.");
+
+            const parts = vatReg.split('/').map(s => s.trim());
+            const checkedIngIds = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value);
+
+            let targetSupId = editingSupplierId;
+            if (editingSupplierId) {
+                suppliers = suppliers.map(s => s.id === editingSupplierId ? {
+                    ...s,
+                    name,
+                    address: address || 'Adresse à compléter',
+                    contact: contact || 'Contact à compléter',
+                    vatNumber: parts[0] || s.vatNumber || 'TVA-À-RENSEIGNER',
+                    companyNumber: parts[1] || parts[0] || s.companyNumber || 'ENT-À-RENSEIGNER',
+                    origin: address || s.origin || 'Origine vérifiée'
+                } : s);
+            } else {
+                targetSupId = 'SUP-' + Date.now();
+                suppliers.push({
+                    id: targetSupId,
+                    name,
+                    address: address || 'Adresse à compléter',
+                    contact: contact || 'Contact à compléter',
+                    vatNumber: parts[0] || 'TVA-À-RENSEIGNER',
+                    companyNumber: parts[1] || parts[0] || 'ENT-À-RENSEIGNER',
+                    origin: address || 'Origine vérifiée'
+                });
+            }
+
+            if (checkedIngIds.length > 0) {
+                ingredientsConfig = ingredientsConfig.map(ing => checkedIngIds.includes(ing.id) ? { ...ing, supplierId: targetSupId } : ing);
+                persistIngredientsConfig();
+            }
+
+            persistSuppliers();
+            resetSupplierForm();
+            refreshActiveViews();
+        }
+
         function updateStockView() {
             const stockState = computeStockState();
+            const currentChecked = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value);
+            renderSupplierPortfolioCheckboxes(editingSupplierId
+                ? ingredientsConfig.filter(i => i.supplierId === editingSupplierId).map(i => i.id)
+                : currentChecked
+            );
 
             document.getElementById('stock-table-body').innerHTML = stockState.map(st => {
                 const stockColor = st.needsOrder ? 'text-rose-400' : 'text-emerald-400';
@@ -1216,15 +1312,21 @@
             document.getElementById('suppliers-portfolio-grid').innerHTML = suppliers.map(sup => {
                 const portfolioItems = stockState.filter(i => i.supplierId === sup.id);
                 return `
-                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-1.5">
-                        <p class="font-bold text-sky-300 text-sm">${sup.name}</p>
-                        <p class="text-[11px] text-slate-300">Adresse : ${sup.address || '-'}</p>
-                        <p class="text-[11px] text-slate-300">Contact : ${sup.contact || '-'}</p>
-                        <p class="text-[11px] text-amber-300">TVA : ${sup.vatNumber || '-'} • Ent. : ${sup.companyNumber || '-'}</p>
-                        <p class="text-[10px] text-slate-400 font-bold pt-1 border-t border-slate-800">Portefeuille Produits :</p>
-                        <ul class="text-[11px] text-emerald-300 space-y-0.5">
-                            ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit assigné</li>' : portfolioItems.map(p => `<li>• ${p.name} (Stock: ${p.currentQty} ${p.unit})</li>`).join('')}
-                        </ul>
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between space-y-2">
+                        <div class="space-y-1">
+                            <p class="font-bold text-sky-300 text-sm">${sup.name}</p>
+                            <p class="text-[11px] text-slate-300">Adresse : ${sup.address || '-'}</p>
+                            <p class="text-[11px] text-slate-300">Contact : ${sup.contact || '-'}</p>
+                            <p class="text-[11px] text-amber-300">TVA : ${sup.vatNumber || '-'} • Ent. : ${sup.companyNumber || '-'}</p>
+                            <p class="text-[10px] text-slate-400 font-bold pt-1 border-t border-slate-800">Portefeuille Produits :</p>
+                            <ul class="text-[11px] text-emerald-300 space-y-0.5">
+                                ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit assigné</li>' : portfolioItems.map(p => `<li>• ${p.name} (Stock: ${p.currentQty} ${p.unit})</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="flex gap-2 pt-2 border-t border-slate-800">
+                            <button onclick="startEditSupplier('${sup.id}')" class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-2.5 py-1 rounded text-[11px] font-bold flex-1">Modifier</button>
+                            <button onclick="deleteSupplier('${sup.id}')" class="bg-rose-950 hover:bg-rose-900 text-rose-300 px-2.5 py-1 rounded text-[11px] font-bold">Supprimer</button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1318,31 +1420,6 @@
             const num = Math.max(0, parseInt(val, 10) || 0);
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: num } : i);
             persistIngredientsConfig();
-            refreshActiveViews();
-        }
-
-        function addSupplier() {
-            const name = document.getElementById('new-sup-name').value.trim();
-            const address = document.getElementById('new-sup-address').value.trim();
-            const contact = document.getElementById('new-sup-contact').value.trim();
-            const vatReg = document.getElementById('new-sup-vat-reg').value.trim();
-            if (!name) return alert("Saisissez le nom du fournisseur.");
-
-            const parts = vatReg.split('/').map(s => s.trim());
-            suppliers.push({
-                id: 'SUP-' + Date.now(),
-                name,
-                address: address || 'Adresse à compléter',
-                contact: contact || 'Contact à compléter',
-                vatNumber: parts[0] || 'TVA-À-RENSEIGNER',
-                companyNumber: parts[1] || parts[0] || 'ENT-À-RENSEIGNER',
-                origin: address || 'Origine vérifiée'
-            });
-            persistSuppliers();
-
-            ['new-sup-name', 'new-sup-address', 'new-sup-contact', 'new-sup-vat-reg'].forEach(id => {
-                document.getElementById(id).value = '';
-            });
             refreshActiveViews();
         }
 
