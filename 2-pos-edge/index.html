@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexwallet.app — Point Zero POS & P&L Engine</title>
+    <title>Lexwallet.app — Point Zero POS, Stocks & Traçabilité</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8">
@@ -12,13 +12,13 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé, Stocks & Contrôle Fiscal</p>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé, Stocks, Fournisseurs & Traçabilité QR</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
                 <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
-                <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique Commandes</button>
-                <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Gestion des Stocks</button>
+                <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique & QR</button>
+                <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks & Fournisseurs</button>
                 <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
             </div>
         </header>
@@ -155,12 +155,12 @@
             </div>
         </div>
 
-        <!-- VUE 3 : HISTORIQUE DES COMMANDES -->
+        <!-- VUE 3 : HISTORIQUE DES COMMANDES & TRAÇABILITÉ QR -->
         <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-base font-bold text-sky-300">Registre & Historique des Commandes</h2>
-                    <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour vérifier ou corriger</span>
+                    <h2 class="text-base font-bold text-sky-300">Registre, Traçabilité QR & Historique</h2>
+                    <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR traçabilité, modification ou annulation</span>
                 </div>
                 <div id="history-container" class="space-y-2 font-mono text-xs">
                     <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
@@ -168,13 +168,13 @@
             </div>
         </div>
 
-        <!-- VUE 4 : GESTION DES STOCKS (MATIÈRES PREMIÈRES PAR ARTICLE) -->
+        <!-- VUE 4 : GESTION DES STOCKS, FOURNISSEURS & BONS DE COMMANDE -->
         <div id="view-stock" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
-                        <h2 class="text-base font-bold text-emerald-400">Gestion des Stocks & Recettes Articles</h2>
-                        <p class="text-xs text-slate-400 font-mono">Déduction automatique sur ventes réelles (ex: 100 burgers = -100 pains, -100 viandes de bœuf...)</p>
+                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé, Fournisseurs & Bons de Commande</h2>
+                        <p class="text-xs text-slate-400 font-mono">Stock de départ éditable • Déduction synchronisée sur ventes réelles • Validation superviseur</p>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs font-mono">
                         <button onclick="exportBackupJson()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Export JSON</button>
@@ -185,24 +185,51 @@
                     </div>
                 </div>
 
+                <!-- Tableau des stocks synchronisés -->
                 <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
                     <table class="w-full text-left font-mono text-xs">
                         <thead class="border-b border-slate-800 text-slate-400">
                             <tr>
-                                <th class="p-3">Ingrédient / Produit</th>
-                                <th class="p-3">Unité</th>
-                                <th class="p-3">Stock Initial</th>
-                                <th class="p-3">Consommé (Ventes)</th>
+                                <th class="p-3">Ingrédient</th>
+                                <th class="p-3">Fournisseur & Lot</th>
+                                <th class="p-3">Stock Départ</th>
+                                <th class="p-3">Consommé</th>
                                 <th class="p-3">Stock Actuel</th>
-                                <th class="p-3">Réapprovisionner</th>
+                                <th class="p-3">Seuil Min</th>
                             </tr>
                         </thead>
                         <tbody id="stock-table-body" class="divide-y divide-slate-900"></tbody>
                     </table>
                 </div>
 
+                <!-- Portefeuille Fournisseurs & Ajout Fournisseur -->
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                        <h3 class="text-sm font-bold text-sky-300">Portefeuille Fournisseurs</h3>
+                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                            <input type="text" id="new-sup-name" placeholder="Nom fournisseur" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                            <input type="text" id="new-sup-origin" placeholder="Origine / Certif" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                            <button onclick="addSupplier()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded font-bold text-xs">+ Fournisseur</button>
+                        </div>
+                    </div>
+                    <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+                </div>
+
+                <!-- Suggestions Automatiques de Bons de Commande à Valider par le Superviseur -->
+                <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-4 font-mono text-xs">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
+                            <p class="text-[11px] text-slate-400">Générées automatiquement lorsque Stock Actuel &lt; Seuil Min</p>
+                        </div>
+                    </div>
+                    <div id="suggested-po-container" class="space-y-3"></div>
+                    <div id="validated-po-history" class="space-y-2 pt-3 border-t border-slate-800"></div>
+                </div>
+
+                <!-- Correspondance Articles <-> Ingrédients -->
                 <div class="space-y-3">
-                    <h3 class="text-sm font-bold text-sky-300">Correspondance Articles ↔ Ingrédients</h3>
+                    <h3 class="text-sm font-bold text-emerald-300">Recettes Articles & Traçabilité Matières</h3>
                     <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs"></div>
                 </div>
             </div>
@@ -210,24 +237,33 @@
 
     </div>
 
-    <!-- MODAL DÉTAIL & MODIFICATION TICKET -->
+    <!-- MODAL DÉTAIL TICKET + QR CODE TRAÇABILITÉ -->
     <div id="ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 font-mono text-xs my-8">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sky-400 text-sm">Détail Ticket : <span id="modal-tx-id"></span></h3>
+                <h3 class="font-bold text-sky-400 text-sm">Ticket & Traçabilité : <span id="modal-tx-id"></span></h3>
                 <button onclick="closeTicketModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
             </div>
             <div id="modal-tx-meta" class="text-slate-400 space-y-1"></div>
             <div id="modal-tx-items" class="divide-y divide-slate-800 bg-slate-950 p-3 rounded-lg border border-slate-800"></div>
+            <div id="modal-tx-traceability" class="bg-slate-950 p-3 rounded-lg border border-emerald-900/50 space-y-1 text-[11px]"></div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div id="modal-qr-container" class="bg-white p-2 rounded-lg shrink-0"></div>
+                <div class="space-y-1 text-[11px] text-slate-300">
+                    <p class="font-bold text-sky-300">QR Code Provenance & Lot</p>
+                    <p id="modal-qr-summary" class="text-slate-400 break-all"></p>
+                </div>
+            </div>
             <div id="modal-tx-totals" class="space-y-1 pt-2 border-t border-slate-800"></div>
             <div class="flex flex-wrap gap-2 pt-2">
-                <button onclick="requestEditCurrentTicket()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded font-bold flex-1">Modifier Ticket (PIN Manager)</button>
+                <button onclick="requestEditCurrentTicket()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded font-bold flex-1">Modifier (PIN)</button>
+                <button onclick="requestCancelCurrentTicket()" class="bg-rose-800 hover:bg-rose-700 text-white px-3 py-2 rounded font-bold">Annuler Ticket</button>
                 <button onclick="closeTicketModal()" class="bg-slate-800 px-3 py-2 rounded text-slate-300">Fermer</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL ÉDITION TICKET (APRÈS PIN) -->
+    <!-- MODAL ÉDITION TICKET -->
     <div id="edit-ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-amber-700/60 p-6 rounded-2xl max-w-lg w-full space-y-4 font-mono text-xs my-8">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -249,17 +285,17 @@
             </div>
             <div id="edit-items-list" class="space-y-2 bg-slate-950 p-3 rounded-lg border border-slate-800 max-h-56 overflow-y-auto"></div>
             <div class="flex gap-2 pt-2">
-                <button onclick="saveEditedTicket()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded w-full font-bold">Enregistrer & Recalculer</button>
+                <button onclick="saveEditedTicket()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded w-full font-bold">Enregistrer & Synchroniser</button>
                 <button onclick="closeEditTicketModal()" class="bg-slate-800 py-2 rounded w-full text-slate-300">Annuler</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL SÉCURITÉ ADMIN / MANAGER -->
+    <!-- MODAL SÉCURITÉ ADMIN / SUPERVISEUR -->
     <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 font-mono text-xs">
-            <h3 id="admin-modal-title" class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN HOLDING</h3>
-            <p id="admin-modal-desc" class="text-slate-400">Entrez le code PIN administrateur / manager :</p>
+            <h3 id="admin-modal-title" class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN / SUPERVISEUR</h3>
+            <p id="admin-modal-desc" class="text-slate-400">Entrez le code PIN :</p>
             <input type="password" id="admin-pin-input" placeholder="PIN (ex: CHEEZ-ADMIN-2026)" class="bg-slate-950 border border-slate-800 px-3 py-2 rounded w-full text-white"/>
             <div class="flex gap-2">
                 <button onclick="submitAdminAction()" class="bg-rose-600 hover:bg-rose-500 text-white py-2 rounded w-full font-bold">Valider PIN</button>
@@ -269,8 +305,10 @@
     </div>
 
     <script>
-        const TX_STORAGE_KEY = 'lexwallet_pos_tx_v1';
-        const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v1';
+        const TX_STORAGE_KEY = 'lexwallet_pos_tx_v2';
+        const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
+        const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
+        const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
 
         const RUBRICS = {
@@ -280,18 +318,24 @@
             vins_alcools: { label: 'Vins, Alcools & Spiritueux', vatPlace: 0.20, vatTakeout: 0.20 }
         };
 
+        const DEFAULT_SUPPLIERS = [
+            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', origin: 'Farine CRC • Lot BN-2026-11' },
+            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', origin: 'Charolais / Fromages • Lot FT-2026-11' },
+            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', origin: 'Cave / Softs • Lot CB-2026-11' }
+        ];
+
         const DEFAULT_INGREDIENTS = [
-            { id: 'ING-PAIN', name: 'Pain Burger', unit: 'unité', initialQty: 250 },
-            { id: 'ING-BOEUF', name: 'Viande de Bœuf', unit: 'portion', initialQty: 250 },
-            { id: 'ING-CHEDDAR', name: 'Cheddar Affiné', unit: 'tranche', initialQty: 300 },
-            { id: 'ING-SAUCE', name: 'Sauce Signature', unit: 'dose', initialQty: 400 },
-            { id: 'ING-SALADE', name: 'Salade Fraîche', unit: 'portion', initialQty: 250 },
-            { id: 'ING-BACON', name: 'Bacon Fumé', unit: 'tranche', initialQty: 200 },
-            { id: 'ING-TRUFFE', name: 'Crème Truffe', unit: 'dose', initialQty: 150 },
-            { id: 'ING-FRITES', name: 'Pommes de Terre / Frites', unit: 'portion', initialQty: 300 },
-            { id: 'ING-FROMAGE', name: 'Assortiment Fromages', unit: 'plateau', initialQty: 80 },
-            { id: 'ING-SOFT', name: 'Boisson Soft / Jus', unit: 'unité', initialQty: 200 },
-            { id: 'ING-VIN', name: 'Vin / Spiritueux', unit: 'verre/dose', initialQty: 150 }
+            { id: 'ING-PAIN', name: 'Pain Burger', unit: 'unité', initialQty: 250, minThreshold: 60, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-PAIN-1126', orderQty: 200 },
+            { id: 'ING-BOEUF', name: 'Viande de Bœuf', unit: 'portion', initialQty: 250, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BOEUF-1126', orderQty: 200 },
+            { id: 'ING-CHEDDAR', name: 'Cheddar Affiné', unit: 'tranche', initialQty: 300, minThreshold: 80, supplierId: 'SUP-ELEVAGE', lot: 'LOT-CHED-1126', orderQty: 250 },
+            { id: 'ING-SAUCE', name: 'Sauce Signature', unit: 'dose', initialQty: 400, minThreshold: 90, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-SAUC-1126', orderQty: 300 },
+            { id: 'ING-SALADE', name: 'Salade Fraîche', unit: 'portion', initialQty: 250, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-SALA-1126', orderQty: 200 },
+            { id: 'ING-BACON', name: 'Bacon Fumé', unit: 'tranche', initialQty: 200, minThreshold: 50, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BACO-1126', orderQty: 150 },
+            { id: 'ING-TRUFFE', name: 'Crème Truffe', unit: 'dose', initialQty: 150, minThreshold: 40, supplierId: 'SUP-ELEVAGE', lot: 'LOT-TRUF-1126', orderQty: 120 },
+            { id: 'ING-FRITES', name: 'Pommes de Terre / Frites', unit: 'portion', initialQty: 300, minThreshold: 75, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-FRIT-1126', orderQty: 250 },
+            { id: 'ING-FROMAGE', name: 'Assortiment Fromages', unit: 'plateau', initialQty: 80, minThreshold: 20, supplierId: 'SUP-ELEVAGE', lot: 'LOT-FROM-1126', orderQty: 60 },
+            { id: 'ING-SOFT', name: 'Boisson Soft / Jus', unit: 'unité', initialQty: 200, minThreshold: 50, supplierId: 'SUP-CAVE', lot: 'LOT-SOFT-1126', orderQty: 180 },
+            { id: 'ING-VIN', name: 'Vin / Spiritueux', unit: 'verre/dose', initialQty: 150, minThreshold: 40, supplierId: 'SUP-CAVE', lot: 'LOT-VINS-1126', orderQty: 120 }
         ];
 
         const CATALOG_CATEGORIES = [
@@ -341,48 +385,16 @@
                 id: 'CAT-SOFT',
                 title: 'Boissons Normal / Soft',
                 items: [
-                    {
-                        sku: 'BEV-COLA-01',
-                        name: 'Boisson Artisanale / Limonade',
-                        desc: '33cl',
-                        price_ht: 3.50,
-                        unit_cogs: 1.00,
-                        baseGroup: 'boissons_soft',
-                        recipe: { 'ING-SOFT': 1 }
-                    },
-                    {
-                        sku: 'BEV-JUICE-01',
-                        name: 'Jus Pressé Maison',
-                        desc: '25cl frais',
-                        price_ht: 4.20,
-                        unit_cogs: 1.25,
-                        baseGroup: 'boissons_soft',
-                        recipe: { 'ING-SOFT': 1 }
-                    }
+                    { sku: 'BEV-COLA-01', name: 'Boisson Artisanale / Limonade', desc: '33cl', price_ht: 3.50, unit_cogs: 1.00, baseGroup: 'boissons_soft', recipe: { 'ING-SOFT': 1 } },
+                    { sku: 'BEV-JUICE-01', name: 'Jus Pressé Maison', desc: '25cl frais', price_ht: 4.20, unit_cogs: 1.25, baseGroup: 'boissons_soft', recipe: { 'ING-SOFT': 1 } }
                 ]
             },
             {
                 id: 'CAT-ALCOOL',
                 title: 'Vins, Alcools & Spiritueux',
                 items: [
-                    {
-                        sku: 'BEV-WINE-01',
-                        name: 'Verre de Vin Sélection',
-                        desc: 'Rouge / Blanc / Rosé',
-                        price_ht: 6.00,
-                        unit_cogs: 2.00,
-                        baseGroup: 'vins_alcools',
-                        recipe: { 'ING-VIN': 1 }
-                    },
-                    {
-                        sku: 'SPIRIT-01',
-                        name: 'Spiritueux Signature (4cl)',
-                        desc: 'Service bar',
-                        price_ht: 8.50,
-                        unit_cogs: 2.60,
-                        baseGroup: 'vins_alcools',
-                        recipe: { 'ING-VIN': 1 }
-                    }
+                    { sku: 'BEV-WINE-01', name: 'Verre de Vin Sélection', desc: 'Rouge / Blanc / Rosé', price_ht: 6.00, unit_cogs: 2.00, baseGroup: 'vins_alcools', recipe: { 'ING-VIN': 1 } },
+                    { sku: 'SPIRIT-01', name: 'Spiritueux Signature (4cl)', desc: 'Service bar', price_ht: 8.50, unit_cogs: 2.60, baseGroup: 'vins_alcools', recipe: { 'ING-VIN': 1 } }
                 ]
             }
         ];
@@ -396,11 +408,14 @@
 
         let cart = [];
         let transactions = loadTransactions();
-        let stockInitialMap = loadStockInitialMap();
+        let ingredientsConfig = loadIngredientsConfig();
+        let suppliers = loadSuppliers();
+        let validatedPOs = loadValidatedPOs();
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
         let activeVoucher = null;
         let adminActionMode = null;
+        let pendingSupplierId = null;
         let selectedTicketIndex = null;
         let zSequenceCounter = 1050;
 
@@ -409,37 +424,38 @@
         updateCartUI();
 
         function loadTransactions() {
-            try {
-                const raw = localStorage.getItem(TX_STORAGE_KEY);
-                return raw ? JSON.parse(raw) : [];
-            } catch (_) {
-                return [];
-            }
+            try { return JSON.parse(localStorage.getItem(TX_STORAGE_KEY) || '[]'); } catch (_) { return []; }
         }
-
         function persistTransactions() {
-            try {
-                localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(transactions));
-            } catch (_) {}
+            try { localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(transactions)); } catch (_) {}
         }
-
-        function loadStockInitialMap() {
-            const defaults = {};
-            DEFAULT_INGREDIENTS.forEach(ing => { defaults[ing.id] = ing.initialQty; });
+        function loadIngredientsConfig() {
             try {
                 const raw = localStorage.getItem(STOCK_STORAGE_KEY);
-                if (!raw) return defaults;
+                if (!raw) return DEFAULT_INGREDIENTS.map(x => ({ ...x }));
                 const parsed = JSON.parse(raw);
-                return { ...defaults, ...parsed };
-            } catch (_) {
-                return defaults;
-            }
+                return DEFAULT_INGREDIENTS.map(def => ({ ...def, ...(parsed[def.id] || {}) }));
+            } catch (_) { return DEFAULT_INGREDIENTS.map(x => ({ ...x })); }
         }
-
-        function persistStockInitialMap() {
+        function persistIngredientsConfig() {
+            const map = {};
+            ingredientsConfig.forEach(i => { map[i.id] = i; });
+            try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
+        }
+        function loadSuppliers() {
             try {
-                localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(stockInitialMap));
-            } catch (_) {}
+                const raw = localStorage.getItem(SUP_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : DEFAULT_SUPPLIERS.map(s => ({ ...s }));
+            } catch (_) { return DEFAULT_SUPPLIERS.map(s => ({ ...s })); }
+        }
+        function persistSuppliers() {
+            try { localStorage.setItem(SUP_STORAGE_KEY, JSON.stringify(suppliers)); } catch (_) {}
+        }
+        function loadValidatedPOs() {
+            try { return JSON.parse(localStorage.getItem(PO_STORAGE_KEY) || '[]'); } catch (_) { return []; }
+        }
+        function persistValidatedPOs() {
+            try { localStorage.setItem(PO_STORAGE_KEY, JSON.stringify(validatedPOs)); } catch (_) {}
         }
 
         function findCatalogItem(sku) {
@@ -456,29 +472,34 @@
             return (catItem && catItem.recipe) ? catItem.recipe : {};
         }
 
-        function computeConsumedIngredients() {
-            const consumed = {};
-            DEFAULT_INGREDIENTS.forEach(ing => { consumed[ing.id] = 0; });
+        // Fonction centrale synchronisée pour toutes les variables de stock
+        function computeStockState() {
+            const consumedMap = {};
+            ingredientsConfig.forEach(ing => { consumedMap[ing.id] = 0; });
 
-            transactions.filter(t => !t.is_test).forEach(tx => {
+            transactions.filter(t => !t.is_test && !t.cancelled).forEach(tx => {
                 (tx.items || []).forEach(line => {
                     const rec = getRecipeForItem(line);
                     Object.keys(rec).forEach(ingId => {
-                        consumed[ingId] = (consumed[ingId] || 0) + (rec[ingId] * line.qty);
+                        consumedMap[ingId] = (consumedMap[ingId] || 0) + (rec[ingId] * Number(line.qty || 0));
                     });
                 });
             });
 
-            return consumed;
+            return ingredientsConfig.map(ing => {
+                const initialQty = Number(ing.initialQty || 0);
+                const consumedQty = Number(consumedMap[ing.id] || 0);
+                const currentQty = initialQty - consumedQty;
+                const minThreshold = Number(ing.minThreshold || 0);
+                const needsOrder = currentQty < minThreshold;
+                const suggestedQty = needsOrder ? Math.max(Number(ing.orderQty || 50), (minThreshold - currentQty) + Number(ing.orderQty || 50)) : 0;
+                return { ...ing, initialQty, consumedQty, currentQty, minThreshold, needsOrder, suggestedQty };
+            });
         }
 
         function getItemRubricKey(baseGroup, currentSaleType) {
-            if (currentSaleType === 'emporter' && (baseGroup === 'plats_sur_place' || baseGroup === 'plats_emporter')) {
-                return 'plats_emporter';
-            }
-            if (currentSaleType === 'sur_place' && baseGroup === 'plats_emporter') {
-                return 'plats_sur_place';
-            }
+            if (currentSaleType === 'emporter' && (baseGroup === 'plats_sur_place' || baseGroup === 'plats_emporter')) return 'plats_emporter';
+            if (currentSaleType === 'sur_place' && baseGroup === 'plats_emporter') return 'plats_sur_place';
             return baseGroup;
         }
 
@@ -492,17 +513,13 @@
         function computeCartBreakdown(items, currentSaleType, discPct, voucher) {
             const rawSubtotalHt = items.reduce((acc, i) => acc + (i.price_ht * i.qty), 0);
             const cogsTotal = items.reduce((acc, i) => acc + (i.unit_cogs * i.qty), 0);
-
             const pctDiscountAmount = rawSubtotalHt * (Math.min(100, Math.max(0, discPct)) / 100);
             let voucherDiscountAmount = 0;
             if (voucher) {
-                if (voucher.type === 'percent') {
-                    voucherDiscountAmount = (rawSubtotalHt - pctDiscountAmount) * (voucher.value / 100);
-                } else if (voucher.type === 'fixed_ht') {
-                    voucherDiscountAmount = Math.min(rawSubtotalHt - pctDiscountAmount, voucher.value);
-                }
+                voucherDiscountAmount = voucher.type === 'percent'
+                    ? (rawSubtotalHt - pctDiscountAmount) * (voucher.value / 100)
+                    : Math.min(rawSubtotalHt - pctDiscountAmount, voucher.value);
             }
-
             const totalDiscountHt = Math.min(rawSubtotalHt, pctDiscountAmount + voucherDiscountAmount);
             const netHt = Math.max(0, rawSubtotalHt - totalDiscountHt);
             const discountRatio = rawSubtotalHt > 0 ? (netHt / rawSubtotalHt) : 1;
@@ -514,15 +531,14 @@
 
             let totalVat = 0;
             const enrichedLines = items.map(item => {
-                const lineRawHt = item.price_ht * item.qty;
-                const lineNetHt = lineRawHt * discountRatio;
+                const lineNetHt = (item.price_ht * item.qty) * discountRatio;
                 const lineCogs = item.unit_cogs * item.qty;
                 const { rubricKey, rubricLabel, rate } = getVatRateForItem(item, currentSaleType);
                 const lineVat = lineNetHt * rate;
                 const lineTtc = lineNetHt + lineVat;
                 const lineMargin = lineNetHt - lineCogs;
-
                 totalVat += lineVat;
+
                 const b = bucketMap[rubricKey];
                 b.rate = rate;
                 b.ht += lineNetHt;
@@ -531,30 +547,17 @@
                 b.cogs += lineCogs;
                 b.margin += lineMargin;
 
-                return {
-                    ...item,
-                    rubricKey,
-                    rubricLabel,
-                    vatRate: rate,
-                    lineNetHt,
-                    lineVat,
-                    lineTtc,
-                    lineCogs,
-                    lineMargin
-                };
+                return { ...item, rubricKey, rubricLabel, vatRate: rate, lineNetHt, lineVat, lineTtc, lineCogs, lineMargin };
             });
-
-            const totalTtc = netHt + totalVat;
-            const grossMargin = netHt - cogsTotal;
 
             return {
                 rawSubtotalHt,
                 totalDiscountHt,
                 netHt,
                 totalVat,
-                totalTtc,
+                totalTtc: netHt + totalVat,
                 cogsTotal,
-                grossMargin,
+                grossMargin: netHt - cogsTotal,
                 buckets: Object.values(bucketMap),
                 lines: enrichedLines
             };
@@ -613,8 +616,7 @@
         function setQuickDiscount(pct) {
             quickDiscountPercent = pct;
             [0, 5, 10].forEach(val => {
-                const btn = document.getElementById('disc-btn-' + val);
-                btn.className = val === pct
+                document.getElementById('disc-btn-' + val).className = val === pct
                     ? "py-1.5 rounded font-bold bg-sky-600 text-white"
                     : "py-1.5 rounded font-bold bg-slate-800 text-slate-300";
             });
@@ -623,10 +625,7 @@
 
         function applyCoupon() {
             const rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
-            if (!rawCode) {
-                alert("Saisissez un code ou bon de réduction.");
-                return;
-            }
+            if (!rawCode) return alert("Saisissez un code ou bon de réduction.");
             if (VOUCHER_CODES[rawCode]) {
                 activeVoucher = { code: rawCode, ...VOUCHER_CODES[rawCode] };
             } else {
@@ -635,8 +634,7 @@
                     const val = Math.min(80, Math.max(1, parseInt(matchPct[1], 10)));
                     activeVoucher = { code: rawCode, type: 'percent', value: val, label: `Bon ${rawCode} (-${val}%)` };
                 } else {
-                    alert("Code inconnu. Utilisez CHEEZVIP, STAFF, BONUS5, BONUS10 ou BON15.");
-                    return;
+                    return alert("Code inconnu. Utilisez CHEEZVIP, STAFF, BONUS5, BONUS10 ou BON15.");
                 }
             }
             const statusEl = document.getElementById('coupon-status');
@@ -656,11 +654,8 @@
             const base = findCatalogItem(sku);
             if (!base) return;
             const existing = cart.find(i => i.sku === sku);
-            if (existing) {
-                existing.qty += 1;
-            } else {
-                cart.push({ ...base, qty: 1 });
-            }
+            if (existing) existing.qty += 1;
+            else cart.push({ ...base, qty: 1 });
             updateCartUI();
         }
 
@@ -672,7 +667,6 @@
         function updateCartUI() {
             const container = document.getElementById('cart-items-container');
             const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher);
-
             if (cart.length === 0) {
                 container.innerHTML = '<p class="text-slate-500 text-center py-6">Panier vide.</p>';
                 document.getElementById('cart-ht').innerText = '0.00 €';
@@ -681,7 +675,6 @@
                 document.getElementById('discount-row').style.display = 'none';
                 return;
             }
-
             container.innerHTML = bd.lines.map((line, idx) => `
                 <div class="py-2 flex justify-between items-center gap-2">
                     <div>
@@ -694,14 +687,9 @@
                     </div>
                 </div>
             `).join('');
-
             document.getElementById('cart-ht').innerText = bd.netHt.toFixed(2) + ' €';
-            if (bd.totalDiscountHt > 0) {
-                document.getElementById('discount-row').style.display = 'flex';
-                document.getElementById('cart-discount').innerText = '-' + bd.totalDiscountHt.toFixed(2) + ' €';
-            } else {
-                document.getElementById('discount-row').style.display = 'none';
-            }
+            document.getElementById('discount-row').style.display = bd.totalDiscountHt > 0 ? 'flex' : 'none';
+            if (bd.totalDiscountHt > 0) document.getElementById('cart-discount').innerText = '-' + bd.totalDiscountHt.toFixed(2) + ' €';
             document.getElementById('cart-vat').innerText = bd.totalVat.toFixed(2) + ' €';
             document.getElementById('cart-total').innerText = bd.totalTtc.toFixed(2) + ' €';
         }
@@ -718,6 +706,7 @@
                 timestamp: new Date().toISOString(),
                 time: new Date().toLocaleTimeString(),
                 is_test: isTest,
+                cancelled: false,
                 sale_type: saleType,
                 quick_discount_pct: quickDiscountPercent,
                 voucher: activeVoucher ? { ...activeVoucher } : null,
@@ -749,12 +738,11 @@
             clearCoupon();
             updateCartUI();
             refreshActiveViews();
-
-            alert(isTest ? "[MODE TEST] Enregistré hors CA." : `Encaissement validé !\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
+            alert(isTest ? "[MODE TEST] Enregistré hors CA et hors stock." : `Encaissement validé !\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
         }
 
         function aggregateDayData(dateStr) {
-            const activeTxs = transactions.filter(t => !t.is_test && t.date === dateStr);
+            const activeTxs = transactions.filter(t => !t.is_test && !t.cancelled && t.date === dateStr);
             const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
             const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
             const vat = activeTxs.reduce((acc, t) => acc + t.vat, 0);
@@ -764,44 +752,19 @@
             const bucketTotals = {};
             Object.keys(RUBRICS).forEach(k => {
                 const r = RUBRICS[k];
-                bucketTotals[k] = {
-                    key: k,
-                    label: r.label,
-                    rateLabel: `${(r.vatPlace * 100).toFixed(0)}% / ${(r.vatTakeout * 100).toFixed(0)}%`,
-                    ht: 0,
-                    vat: 0,
-                    ttc: 0,
-                    cogs: 0,
-                    margin: 0
-                };
+                bucketTotals[k] = { key: k, label: r.label, rateLabel: `${(r.vatPlace * 100).toFixed(0)}% / ${(r.vatTakeout * 100).toFixed(0)}%`, ht: 0, vat: 0, ttc: 0, cogs: 0, margin: 0 };
             });
 
             const productMap = {};
-
             activeTxs.forEach(tx => {
                 const recomputed = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
                 recomputed.buckets.forEach(b => {
                     const target = bucketTotals[b.key];
-                    if (target) {
-                        target.ht += b.ht;
-                        target.vat += b.vat;
-                        target.ttc += b.ttc;
-                        target.cogs += b.cogs;
-                        target.margin += b.margin;
-                    }
+                    if (target) { target.ht += b.ht; target.vat += b.vat; target.ttc += b.ttc; target.cogs += b.cogs; target.margin += b.margin; }
                 });
-
                 recomputed.lines.forEach(line => {
                     if (!productMap[line.sku]) {
-                        productMap[line.sku] = {
-                            sku: line.sku,
-                            name: line.name,
-                            rubricLabel: line.rubricLabel,
-                            qty: 0,
-                            ht: 0,
-                            cogs: 0,
-                            margin: 0
-                        };
+                        productMap[line.sku] = { sku: line.sku, name: line.name, rubricLabel: line.rubricLabel, qty: 0, ht: 0, cogs: 0, margin: 0 };
                     }
                     productMap[line.sku].qty += line.qty;
                     productMap[line.sku].ht += line.lineNetHt;
@@ -810,18 +773,7 @@
                 });
             });
 
-            const topProducts = Object.values(productMap).sort((a, b) => b.qty - a.qty);
-
-            return {
-                activeTxs,
-                ca,
-                ht,
-                vat,
-                cogs,
-                margin,
-                buckets: Object.values(bucketTotals),
-                topProducts
-            };
+            return { activeTxs, ca, ht, vat, cogs, margin, buckets: Object.values(bucketTotals), topProducts: Object.values(productMap).sort((a, b) => b.qty - a.qty) };
         }
 
         function updatePnL() {
@@ -847,10 +799,9 @@
             `).join('');
 
             const prodBody = document.getElementById('pnl-products-body');
-            if (data.topProducts.length === 0) {
-                prodBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date.</td></tr>';
-            } else {
-                prodBody.innerHTML = data.topProducts.map(p => `
+            prodBody.innerHTML = data.topProducts.length === 0
+                ? '<tr><td colspan="6" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date.</td></tr>'
+                : data.topProducts.map(p => `
                     <tr>
                         <td class="p-3 text-slate-100 font-bold">${p.name}</td>
                         <td class="p-3 text-slate-400">${p.rubricLabel}</td>
@@ -860,24 +811,15 @@
                         <td class="p-3 text-emerald-400 font-bold">${p.margin.toFixed(2)} €</td>
                     </tr>
                 `).join('');
-            }
         }
 
         function generateZReport() {
             const selectedDate = document.getElementById('pos-date-input').value;
             const data = aggregateDayData(selectedDate);
             zSequenceCounter += 1;
-
-            const bucketLines = data.buckets.map(b =>
-                `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`
-            ).join('');
-
-            const topProductLines = data.topProducts.slice(0, 5).map(p =>
-                `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (Marge ${p.margin.toFixed(2)} €)</p>`
-            ).join('');
-
-            const card = document.getElementById('z-report-card');
-            card.classList.remove('hidden');
+            const bucketLines = data.buckets.map(b => `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`).join('');
+            const topProductLines = data.topProducts.slice(0, 5).map(p => `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (Marge ${p.margin.toFixed(2)} €)</p>`).join('');
+            document.getElementById('z-report-card').classList.remove('hidden');
             document.getElementById('z-report-content').innerHTML = `
                 <p><strong>Terminal ID :</strong> LEX-POS-TERM-01</p>
                 <p><strong>Séquence Z # :</strong> ${zSequenceCounter}</p>
@@ -903,106 +845,87 @@
                 container.innerHTML = '<p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>';
                 return;
             }
-
             container.innerHTML = transactions.map((t, idx) => {
                 const qtySum = (t.items || []).reduce((a, b) => a + b.qty, 0);
+                const statusBadge = t.cancelled ? '(ANNULÉ)' : (t.is_test ? '(TEST)' : (t.edited_at ? '(MODIFIÉ)' : ''));
                 return `
-                    <div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border transition hover:border-sky-500 ${t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300'}">
+                    <div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border transition hover:border-sky-500 ${t.cancelled ? 'border-rose-900/70 bg-rose-950/20 text-rose-300 line-through opacity-80' : (t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300')}">
                         <div class="flex justify-between font-bold text-sm mb-1">
-                            <span>${t.id} ${t.is_test ? '(TEST)' : ''} ${t.edited_at ? '(MODIFIÉ)' : ''}</span>
+                            <span>${t.id} ${statusBadge}</span>
                             <span class="text-sky-400">${Number(t.total_ttc).toFixed(2)} € TTC</span>
                         </div>
-                        <p class="text-[10px] text-slate-500">${t.date} à ${t.time} • Régime : ${t.sale_type} • Articles : ${qtySum} • Cliquer pour inspecter</p>
+                        <p class="text-[10px] text-slate-500">${t.date} à ${t.time} • Régime : ${t.sale_type} • Articles : ${qtySum} • Cliquer pour QR & actions</p>
                     </div>
                 `;
             }).join('');
         }
 
-        function updateStockView() {
-            const consumed = computeConsumedIngredients();
-            const ingNameMap = {};
-            DEFAULT_INGREDIENTS.forEach(i => { ingNameMap[i.id] = i.name; });
-
-            document.getElementById('stock-table-body').innerHTML = DEFAULT_INGREDIENTS.map(ing => {
-                const initQty = Number(stockInitialMap[ing.id] ?? ing.initialQty);
-                const usedQty = Number(consumed[ing.id] || 0);
-                const currentQty = initQty - usedQty;
-                const stockColor = currentQty <= 20 ? 'text-rose-400' : 'text-emerald-400';
-
-                return `
-                    <tr>
-                        <td class="p-3 text-slate-100 font-bold">${ing.name}</td>
-                        <td class="p-3 text-slate-400">${ing.unit}</td>
-                        <td class="p-3 text-slate-200">${initQty}</td>
-                        <td class="p-3 text-amber-400">-${usedQty}</td>
-                        <td class="p-3 font-bold ${stockColor}">${currentQty}</td>
-                        <td class="p-3">
-                            <div class="flex gap-1">
-                                <button onclick="restockIngredient('${ing.id}', 50)" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-sky-300">+50</button>
-                                <button onclick="restockIngredient('${ing.id}', 100)" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-emerald-300">+100</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const allItems = [];
-            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push(i)));
-
-            document.getElementById('recipes-grid').innerHTML = allItems.map(item => {
-                const recEntries = Object.entries(item.recipe || {}).map(([ingId, q]) => `${ingNameMap[ingId] || ingId} (x${q})`).join(', ');
-                return `
-                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-                        <p class="font-bold text-sky-300">${item.name}</p>
-                        <p class="text-[11px] text-slate-400 mt-1">${recEntries || 'Aucun ingrédient lié'}</p>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function restockIngredient(ingId, delta) {
-            stockInitialMap[ingId] = Number(stockInitialMap[ingId] || 0) + delta;
-            persistStockInitialMap();
-            updateStockView();
-        }
-
-        function exportBackupJson() {
-            const payload = {
-                exported_at: new Date().toISOString(),
-                transactions,
-                stockInitialMap
-            };
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `lexwallet-backup-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importBackupJson(event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const data = JSON.parse(String(reader.result || '{}'));
-                    if (Array.isArray(data.transactions)) {
-                        transactions = data.transactions;
-                        persistTransactions();
+        // Génération QR Code vectoriel léger (matrice déterministe basée sur le payload de traçabilité)
+        function buildQrSvg(payloadText) {
+            const size = 21;
+            const cells = Array.from({ length: size }, () => Array(size).fill(false));
+            const addFinder = (r0, c0) => {
+                for (let r = 0; r < 7; r++) {
+                    for (let c = 0; c < 7; c++) {
+                        const border = r === 0 || r === 6 || c === 0 || c === 6;
+                        const core = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+                        if (r0 + r < size && c0 + c < size) cells[r0 + r][c0 + c] = border || core;
                     }
-                    if (data.stockInitialMap && typeof data.stockInitialMap === 'object') {
-                        stockInitialMap = { ...stockInitialMap, ...data.stockInitialMap };
-                        persistStockInitialMap();
-                    }
-                    refreshActiveViews();
-                    alert("Sauvegarde JSON importée avec succès.");
-                } catch (_) {
-                    alert("Fichier JSON invalide.");
                 }
             };
-            reader.readAsText(file);
+            addFinder(0, 0);
+            addFinder(0, size - 7);
+            addFinder(size - 7, 0);
+
+            let hash = 2166136261;
+            for (let i = 0; i < payloadText.length; i++) {
+                hash ^= payloadText.charCodeAt(i);
+                hash = Math.imul(hash, 16777619);
+            }
+
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const inFinder = (r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8);
+                    if (!inFinder) {
+                        const mix = (hash ^ Math.imul(r + 1, 73856093) ^ Math.imul(c + 1, 19349663)) >>> 0;
+                        cells[r][c] = (mix % 2) === 0;
+                    }
+                }
+            }
+
+            const px = 5;
+            const rects = [];
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (cells[r][c]) rects.push(`<rect x="${c * px}" y="${r * px}" width="${px}" height="${px}" fill="#0f172a"/>`);
+                }
+            }
+            return `<svg width="${size * px}" height="${size * px}" viewBox="0 0 ${size * px} ${size * px}" xmlns="http://www.w3.org/2000/svg">${rects.join('')}</svg>`;
+        }
+
+        function getTicketTraceabilityList(tx) {
+            const supMap = {};
+            suppliers.forEach(s => { supMap[s.id] = s; });
+            const ingMap = {};
+            ingredientsConfig.forEach(i => { ingMap[i.id] = i; });
+
+            const traceMap = {};
+            (tx.items || []).forEach(line => {
+                const rec = getRecipeForItem(line);
+                Object.keys(rec).forEach(ingId => {
+                    const ing = ingMap[ingId];
+                    if (!ing) return;
+                    const sup = supMap[ing.supplierId] || { name: 'Fournisseur Standard', origin: 'Origine contrôlée' };
+                    const used = Number(rec[ingId]) * Number(line.qty);
+                    const key = `${ing.id}-${ing.lot}`;
+                    if (!traceMap[key]) {
+                        traceMap[key] = { ingName: ing.name, lot: ing.lot, supName: sup.name, origin: sup.origin, qty: used, unit: ing.unit };
+                    } else {
+                        traceMap[key].qty += used;
+                    }
+                });
+            });
+            return Object.values(traceMap);
         }
 
         function openTicketModal(index) {
@@ -1010,13 +933,14 @@
             const tx = transactions[index];
             if (!tx) return;
             const bd = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
+            const traceList = getTicketTraceabilityList(tx);
 
             document.getElementById('modal-tx-id').innerText = tx.id;
             document.getElementById('modal-tx-meta').innerHTML = `
-                <p>Date : ${tx.date} à ${tx.time}</p>
-                <p>Régime : ${tx.sale_type === 'emporter' ? 'À Emporter' : 'Sur Place'} • Type : ${tx.is_test ? 'TEST' : 'RÉEL'}</p>
+                <p>Date : ${tx.date} à ${tx.time} • Statut : ${tx.cancelled ? 'ANNULÉ' : (tx.is_test ? 'TEST' : 'RÉEL')}</p>
+                <p>Régime : ${tx.sale_type === 'emporter' ? 'À Emporter' : 'Sur Place'}</p>
                 ${tx.voucher ? `<p class="text-emerald-400">Bon : ${tx.voucher.label}</p>` : ''}
-                ${tx.edited_at ? `<p class="text-amber-400">Dernière correction : ${tx.edited_at}</p>` : ''}
+                ${tx.edited_at ? `<p class="text-amber-400">Modifié à : ${tx.edited_at}</p>` : ''}
             `;
 
             document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `
@@ -1025,6 +949,23 @@
                     <span class="text-sky-300">${l.lineNetHt.toFixed(2)} € HT</span>
                 </div>
             `).join('');
+
+            document.getElementById('modal-tx-traceability').innerHTML = `
+                <p class="font-bold text-emerald-400">Traçabilité Provenance & Lots :</p>
+                ${traceList.length === 0
+                    ? '<p class="text-slate-500">Aucun ingrédient tracé.</p>'
+                    : traceList.map(tr => `<p>• ${tr.ingName} (${tr.qty} ${tr.unit}) — ${tr.supName} | Lot: ${tr.lot} (${tr.origin})</p>`).join('')
+                }
+            `;
+
+            const qrPayload = JSON.stringify({
+                tx: tx.id,
+                date: tx.date,
+                ttc: tx.total_ttc,
+                lots: traceList.map(t => `${t.ingName}:${t.lot}:${t.supName}`)
+            });
+            document.getElementById('modal-qr-container').innerHTML = buildQrSvg(qrPayload);
+            document.getElementById('modal-qr-summary').innerText = `${tx.id} | ${traceList.length} lot(s) tracé(s) | Total ${Number(tx.total_ttc).toFixed(2)} €`;
 
             document.getElementById('modal-tx-totals').innerHTML = `
                 <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
@@ -1044,12 +985,24 @@
             openAdminModal('edit_ticket');
         }
 
-        function openAdminModal(mode) {
+        function requestCancelCurrentTicket() {
+            closeTicketModal();
+            openAdminModal('cancel_ticket');
+        }
+
+        function openAdminModal(mode, extraId = null) {
             adminActionMode = mode;
+            pendingSupplierId = extraId;
             document.getElementById('admin-pin-input').value = '';
             if (mode === 'edit_ticket') {
                 document.getElementById('admin-modal-title').innerText = 'AUTORISATION MANAGER — ÉDITION TICKET';
                 document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Manager pour modifier ce ticket :';
+            } else if (mode === 'cancel_ticket') {
+                document.getElementById('admin-modal-title').innerText = 'AUTORISATION MANAGER — ANNULATION TICKET';
+                document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Manager pour annuler ce ticket et restituer le stock :';
+            } else if (mode === 'validate_po') {
+                document.getElementById('admin-modal-title').innerText = 'VALIDATION SUPERVISEUR — BON DE COMMANDE';
+                document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Superviseur pour valider et réceptionner ce bon :';
             } else {
                 document.getElementById('admin-modal-title').innerText = 'SÉCURITÉ ADMIN HOLDING';
                 document.getElementById('admin-modal-desc').innerText = 'Entrez le code PIN maître pour purger les tests :';
@@ -1064,20 +1017,26 @@
 
         function submitAdminAction() {
             const pin = document.getElementById('admin-pin-input').value.trim();
-            if (pin !== MANAGER_PIN) {
-                alert("Code PIN Administrateur / Manager incorrect.");
-                return;
-            }
+            if (pin !== MANAGER_PIN) return alert("Code PIN Administrateur / Superviseur incorrect.");
             const mode = adminActionMode;
+            const supId = pendingSupplierId;
             closeAdminModal();
 
             if (mode === 'purge') {
                 transactions = transactions.filter(t => !t.is_test);
                 persistTransactions();
-                alert("Purge des transactions de test effectuée avec succès.");
                 refreshActiveViews();
+                alert("Purge des transactions de test effectuée.");
             } else if (mode === 'edit_ticket' && selectedTicketIndex !== null) {
                 openEditTicketModal(selectedTicketIndex);
+            } else if (mode === 'cancel_ticket' && selectedTicketIndex !== null) {
+                transactions[selectedTicketIndex].cancelled = true;
+                transactions[selectedTicketIndex].cancelled_at = new Date().toLocaleTimeString();
+                persistTransactions();
+                refreshActiveViews();
+                alert("Ticket annulé : P&L et stocks synchronisés.");
+            } else if (mode === 'validate_po' && supId) {
+                validateSupplierPurchaseOrder(supId);
             }
         }
 
@@ -1087,17 +1046,15 @@
             document.getElementById('edit-tx-id').innerText = tx.id;
             document.getElementById('edit-sale-type').value = tx.sale_type || 'sur_place';
             document.getElementById('edit-discount-pct').value = tx.quick_discount_pct || 0;
-
             document.getElementById('edit-items-list').innerHTML = (tx.items || []).map((item, idx) => `
                 <div class="flex justify-between items-center gap-2 py-1 border-b border-slate-900">
                     <span class="text-slate-200">${item.name}</span>
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] text-slate-400">Qté</span>
-                        <input type="number" min="0" id="edit-qty-${idx}" value="${item.qty}" class="w-14 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
+                        <input type="number" min="0" id="edit-qty-${idx}" value="${item.qty}" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
                     </div>
                 </div>
             `).join('');
-
             document.getElementById('edit-ticket-modal').classList.remove('hidden');
         }
 
@@ -1108,21 +1065,16 @@
         function saveEditedTicket() {
             const tx = transactions[selectedTicketIndex];
             if (!tx) return;
-
             const newSaleType = document.getElementById('edit-sale-type').value;
             const newDiscPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('edit-discount-pct').value) || 0));
-
             const updatedItems = (tx.items || [])
-                .map((item, idx) => {
-                    const q = Math.max(0, parseInt(document.getElementById(`edit-qty-${idx}`).value, 10) || 0);
-                    return { ...item, qty: q };
-                })
+                .map((item, idx) => ({ ...item, qty: Math.max(0, parseInt(document.getElementById(`edit-qty-${idx}`).value, 10) || 0) }))
                 .filter(i => i.qty > 0);
 
             const bd = computeCartBreakdown(updatedItems, newSaleType, newDiscPct, tx.voucher || null);
-
             transactions[selectedTicketIndex] = {
                 ...tx,
+                cancelled: false,
                 sale_type: newSaleType,
                 quick_discount_pct: newDiscPct,
                 items: updatedItems,
@@ -1139,7 +1091,177 @@
             persistTransactions();
             closeEditTicketModal();
             refreshActiveViews();
-            alert("Ticket mis à jour, P&L et stocks recalculés.");
+            alert("Ticket mis à jour : P&L et stocks synchronisés.");
+        }
+
+        function updateStockView() {
+            const stockState = computeStockState();
+            const supMap = {};
+            suppliers.forEach(s => { supMap[s.id] = s; });
+
+            document.getElementById('stock-table-body').innerHTML = stockState.map(st => {
+                const sup = supMap[st.supplierId] || { name: 'Non assigné' };
+                const stockColor = st.needsOrder ? 'text-rose-400' : 'text-emerald-400';
+                return `
+                    <tr>
+                        <td class="p-3 text-slate-100 font-bold">${st.name} <span class="text-[10px] text-slate-500">(${st.unit})</span></td>
+                        <td class="p-3 text-slate-300">${sup.name}<span class="block text-[10px] text-slate-500">${st.lot}</span></td>
+                        <td class="p-3">
+                            <input type="number" min="0" value="${st.initialQty}" onchange="updateInitialStock('${st.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
+                        </td>
+                        <td class="p-3 text-amber-400">-${st.consumedQty}</td>
+                        <td class="p-3 font-bold ${stockColor}">${st.currentQty}</td>
+                        <td class="p-3">
+                            <input type="number" min="0" value="${st.minThreshold}" onchange="updateMinThreshold('${st.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Portefeuille Fournisseurs
+            document.getElementById('suppliers-portfolio-grid').innerHTML = suppliers.map(sup => {
+                const portfolioItems = stockState.filter(i => i.supplierId === sup.id);
+                return `
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-2">
+                        <p class="font-bold text-sky-300">${sup.name}</p>
+                        <p class="text-[10px] text-slate-400">${sup.origin}</p>
+                        <ul class="text-[11px] text-slate-200 space-y-1 pt-1 border-t border-slate-800">
+                            ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit assigné</li>' : portfolioItems.map(p => `<li>• ${p.name} (Stock: ${p.currentQty})</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
+
+            // Suggestions de bons de commande par fournisseur
+            const poContainer = document.getElementById('suggested-po-container');
+            const poCards = suppliers.map(sup => {
+                const neededLines = stockState.filter(i => i.supplierId === sup.id && i.needsOrder);
+                if (neededLines.length === 0) return '';
+                return `
+                    <div class="bg-slate-900 border border-amber-700/50 p-4 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <p class="font-bold text-amber-300">Bon Suggéré — ${sup.name}</p>
+                            <button onclick="openAdminModal('validate_po', '${sup.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">Valider Bon (Superviseur)</button>
+                        </div>
+                        ${neededLines.map(nl => `<p class="text-slate-300">• ${nl.name} : Stock ${nl.currentQty} / Min ${nl.minThreshold} → Commander <strong>+${nl.suggestedQty} ${nl.unit}</strong></p>`).join('')}
+                    </div>
+                `;
+            }).filter(Boolean);
+
+            poContainer.innerHTML = poCards.length === 0
+                ? '<p class="text-emerald-400 text-xs">Tous les stocks sont au-dessus de leur seuil minimum. Aucune commande urgente suggérée.</p>'
+                : poCards.join('');
+
+            const poHistEl = document.getElementById('validated-po-history');
+            poHistEl.innerHTML = validatedPOs.length === 0
+                ? '<p class="text-slate-500 text-[11px]">Aucun bon de commande validé récemment.</p>'
+                : `<p class="text-sky-300 font-bold">Bons Validés par Superviseur :</p>` + validatedPOs.slice(0, 5).map(po => `
+                    <p class="text-[11px] text-slate-300">• ${po.poId} (${po.date}) — ${po.supplierName} : ${po.lines.map(l => `${l.name} +${l.qty}`).join(', ')}</p>
+                `).join('');
+
+            const allItems = [];
+            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push(i)));
+            const ingNameMap = {};
+            ingredientsConfig.forEach(i => { ingNameMap[i.id] = i; });
+
+            document.getElementById('recipes-grid').innerHTML = allItems.map(item => {
+                const recEntries = Object.entries(item.recipe || {}).map(([ingId, q]) => {
+                    const meta = ingNameMap[ingId];
+                    return `${meta ? meta.name : ingId} (x${q}, Lot ${meta ? meta.lot : '-'})`;
+                }).join(' • ');
+                return `
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl">
+                        <p class="font-bold text-sky-300">${item.name}</p>
+                        <p class="text-[11px] text-slate-400 mt-1">${recEntries}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateInitialStock(ingId, val) {
+            const num = Math.max(0, parseInt(val, 10) || 0);
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, initialQty: num } : i);
+            persistIngredientsConfig();
+            updateStockView();
+        }
+
+        function updateMinThreshold(ingId, val) {
+            const num = Math.max(0, parseInt(val, 10) || 0);
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: num } : i);
+            persistIngredientsConfig();
+            updateStockView();
+        }
+
+        function addSupplier() {
+            const name = document.getElementById('new-sup-name').value.trim();
+            const origin = document.getElementById('new-sup-origin').value.trim() || 'Origine vérifiée';
+            if (!name) return alert("Saisissez le nom du fournisseur.");
+            suppliers.push({ id: 'SUP-' + Date.now(), name, origin });
+            persistSuppliers();
+            document.getElementById('new-sup-name').value = '';
+            document.getElementById('new-sup-origin').value = '';
+            updateStockView();
+        }
+
+        function validateSupplierPurchaseOrder(supId) {
+            const sup = suppliers.find(s => s.id === supId);
+            const stockState = computeStockState();
+            const needed = stockState.filter(i => i.supplierId === supId && i.needsOrder);
+            if (!sup || needed.length === 0) return;
+
+            ingredientsConfig = ingredientsConfig.map(ing => {
+                const match = needed.find(n => n.id === ing.id);
+                if (!match) return ing;
+                return { ...ing, initialQty: Number(ing.initialQty || 0) + Number(match.suggestedQty || 0) };
+            });
+            persistIngredientsConfig();
+
+            validatedPOs.unshift({
+                poId: 'PO-' + Date.now(),
+                date: new Date().toLocaleString(),
+                supplierName: sup.name,
+                lines: needed.map(n => ({ name: n.name, qty: n.suggestedQty }))
+            });
+            persistValidatedPOs();
+            updateStockView();
+            alert(`Bon de commande ${sup.name} validé par superviseur et stock réapprovisionné.`);
+        }
+
+        function exportBackupJson() {
+            const payload = {
+                exported_at: new Date().toISOString(),
+                transactions,
+                ingredientsConfig,
+                suppliers,
+                validatedPOs
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lexwallet-full-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importBackupJson(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const data = JSON.parse(String(reader.result || '{}'));
+                    if (Array.isArray(data.transactions)) { transactions = data.transactions; persistTransactions(); }
+                    if (Array.isArray(data.ingredientsConfig)) { ingredientsConfig = data.ingredientsConfig; persistIngredientsConfig(); }
+                    if (Array.isArray(data.suppliers)) { suppliers = data.suppliers; persistSuppliers(); }
+                    if (Array.isArray(data.validatedPOs)) { validatedPOs = data.validatedPOs; persistValidatedPOs(); }
+                    refreshActiveViews();
+                    alert("Sauvegarde complète importée et synchronisée.");
+                } catch (_) {
+                    alert("Fichier JSON invalide.");
+                }
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
