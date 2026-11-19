@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexwallet.app — Point Zero POS, Stocks & Traçabilité</title>
+    <title>Lexwallet.app — Point Zero POS, P&L, Coûts & Traçabilité</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8">
@@ -12,11 +12,12 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé, Stocks, Fournisseurs, Recettes & QR</p>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Fiscal, Coûts & Réserves, Stocks, Recettes & QR</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
                 <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
+                <button onclick="switchTab('costs')" id="tab-btn-costs" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Analyse Coûts & Réserves</button>
                 <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique & QR</button>
                 <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks & Fournisseurs</button>
                 <button onclick="switchTab('recipes')" id="tab-btn-recipes" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Recettes & Traçabilité</button>
@@ -80,12 +81,12 @@
             </div>
         </div>
 
-        <!-- VUE 2 : RAPPORT P&L HYPER-VENTILÉ & Z -->
+        <!-- VUE 2 : RAPPORT P&L FISCAL & Z -->
         <div id="view-pnl" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
-                        <h2 class="text-base font-bold text-amber-400">Tableau de Bord P&L Hyper-Ventilé & Clôture Z</h2>
+                        <h2 class="text-base font-bold text-amber-400">Rapport P&L Fiscal & Clôture Z</h2>
                         <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span></p>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -94,7 +95,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                         <p class="text-xs text-slate-400">CA Total TTC</p>
                         <p id="pnl-ca" class="text-xl font-bold text-sky-400 mt-1">0.00 €</p>
@@ -104,12 +105,8 @@
                         <p id="pnl-ht" class="text-xl font-bold text-slate-200 mt-1">0.00 €</p>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">COGS Achats</p>
-                        <p id="pnl-cogs" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">Marge Brute P&L</p>
-                        <p id="pnl-margin" class="text-xl font-bold text-emerald-400 mt-1">0.00 €</p>
+                        <p class="text-xs text-slate-400">TVA Collectée</p>
+                        <p id="pnl-vat" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
                     </div>
                 </div>
 
@@ -124,8 +121,6 @@
                                     <th class="p-3">Net HT</th>
                                     <th class="p-3">TVA</th>
                                     <th class="p-3">Total TTC</th>
-                                    <th class="p-3">COGS</th>
-                                    <th class="p-3">Marge</th>
                                 </tr>
                             </thead>
                             <tbody id="pnl-buckets-body" class="divide-y divide-slate-900"></tbody>
@@ -143,8 +138,7 @@
                                     <th class="p-3">Rubrique</th>
                                     <th class="p-3">Qté Vendue</th>
                                     <th class="p-3">CA Net HT</th>
-                                    <th class="p-3">COGS</th>
-                                    <th class="p-3">Marge Brute</th>
+                                    <th class="p-3">Total TTC</th>
                                 </tr>
                             </thead>
                             <tbody id="pnl-products-body" class="divide-y divide-slate-900"></tbody>
@@ -159,7 +153,78 @@
             </div>
         </div>
 
-        <!-- VUE 3 : HISTORIQUE DES COMMANDES & QR -->
+        <!-- VUE 3 : ANALYSE DES COÛTS, CHARGES & VENTILATION TRÉSORERIE -->
+        <div id="view-costs" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-emerald-400">Analyse des Coûts, Charges & Ventilation Trésorerie</h2>
+                        <p class="text-xs text-slate-400 font-mono">Date ciblée : <span id="costs-date-label"></span> • COGS, Loyer, Royalties, Personnel & Mise de côté</p>
+                    </div>
+                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold font-mono">Export CSV Financier</button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">COGS Matières (Ventes)</p>
+                        <p id="cost-cogs-val" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Charges fixes / variables</p>
+                        <p id="cost-opex-val" class="text-xl font-bold text-rose-400 mt-1">0.00 €</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">À Mettre de Côté (TVA + Réserves)</p>
+                        <p id="cost-reserve-val" class="text-xl font-bold text-sky-400 mt-1">0.00 €</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Gain Net Disponible</p>
+                        <p id="cost-net-gain-val" class="text-xl font-bold text-emerald-400 mt-1">0.00 €</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono text-xs">
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                        <h3 class="text-sm font-bold text-sky-300">Paramètres de Charges (sur la période / journée)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Loyer (€)</label>
+                                <input type="number" step="0.01" min="0" id="cfg-rent" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Royalties (€)</label>
+                                <input type="number" step="0.01" min="0" id="cfg-royalties" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Frais de Personnel (€)</label>
+                                <input type="number" step="0.01" min="0" id="cfg-staff" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (Assurance, Fluides...) (€)</label>
+                                <input type="number" step="0.01" min="0" id="cfg-other" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                        <h3 class="text-sm font-bold text-amber-300">Répartition & Mise de Côté (sur CA Net HT)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Provision Fiscalité / Impôts (% Net HT)</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-tax-reserve-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Réserve Trésorerie / R&D (% Net HT)</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-cap-reserve-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            </div>
+                        </div>
+                        <div id="cost-breakdown-summary" class="space-y-1 pt-2 border-t border-slate-800 text-slate-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VUE 4 : HISTORIQUE DES COMMANDES & QR -->
         <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -172,7 +237,7 @@
             </div>
         </div>
 
-        <!-- VUE 4 : GESTION DES STOCKS, FOURNISSEURS & BONS DE COMMANDE -->
+        <!-- VUE 5 : GESTION DES STOCKS, FOURNISSEURS & BONS DE COMMANDE -->
         <div id="view-stock" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
@@ -190,7 +255,6 @@
                     </div>
                 </div>
 
-                <!-- Tableau des stocks synchronisés avec sélecteur fournisseur -->
                 <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
                     <table class="w-full text-left font-mono text-xs">
                         <thead class="border-b border-slate-800 text-slate-400">
@@ -207,7 +271,6 @@
                     </table>
                 </div>
 
-                <!-- Fiches Fournisseurs Complètes, Portefeuille, Édition & Suppression -->
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
                     <div class="flex justify-between items-center">
                         <h3 id="supplier-form-title" class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
@@ -228,7 +291,6 @@
                     <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2"></div>
                 </div>
 
-                <!-- Suggestions Automatiques de Bons de Commande à Valider par le Superviseur -->
                 <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-4 font-mono text-xs">
                     <div>
                         <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
@@ -240,7 +302,7 @@
             </div>
         </div>
 
-        <!-- VUE 5 : RECETTES ARTICLES & TRAÇABILITÉ MATIÈRES -->
+        <!-- VUE 6 : RECETTES ARTICLES & TRAÇABILITÉ MATIÈRES -->
         <div id="view-recipes" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
@@ -275,7 +337,7 @@
 
     </div>
 
-    <!-- MODAL DÉTAIL TICKET + QR CODE UNIQUE (SCROLL SAFE MOBILE) -->
+    <!-- MODAL DÉTAIL TICKET + QR CODE UNIQUE -->
     <div id="ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-6 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 font-mono text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3 sticky top-0 bg-slate-900 z-10">
@@ -347,6 +409,7 @@
         const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
         const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
         const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
+        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v1';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
 
         const RUBRICS = {
@@ -405,42 +468,10 @@
                 id: 'CAT-PLATS',
                 title: 'Plats & Burgers',
                 items: [
-                    {
-                        sku: 'CHEER-BURGER-01',
-                        name: 'Cheer Classic Cheese Burger',
-                        desc: 'Pain, viande de bœuf, cheddar, sauce, salade',
-                        price_ht: 9.50,
-                        unit_cogs: 2.85,
-                        baseGroup: 'plats_sur_place',
-                        recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1, 'ING-SALADE': 1 }
-                    },
-                    {
-                        sku: 'CHEER-BURGER-02',
-                        name: 'Cheer Truffle Bacon Burger',
-                        desc: 'Pain, viande de bœuf, double cheddar, bacon, truffe, sauce',
-                        price_ht: 12.50,
-                        unit_cogs: 3.75,
-                        baseGroup: 'plats_sur_place',
-                        recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 2, 'ING-BACON': 2, 'ING-TRUFFE': 1, 'ING-SAUCE': 1 }
-                    },
-                    {
-                        sku: 'CHEER-BOX-01',
-                        name: 'Box Frites & Cheese Emporter',
-                        desc: 'Frites, cheddar, sauce emballage thermique',
-                        price_ht: 8.50,
-                        unit_cogs: 2.30,
-                        baseGroup: 'plats_emporter',
-                        recipe: { 'ING-FRITES': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1 }
-                    },
-                    {
-                        sku: 'CHEESE-PLATE-01',
-                        name: 'Plateau de Fromages Affinés',
-                        desc: 'Sélection du terroir',
-                        price_ht: 14.00,
-                        unit_cogs: 4.50,
-                        baseGroup: 'plats_sur_place',
-                        recipe: { 'ING-FROMAGE': 1 }
-                    }
+                    { sku: 'CHEER-BURGER-01', name: 'Cheer Classic Cheese Burger', desc: 'Pain, viande de bœuf, cheddar, sauce, salade', price_ht: 9.50, unit_cogs: 2.85, baseGroup: 'plats_sur_place', recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1, 'ING-SALADE': 1 } },
+                    { sku: 'CHEER-BURGER-02', name: 'Cheer Truffle Bacon Burger', desc: 'Pain, viande de bœuf, double cheddar, bacon, truffe, sauce', price_ht: 12.50, unit_cogs: 3.75, baseGroup: 'plats_sur_place', recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 2, 'ING-BACON': 2, 'ING-TRUFFE': 1, 'ING-SAUCE': 1 } },
+                    { sku: 'CHEER-BOX-01', name: 'Box Frites & Cheese Emporter', desc: 'Frites, cheddar, sauce emballage thermique', price_ht: 8.50, unit_cogs: 2.30, baseGroup: 'plats_emporter', recipe: { 'ING-FRITES': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1 } },
+                    { sku: 'CHEESE-PLATE-01', name: 'Plateau de Fromages Affinés', desc: 'Sélection du terroir', price_ht: 14.00, unit_cogs: 4.50, baseGroup: 'plats_sur_place', recipe: { 'ING-FROMAGE': 1 } }
                 ]
             },
             {
@@ -473,6 +504,7 @@
         let ingredientsConfig = loadIngredientsConfig();
         let suppliers = loadSuppliers();
         let validatedPOs = loadValidatedPOs();
+        let costConfig = loadCostConfig();
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
         let activeVoucher = null;
@@ -483,6 +515,7 @@
         let zSequenceCounter = 1050;
 
         document.getElementById('pos-date-input').value = new Date().toISOString().split('T')[0];
+        hydrateCostInputs();
         renderCatalog();
         updateCartUI();
 
@@ -547,6 +580,40 @@
 
         function persistValidatedPOs() {
             try { localStorage.setItem(PO_STORAGE_KEY, JSON.stringify(validatedPOs)); } catch (_) {}
+        }
+
+        function loadCostConfig() {
+            const defaults = { rent: 0, royalties: 0, staff: 0, other: 0, taxReservePct: 15, capReservePct: 10 };
+            try {
+                const raw = localStorage.getItem(COST_CFG_STORAGE_KEY);
+                return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+            } catch (_) { return defaults; }
+        }
+
+        function persistCostConfig() {
+            try { localStorage.setItem(COST_CFG_STORAGE_KEY, JSON.stringify(costConfig)); } catch (_) {}
+        }
+
+        function hydrateCostInputs() {
+            document.getElementById('cfg-rent').value = costConfig.rent;
+            document.getElementById('cfg-royalties').value = costConfig.royalties;
+            document.getElementById('cfg-staff').value = costConfig.staff;
+            document.getElementById('cfg-other').value = costConfig.other;
+            document.getElementById('cfg-tax-reserve-pct').value = costConfig.taxReservePct;
+            document.getElementById('cfg-cap-reserve-pct').value = costConfig.capReservePct;
+        }
+
+        function saveCostConfig() {
+            costConfig = {
+                rent: Math.max(0, parseFloat(document.getElementById('cfg-rent').value) || 0),
+                royalties: Math.max(0, parseFloat(document.getElementById('cfg-royalties').value) || 0),
+                staff: Math.max(0, parseFloat(document.getElementById('cfg-staff').value) || 0),
+                other: Math.max(0, parseFloat(document.getElementById('cfg-other').value) || 0),
+                taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)),
+                capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0))
+            };
+            persistCostConfig();
+            refreshActiveViews();
         }
 
         function findCatalogItem(sku) {
@@ -680,7 +747,7 @@
         }
 
         function switchTab(tab) {
-            ['pos', 'pnl', 'history', 'stock', 'recipes'].forEach(t => {
+            ['pos', 'pnl', 'costs', 'history', 'stock', 'recipes'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('tab-btn-' + t).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
             });
@@ -691,6 +758,7 @@
 
         function refreshActiveViews() {
             if (!document.getElementById('view-pnl').classList.contains('hidden')) updatePnL();
+            if (!document.getElementById('view-costs').classList.contains('hidden')) updateCostsView();
             if (!document.getElementById('view-history').classList.contains('hidden')) updateHistory();
             if (!document.getElementById('view-stock').classList.contains('hidden')) updateStockView();
             if (!document.getElementById('view-recipes').classList.contains('hidden')) updateRecipesView();
@@ -857,10 +925,11 @@
                 });
                 recomputed.lines.forEach(line => {
                     if (!productMap[line.sku]) {
-                        productMap[line.sku] = { sku: line.sku, name: line.name, rubricLabel: line.rubricLabel, qty: 0, ht: 0, cogs: 0, margin: 0 };
+                        productMap[line.sku] = { sku: line.sku, name: line.name, rubricLabel: line.rubricLabel, qty: 0, ht: 0, ttc: 0, cogs: 0, margin: 0 };
                     }
                     productMap[line.sku].qty += line.qty;
                     productMap[line.sku].ht += line.lineNetHt;
+                    productMap[line.sku].ttc += line.lineTtc;
                     productMap[line.sku].cogs += line.lineCogs;
                     productMap[line.sku].margin += line.lineMargin;
                 });
@@ -876,8 +945,7 @@
 
             document.getElementById('pnl-ca').innerText = data.ca.toFixed(2) + ' €';
             document.getElementById('pnl-ht').innerText = data.ht.toFixed(2) + ' €';
-            document.getElementById('pnl-cogs').innerText = '-' + data.cogs.toFixed(2) + ' €';
-            document.getElementById('pnl-margin').innerText = data.margin.toFixed(2) + ' €';
+            document.getElementById('pnl-vat').innerText = data.vat.toFixed(2) + ' €';
 
             document.getElementById('pnl-buckets-body').innerHTML = data.buckets.map(b => `
                 <tr>
@@ -886,22 +954,19 @@
                     <td class="p-3 text-slate-200">${b.ht.toFixed(2)} €</td>
                     <td class="p-3 text-slate-300">${b.vat.toFixed(2)} €</td>
                     <td class="p-3 text-sky-400 font-bold">${b.ttc.toFixed(2)} €</td>
-                    <td class="p-3 text-amber-400">-${b.cogs.toFixed(2)} €</td>
-                    <td class="p-3 text-emerald-400 font-bold">${b.margin.toFixed(2)} €</td>
                 </tr>
             `).join('');
 
             const prodBody = document.getElementById('pnl-products-body');
             prodBody.innerHTML = data.topProducts.length === 0
-                ? '<tr><td colspan="6" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date.</td></tr>'
+                ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date.</td></tr>'
                 : data.topProducts.map(p => `
                     <tr>
                         <td class="p-3 text-slate-100 font-bold">${p.name}</td>
                         <td class="p-3 text-slate-400">${p.rubricLabel}</td>
                         <td class="p-3 text-sky-300 font-bold">${p.qty}</td>
                         <td class="p-3 text-slate-200">${p.ht.toFixed(2)} €</td>
-                        <td class="p-3 text-amber-400">-${p.cogs.toFixed(2)} €</td>
-                        <td class="p-3 text-emerald-400 font-bold">${p.margin.toFixed(2)} €</td>
+                        <td class="p-3 text-emerald-400 font-bold">${p.ttc.toFixed(2)} €</td>
                     </tr>
                 `).join('');
         }
@@ -912,7 +977,7 @@
             const stamp = formatNowDateTime();
             zSequenceCounter += 1;
             const bucketLines = data.buckets.map(b => `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`).join('');
-            const topProductLines = data.topProducts.slice(0, 5).map(p => `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (Marge ${p.margin.toFixed(2)} €)</p>`).join('');
+            const topProductLines = data.topProducts.slice(0, 5).map(p => `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (TTC ${p.ttc.toFixed(2)} €)</p>`).join('');
             document.getElementById('z-report-card').classList.remove('hidden');
             document.getElementById('z-report-content').innerHTML = `
                 <p><strong>Terminal ID :</strong> LEX-POS-TERM-01</p>
@@ -926,10 +991,31 @@
                 <div class="pt-2 mt-2 border-t border-slate-800 text-white space-y-1">
                     <p><strong>Total Net HT :</strong> ${data.ht.toFixed(2)} €</p>
                     <p><strong>TVA Totale Collectée :</strong> ${data.vat.toFixed(2)} €</p>
-                    <p><strong>COGS Total :</strong> -${data.cogs.toFixed(2)} €</p>
-                    <p><strong>Marge Brute :</strong> ${data.margin.toFixed(2)} €</p>
                     <p class="text-sky-400"><strong>Grand Total TTC :</strong> ${data.ca.toFixed(2)} €</p>
                 </div>
+            `;
+        }
+
+        function updateCostsView() {
+            const selectedDate = document.getElementById('pos-date-input').value;
+            document.getElementById('costs-date-label').innerText = selectedDate;
+            const data = aggregateDayData(selectedDate);
+
+            const totalOpex = Number(costConfig.rent || 0) + Number(costConfig.royalties || 0) + Number(costConfig.staff || 0) + Number(costConfig.other || 0);
+            const taxReserve = data.ht * (Number(costConfig.taxReservePct || 0) / 100);
+            const capReserve = data.ht * (Number(costConfig.capReservePct || 0) / 100);
+            const totalSetAside = data.vat + taxReserve + capReserve;
+            const netGain = data.ht - data.cogs - totalOpex - taxReserve - capReserve;
+
+            document.getElementById('cost-cogs-val').innerText = '-' + data.cogs.toFixed(2) + ' €';
+            document.getElementById('cost-opex-val').innerText = '-' + totalOpex.toFixed(2) + ' €';
+            document.getElementById('cost-reserve-val').innerText = totalSetAside.toFixed(2) + ' €';
+            document.getElementById('cost-net-gain-val').innerText = netGain.toFixed(2) + ' €';
+
+            document.getElementById('cost-breakdown-summary').innerHTML = `
+                <p>• TVA collectée à isoler : <strong>${data.vat.toFixed(2)} €</strong></p>
+                <p>• Loyer (${costConfig.rent.toFixed(2)} €) + Royalties (${costConfig.royalties.toFixed(2)} €) + Personnel (${costConfig.staff.toFixed(2)} €) + Autres (${costConfig.other.toFixed(2)} €) = <strong>${totalOpex.toFixed(2)} €</strong></p>
+                <p>• Réserve fiscale (${costConfig.taxReservePct}%) : <strong>${taxReserve.toFixed(2)} €</strong> • Réserve Trésorerie/R&D (${costConfig.capReservePct}%) : <strong>${capReserve.toFixed(2)} €</strong></p>
             `;
         }
 
@@ -1486,7 +1572,8 @@
                 transactions,
                 ingredientsConfig,
                 suppliers,
-                validatedPOs
+                validatedPOs,
+                costConfig
             };
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1508,6 +1595,7 @@
                     if (Array.isArray(data.ingredientsConfig)) { ingredientsConfig = data.ingredientsConfig; persistIngredientsConfig(); }
                     if (Array.isArray(data.suppliers)) { suppliers = data.suppliers; persistSuppliers(); }
                     if (Array.isArray(data.validatedPOs)) { validatedPOs = data.validatedPOs; persistValidatedPOs(); }
+                    if (data.costConfig && typeof data.costConfig === 'object') { costConfig = { ...costConfig, ...data.costConfig }; persistCostConfig(); hydrateCostInputs(); }
                     refreshActiveViews();
                     alert("Sauvegarde complète importée et synchronisée.");
                 } catch (_) {
