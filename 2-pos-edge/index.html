@@ -1,1 +1,434 @@
-[Le code ci-dessus]
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexwallet.app — Point Zero POS & P&L Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto space-y-6">
+
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • Architecture Souveraine B2B</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
+                <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
+                <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique Commandes</button>
+                <button onclick="openAdminModal()" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
+            </div>
+        </header>
+
+        <div id="view-pos" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">Régime Fiscal :</span>
+                    <button onclick="setSaleType('sur_place')" id="btn-sur-place" class="px-3 py-1.5 rounded text-xs font-bold bg-sky-600 text-white transition">Sur Place (20%)</button>
+                    <button onclick="setSaleType('emporter')" id="btn-emporter" class="px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition">À Emporter (10%)</button>
+                </div>
+                <input type="date" id="pos-date-input" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <h2 class="text-sm font-semibold text-sky-300 mb-3">Burgers Signature & Plats</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">Cheer Classic Cheese Burger</h3>
+                                    <p class="text-[11px] text-slate-400">Bœuf charolais, cheddar affiné</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">9.50 € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : 2.85 €</span>
+                                    </div>
+                                    <button onclick="addToCart('CHEER-BURGER-01', 'Cheer Classic Cheese Burger', 9.50, 2.85)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">Cheer Truffle Bacon Burger</h3>
+                                    <p class="text-[11px] text-slate-400">Bœuf, double cheddar, truffe</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">12.50 € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : 3.75 €</span>
+                                    </div>
+                                    <button onclick="addToCart('CHEER-BURGER-02', 'Cheer Truffle Bacon Burger', 12.50, 3.75)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <h2 class="text-sm font-semibold text-sky-300 mb-3">Boissons & Vins</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">Boisson Artisanale / Limonade</h3>
+                                    <p class="text-[11px] text-slate-400">33cl</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">3.50 € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : 1.00 €</span>
+                                    </div>
+                                    <button onclick="addToCart('BEV-COLA-01', 'Boisson Artisanale / Limonade', 3.50, 1.00)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">Verre de Vin Sélection</h3>
+                                    <p class="text-[11px] text-slate-400">Rouge / Blanc / Rosé</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">6.00 € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : 2.00 €</span>
+                                    </div>
+                                    <button onclick="addToCart('BEV-WINE-01', 'Verre de Vin Sélection', 6.00, 2.00)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <h2 class="text-sm font-semibold text-sky-300 mb-3">Desserts & Fromages</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">Cheesecake Maison</h3>
+                                    <p class="text-[11px] text-slate-400">Coulis fruits rouges</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">5.50 € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : 1.60 €</span>
+                                    </div>
+                                    <button onclick="addToCart('DESSERT-01', 'Cheesecake Maison', 5.50, 1.60)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">Plateau de Fromages Affinés</h3>
+                                    <p class="text-[11px] text-slate-400">Sélection du terroir</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">14.00 € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : 4.50 €</span>
+                                    </div>
+                                    <button onclick="addToCart('CHEESE-PLATE-01', 'Plateau de Fromages Affinés', 14.00, 4.50)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl space-y-4">
+                        <h2 class="text-sm font-semibold text-sky-300">Panier Actuel (<span id="cart-mode-label">Sur Place</span>)</h2>
+                        <div id="cart-items-container" class="divide-y divide-slate-800 max-h-56 overflow-y-auto text-xs pr-1">
+                            <p class="text-slate-500 text-center py-6">Panier vide.</p>
+                        </div>
+                        <div class="flex gap-2 pt-2 border-t border-slate-800">
+                            <input type="text" id="coupon-input" placeholder="Code VIP" class="bg-slate-950 border border-slate-800 px-2 py-1.5 rounded uppercase font-mono text-xs w-full text-white"/>
+                            <button onclick="applyCoupon()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-xs text-sky-300 font-semibold">OK</button>
+                        </div>
+                        <div class="font-mono space-y-1.5 pt-2 border-t border-slate-800 text-xs">
+                            <div class="flex justify-between text-slate-400"><span>Sous-total HT :</span><span id="cart-ht">0.00 €</span></div>
+                            <div class="flex justify-between text-emerald-400" id="discount-row" style="display:none;"><span>Remise :</span><span id="cart-discount">0.00 €</span></div>
+                            <div class="flex justify-between text-slate-400"><span>TVA :</span><span id="cart-vat">0.00 €</span></div>
+                            <div class="flex justify-between text-sm font-bold text-white pt-1 border-t border-slate-800"><span>Total TTC :</span><span id="cart-total" class="text-sky-400">0.00 €</span></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 pt-2">
+                            <button onclick="checkout(false)" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold text-xs shadow transition">Valider Vente</button>
+                            <button onclick="checkout(true)" class="bg-amber-700 hover:bg-amber-600 text-white py-2.5 rounded font-bold text-xs shadow transition">Mode Test</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-pnl" class="hidden space-y-6 max-w-4xl mx-auto">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                    <h2 class="text-base font-bold text-amber-400">Tableau de Bord P&L & Clôture Fiscale Z</h2>
+                    <button onclick="generateZReport()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold transition">Générer Clôture Z</button>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">CA Total TTC</p>
+                        <p id="pnl-ca" class="text-xl font-bold text-sky-400 mt-1">0.00 €</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">CA Net HT</p>
+                        <p id="pnl-ht" class="text-xl font-bold text-slate-200 mt-1">0.00 €</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">COGS Achats</p>
+                        <p id="pnl-cogs" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-xs text-slate-400">Marge Brute P&L</p>
+                        <p id="pnl-margin" class="text-xl font-bold text-emerald-400 mt-1">0.00 €</p>
+                    </div>
+                </div>
+
+                <div id="z-report-card" class="hidden bg-slate-950 border border-amber-600/50 p-6 rounded-xl space-y-3 font-mono text-xs">
+                    <h3 class="font-bold text-amber-400 text-sm">Rapport Z Officiel Généré</h3>
+                    <div id="z-report-content" class="space-y-1 text-slate-300"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+                <h2 class="text-base font-bold text-sky-300">Registre & Historique des Commandes</h2>
+                <div id="history-container" class="space-y-2 font-mono text-xs">
+                    <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 font-mono text-xs">
+            <h3 class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN HOLDING</h3>
+            <p class="text-slate-400">Entrez le code PIN maître pour purger les tests :</p>
+            <input type="password" id="admin-pin-input" placeholder="PIN Master" class="bg-slate-950 border border-slate-800 px-3 py-2 rounded w-full text-white"/>
+            <div class="flex gap-2">
+                <button onclick="confirmAdminPurge()" class="bg-rose-600 hover:bg-rose-500 text-white py-2 rounded w-full font-bold">Confirmer Purge</button>
+                <button onclick="closeAdminModal()" class="bg-slate-800 py-2 rounded w-full text-slate-300">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cart = [];
+        let transactions = [];
+        let saleType = 'sur_place';
+        let discountPercent = 0;
+
+        document.getElementById('pos-date-input').value = new Date().toISOString().split('T')[0];
+
+        function switchTab(tab) {
+            ['pos', 'pnl', 'history'].forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                document.getElementById('tab-btn-' + t).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
+            });
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('tab-btn-' + tab).className = "px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition";
+
+            if (tab === 'pnl') updatePnL();
+            if (tab === 'history') updateHistory();
+        }
+
+        function setSaleType(type) {
+            saleType = type;
+            document.getElementById('cart-mode-label').innerText = type === 'emporter' ? 'À Emporter' : 'Sur Place';
+            document.getElementById('btn-sur-place').className = type === 'sur_place' ? "px-3 py-1.5 rounded text-xs font-bold bg-sky-600 text-white transition" : "px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition";
+            document.getElementById('btn-emporter').className = type === 'emporter' ? "px-3 py-1.5 rounded text-xs font-bold bg-amber-600 text-white transition" : "px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition";
+            updateCartUI();
+        }
+
+        function addToCart(sku, name, price_ht, unit_cogs) {
+            const existing = cart.find(i => i.sku === sku);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ sku, name, price_ht, unit_cogs, qty: 1 });
+            }
+            updateCartUI();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function applyCoupon() {
+            const code = document.getElementById('coupon-input').value.trim().toUpperCase();
+            if (code === 'CHEEZVIP') {
+                discountPercent = 10;
+                alert("Coupon VIP appliqué : -10%.");
+            } else if (code === 'STAFF') {
+                discountPercent = 20;
+                alert("Coupon Staff appliqué : -20%.");
+            } else {
+                alert("Code de réduction invalide.");
+                discountPercent = 0;
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-center py-6">Panier vide.</p>';
+                document.getElementById('cart-ht').innerText = '0.00 €';
+                document.getElementById('cart-vat').innerText = '0.00 €';
+                document.getElementById('cart-total').innerText = '0.00 €';
+                document.getElementById('discount-row').style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            let rawSubtotal = 0;
+            let totalCogs = 0;
+
+            cart.forEach((item, idx) => {
+                const itemTotalHt = item.price_ht * item.qty;
+                rawSubtotal += itemTotalHt;
+                totalCogs += item.unit_cogs * item.qty;
+                html += `<div class="py-2 flex justify-between items-center">
+                    <div>
+                        <p class="font-medium text-slate-200">${item.name}</p>
+                        <p class="text-[10px] text-slate-400">Qté : ${item.qty} × ${item.price_ht.toFixed(2)} €</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-mono text-sky-300">${itemTotalHt.toFixed(2)} €</span>
+                        <button onclick="removeFromCart(${idx})" class="text-rose-400 font-bold px-1">✕</button>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+
+            const discountAmount = rawSubtotal * (discountPercent / 100);
+            const netHt = rawSubtotal - discountAmount;
+            const vatRate = saleType === 'emporter' ? 0.10 : 0.20;
+            const vat = netHt * vatRate;
+            const totalTtc = netHt + vat;
+
+            document.getElementById('cart-ht').innerText = netHt.toFixed(2) + ' €';
+            if (discountPercent > 0) {
+                document.getElementById('discount-row').style.display = 'flex';
+                document.getElementById('cart-discount').innerText = '-' + discountAmount.toFixed(2) + ' € (' + discountPercent + '%)';
+            } else {
+                document.getElementById('discount-row').style.display = 'none';
+            }
+            document.getElementById('cart-vat').innerText = vat.toFixed(2) + ' €';
+            document.getElementById('cart-total').innerText = totalTtc.toFixed(2) + ' €';
+        }
+
+        function checkout(isTest) {
+            if (cart.length === 0) return;
+
+            let rawSubtotal = cart.reduce((acc, i) => acc + (i.price_ht * i.qty), 0);
+            let discountAmount = rawSubtotal * (discountPercent / 100);
+            let netHt = rawSubtotal - discountAmount;
+            let cogsTotal = cart.reduce((acc, i) => acc + (i.unit_cogs * i.qty), 0);
+            let vatRate = saleType === 'emporter' ? 0.10 : 0.20;
+            let vat = netHt * vatRate;
+            let totalTtc = netHt + vat;
+
+            const tx = {
+                id: 'TX-' + Date.now(),
+                date: document.getElementById('pos-date-input').value,
+                time: new Date().toLocaleTimeString(),
+                is_test: isTest,
+                sale_type: saleType,
+                total_ttc: totalTtc,
+                total_ht: netHt,
+                vat: vat,
+                cogs: cogsTotal,
+                items: [...cart]
+            };
+
+            transactions.unshift(tx);
+            cart = [];
+            discountPercent = 0;
+            document.getElementById('coupon-input').value = '';
+            updateCartUI();
+
+            alert(isTest ? "[MODE TEST] Enregistré hors CA." : `Encaissement validé !\nTotal : ${totalTtc.toFixed(2)} € TTC`);
+        }
+
+        function updatePnL() {
+            const selectedDate = document.getElementById('pos-date-input').value;
+            const activeTxs = transactions.filter(t => !t.is_test && t.date === selectedDate);
+
+            const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
+            const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
+            const cogs = activeTxs.reduce((acc, t) => acc + t.cogs, 0);
+            const margin = ht - cogs;
+
+            document.getElementById('pnl-ca').innerText = ca.toFixed(2) + ' €';
+            document.getElementById('pnl-ht').innerText = ht.toFixed(2) + ' €';
+            document.getElementById('pnl-cogs').innerText = '-' + cogs.toFixed(2) + ' €';
+            document.getElementById('pnl-margin').innerText = margin.toFixed(2) + ' €';
+        }
+
+        function generateZReport() {
+            const selectedDate = document.getElementById('pos-date-input').value;
+            const activeTxs = transactions.filter(t => !t.is_test && t.date === selectedDate);
+
+            const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
+            const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
+            const vat = activeTxs.reduce((acc, t) => acc + t.vat, 0);
+
+            const card = document.getElementById('z-report-card');
+            card.classList.remove('hidden');
+            document.getElementById('z-report-content').innerHTML = `
+                <p><strong>Terminal ID :</strong> LEX-POS-TERM-01</p>
+                <p><strong>Séquence Z # :</strong> 1050</p>
+                <p><strong>Date ciblée :</strong> ${selectedDate}</p>
+                <p><strong>Tickets émis :</strong> ${activeTxs.length}</p>
+                <p><strong>Total HT :</strong> ${ht.toFixed(2)} €</p>
+                <p><strong>TVA Collectée :</strong> ${vat.toFixed(2)} €</p>
+                <p class="text-white pt-1 border-t border-slate-800"><strong>Grand Total TTC :</strong> ${ca.toFixed(2)} €</p>
+            `;
+        }
+
+        function updateHistory() {
+            const container = document.getElementById('history-container');
+            if (transactions.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>';
+                return;
+            }
+
+            let html = '';
+            transactions.forEach(t => {
+                html += `<div class="p-3 rounded-lg border ${t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300'}">
+                    <div class="flex justify-between font-bold text-sm mb-1">
+                        <span>${t.id} ${t.is_test ? '(TEST)' : ''}</span>
+                        <span class="text-sky-400">${t.total_ttc.toFixed(2)} € TTC</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500">${t.date} à ${t.time} • Régime : ${t.sale_type} • Articles : ${t.items.reduce((a, b) => a + b.qty, 0)}</p>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function openAdminModal() {
+            document.getElementById('admin-modal').classList.remove('hidden');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').classList.add('hidden');
+            document.getElementById('admin-pin-input').value = '';
+        }
+
+        function confirmAdminPurge() {
+            const pin = document.getElementById('admin-pin-input').value.trim();
+            if (pin !== 'CHEEZ-ADMIN-2026') {
+                alert("Code PIN Administrateur Holding incorrect.");
+                return;
+            }
+            transactions = transactions.filter(t => !t.is_test);
+            alert("Purge des transactions de test effectuée avec succès.");
+            closeAdminModal();
+            updateHistory();
+        }
+    </script>
+</body>
+</html>
