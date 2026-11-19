@@ -12,124 +12,29 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p class="text-xs text-slate-400">Cheer Cheese Flagship • Architecture Souveraine B2B</p>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé & Contrôle Fiscal</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
                 <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
                 <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique Commandes</button>
-                <button onclick="openAdminModal()" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
+                <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
             </div>
         </header>
 
+        <!-- VUE 1 : CAISSE (POS) -->
         <div id="view-pos" class="space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 gap-3">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs text-slate-400">Régime Fiscal :</span>
-                    <button onclick="setSaleType('sur_place')" id="btn-sur-place" class="px-3 py-1.5 rounded text-xs font-bold bg-sky-600 text-white transition">Sur Place (20%)</button>
-                    <button onclick="setSaleType('emporter')" id="btn-emporter" class="px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition">À Emporter (10%)</button>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-slate-400">Régime Service :</span>
+                    <button onclick="setSaleType('sur_place')" id="btn-sur-place" class="px-3 py-1.5 rounded text-xs font-bold bg-sky-600 text-white transition">Sur Place</button>
+                    <button onclick="setSaleType('emporter')" id="btn-emporter" class="px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition">À Emporter</button>
                 </div>
-                <input type="date" id="pos-date-input" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
+                <input type="date" id="pos-date-input" onchange="refreshActiveViews()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-4">
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                        <h2 class="text-sm font-semibold text-sky-300 mb-3">Burgers Signature & Plats</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-100">Cheer Classic Cheese Burger</h3>
-                                    <p class="text-[11px] text-slate-400">Bœuf charolais, cheddar affiné</p>
-                                </div>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
-                                    <div>
-                                        <span class="text-sky-400 font-mono font-bold">9.50 € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : 2.85 €</span>
-                                    </div>
-                                    <button onclick="addToCart('CHEER-BURGER-01', 'Cheer Classic Cheese Burger', 9.50, 2.85)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
-                                </div>
-                            </div>
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-100">Cheer Truffle Bacon Burger</h3>
-                                    <p class="text-[11px] text-slate-400">Bœuf, double cheddar, truffe</p>
-                                </div>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
-                                    <div>
-                                        <span class="text-sky-400 font-mono font-bold">12.50 € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : 3.75 €</span>
-                                    </div>
-                                    <button onclick="addToCart('CHEER-BURGER-02', 'Cheer Truffle Bacon Burger', 12.50, 3.75)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                        <h2 class="text-sm font-semibold text-sky-300 mb-3">Boissons & Vins</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-100">Boisson Artisanale / Limonade</h3>
-                                    <p class="text-[11px] text-slate-400">33cl</p>
-                                </div>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
-                                    <div>
-                                        <span class="text-sky-400 font-mono font-bold">3.50 € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : 1.00 €</span>
-                                    </div>
-                                    <button onclick="addToCart('BEV-COLA-01', 'Boisson Artisanale / Limonade', 3.50, 1.00)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
-                                </div>
-                            </div>
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-100">Verre de Vin Sélection</h3>
-                                    <p class="text-[11px] text-slate-400">Rouge / Blanc / Rosé</p>
-                                </div>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
-                                    <div>
-                                        <span class="text-sky-400 font-mono font-bold">6.00 € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : 2.00 €</span>
-                                    </div>
-                                    <button onclick="addToCart('BEV-WINE-01', 'Verre de Vin Sélection', 6.00, 2.00)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
-                        <h2 class="text-sm font-semibold text-sky-300 mb-3">Desserts & Fromages</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-100">Cheesecake Maison</h3>
-                                    <p class="text-[11px] text-slate-400">Coulis fruits rouges</p>
-                                </div>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
-                                    <div>
-                                        <span class="text-sky-400 font-mono font-bold">5.50 € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : 1.60 €</span>
-                                    </div>
-                                    <button onclick="addToCart('DESSERT-01', 'Cheesecake Maison', 5.50, 1.60)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
-                                </div>
-                            </div>
-                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-bold text-sm text-slate-100">Plateau de Fromages Affinés</h3>
-                                    <p class="text-[11px] text-slate-400">Sélection du terroir</p>
-                                </div>
-                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
-                                    <div>
-                                        <span class="text-sky-400 font-mono font-bold">14.00 € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : 4.50 €</span>
-                                    </div>
-                                    <button onclick="addToCart('CHEESE-PLATE-01', 'Plateau de Fromages Affinés', 14.00, 4.50)" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div id="catalog-container" class="lg:col-span-2 space-y-4"></div>
 
                 <div class="space-y-6">
                     <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-xl space-y-4">
@@ -137,29 +42,52 @@
                         <div id="cart-items-container" class="divide-y divide-slate-800 max-h-56 overflow-y-auto text-xs pr-1">
                             <p class="text-slate-500 text-center py-6">Panier vide.</p>
                         </div>
-                        <div class="flex gap-2 pt-2 border-t border-slate-800">
-                            <input type="text" id="coupon-input" placeholder="Code VIP" class="bg-slate-950 border border-slate-800 px-2 py-1.5 rounded uppercase font-mono text-xs w-full text-white"/>
-                            <button onclick="applyCoupon()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-xs text-sky-300 font-semibold">OK</button>
+
+                        <!-- Remises rapides 5% / 10% -->
+                        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                            <span class="text-[11px] text-slate-400 block">Réduction spéciale :</span>
+                            <div class="grid grid-cols-3 gap-2 text-xs font-mono">
+                                <button onclick="setQuickDiscount(0)" id="disc-btn-0" class="py-1.5 rounded font-bold bg-sky-600 text-white">0%</button>
+                                <button onclick="setQuickDiscount(5)" id="disc-btn-5" class="py-1.5 rounded font-bold bg-slate-800 text-slate-300">-5%</button>
+                                <button onclick="setQuickDiscount(10)" id="disc-btn-10" class="py-1.5 rounded font-bold bg-slate-800 text-slate-300">-10%</button>
+                            </div>
                         </div>
+
+                        <!-- Bons de réduction / codes -->
+                        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                            <span class="text-[11px] text-slate-400 block">Bon de réduction / Code (ex: BON15, CHEEZVIP, STAFF) :</span>
+                            <div class="flex gap-2">
+                                <input type="text" id="coupon-input" placeholder="CODE OU BON" class="bg-slate-950 border border-slate-800 px-2 py-1.5 rounded uppercase font-mono text-xs w-full text-white"/>
+                                <button onclick="applyCoupon()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-xs text-sky-300 font-semibold">Appliquer</button>
+                                <button onclick="clearCoupon()" class="bg-slate-900 border border-slate-800 hover:bg-slate-800 px-2.5 py-1.5 rounded text-xs text-slate-400">✕</button>
+                            </div>
+                            <p id="coupon-status" class="text-[11px] text-emerald-400 font-mono hidden"></p>
+                        </div>
+
                         <div class="font-mono space-y-1.5 pt-2 border-t border-slate-800 text-xs">
                             <div class="flex justify-between text-slate-400"><span>Sous-total HT :</span><span id="cart-ht">0.00 €</span></div>
-                            <div class="flex justify-between text-emerald-400" id="discount-row" style="display:none;"><span>Remise :</span><span id="cart-discount">0.00 €</span></div>
-                            <div class="flex justify-between text-slate-400"><span>TVA :</span><span id="cart-vat">0.00 €</span></div>
+                            <div class="flex justify-between text-emerald-400" id="discount-row" style="display:none;"><span>Remise totale :</span><span id="cart-discount">0.00 €</span></div>
+                            <div class="flex justify-between text-slate-400"><span>TVA ventilée :</span><span id="cart-vat">0.00 €</span></div>
                             <div class="flex justify-between text-sm font-bold text-white pt-1 border-t border-slate-800"><span>Total TTC :</span><span id="cart-total" class="text-sky-400">0.00 €</span></div>
                         </div>
+
                         <div class="grid grid-cols-2 gap-2 pt-2">
-                            <button onclick="checkout(false)" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold text-xs shadow transition">Valider Vente</button>
-                            <button onclick="checkout(true)" class="bg-amber-700 hover:bg-amber-600 text-white py-2.5 rounded font-bold text-xs shadow transition">Mode Test</button>
+                            <button onclick="checkout(false)" id="btn-checkout-real" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold text-xs shadow transition">Valider Vente</button>
+                            <button onclick="checkout(true)" id="btn-checkout-test" class="bg-amber-700 hover:bg-amber-600 text-white py-2.5 rounded font-bold text-xs shadow transition">Mode Test</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="view-pnl" class="hidden space-y-6 max-w-4xl mx-auto">
+        <!-- VUE 2 : RAPPORT P&L HYPER-VENTILÉ & Z -->
+        <div id="view-pnl" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
-                    <h2 class="text-base font-bold text-amber-400">Tableau de Bord P&L & Clôture Fiscale Z</h2>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-amber-400">Tableau de Bord P&L Hyper-Ventilé & Clôture Z</h2>
+                        <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span></p>
+                    </div>
                     <button onclick="generateZReport()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold transition">Générer Clôture Z</button>
                 </div>
 
@@ -182,16 +110,61 @@
                     </div>
                 </div>
 
+                <!-- Ventilation par rubriques & taux TVA -->
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold text-sky-300">Ventilation Fiscale par Rubrique & Taux TVA</h3>
+                    <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
+                        <table class="w-full text-left font-mono text-xs">
+                            <thead class="border-b border-slate-800 text-slate-400">
+                                <tr>
+                                    <th class="p-3">Rubrique</th>
+                                    <th class="p-3">Taux TVA</th>
+                                    <th class="p-3">Net HT</th>
+                                    <th class="p-3">TVA</th>
+                                    <th class="p-3">Total TTC</th>
+                                    <th class="p-3">COGS</th>
+                                    <th class="p-3">Marge</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pnl-buckets-body" class="divide-y divide-slate-900"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Analyse par produit (meilleures ventes) -->
+                <div class="space-y-3">
+                    <h3 class="text-sm font-bold text-emerald-300">Analyse par Produit (Classement par Volume Vendu)</h3>
+                    <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
+                        <table class="w-full text-left font-mono text-xs">
+                            <thead class="border-b border-slate-800 text-slate-400">
+                                <tr>
+                                    <th class="p-3">Produit</th>
+                                    <th class="p-3">Rubrique</th>
+                                    <th class="p-3">Qté Vendue</th>
+                                    <th class="p-3">CA Net HT</th>
+                                    <th class="p-3">COGS</th>
+                                    <th class="p-3">Marge Brute</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pnl-products-body" class="divide-y divide-slate-900"></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div id="z-report-card" class="hidden bg-slate-950 border border-amber-600/50 p-6 rounded-xl space-y-3 font-mono text-xs">
-                    <h3 class="font-bold text-amber-400 text-sm">Rapport Z Officiel Généré</h3>
+                    <h3 class="font-bold text-amber-400 text-sm">Rapport Z Officiel Détaillé</h3>
                     <div id="z-report-content" class="space-y-1 text-slate-300"></div>
                 </div>
             </div>
         </div>
 
+        <!-- VUE 3 : HISTORIQUE DES COMMANDES -->
         <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
-                <h2 class="text-base font-bold text-sky-300">Registre & Historique des Commandes</h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-base font-bold text-sky-300">Registre & Historique des Commandes</h2>
+                    <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour vérifier ou corriger</span>
+                </div>
                 <div id="history-container" class="space-y-2 font-mono text-xs">
                     <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
                 </div>
@@ -200,25 +173,264 @@
 
     </div>
 
+    <!-- MODAL DÉTAIL & MODIFICATION TICKET -->
+    <div id="ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full space-y-4 font-mono text-xs my-8">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-sky-400 text-sm">Détail Ticket : <span id="modal-tx-id"></span></h3>
+                <button onclick="closeTicketModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+            <div id="modal-tx-meta" class="text-slate-400 space-y-1"></div>
+            <div id="modal-tx-items" class="divide-y divide-slate-800 bg-slate-950 p-3 rounded-lg border border-slate-800"></div>
+            <div id="modal-tx-totals" class="space-y-1 pt-2 border-t border-slate-800"></div>
+            <div class="flex flex-wrap gap-2 pt-2">
+                <button onclick="requestEditCurrentTicket()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded font-bold flex-1">Modifier Ticket (PIN Manager)</button>
+                <button onclick="closeTicketModal()" class="bg-slate-800 px-3 py-2 rounded text-slate-300">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ÉDITION TICKET (APRÈS PIN) -->
+    <div id="edit-ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div class="bg-slate-900 border border-amber-700/60 p-6 rounded-2xl max-w-lg w-full space-y-4 font-mono text-xs my-8">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-amber-400 text-sm">Correction Ticket : <span id="edit-tx-id"></span></h3>
+                <button onclick="closeEditTicketModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">Régime Service</label>
+                    <select id="edit-sale-type" class="bg-slate-950 border border-slate-800 px-2 py-1.5 rounded w-full text-white">
+                        <option value="sur_place">Sur Place</option>
+                        <option value="emporter">À Emporter</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">Remise globale (%)</label>
+                    <input type="number" min="0" max="100" id="edit-discount-pct" class="bg-slate-950 border border-slate-800 px-2 py-1.5 rounded w-full text-white"/>
+                </div>
+            </div>
+            <div id="edit-items-list" class="space-y-2 bg-slate-950 p-3 rounded-lg border border-slate-800 max-h-56 overflow-y-auto"></div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveEditedTicket()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded w-full font-bold">Enregistrer & Recalculer</button>
+                <button onclick="closeEditTicketModal()" class="bg-slate-800 py-2 rounded w-full text-slate-300">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SÉCURITÉ ADMIN / MANAGER -->
     <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 font-mono text-xs">
-            <h3 class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN HOLDING</h3>
-            <p class="text-slate-400">Entrez le code PIN maître pour purger les tests :</p>
-            <input type="password" id="admin-pin-input" placeholder="PIN Master" class="bg-slate-950 border border-slate-800 px-3 py-2 rounded w-full text-white"/>
+            <h3 id="admin-modal-title" class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN HOLDING</h3>
+            <p id="admin-modal-desc" class="text-slate-400">Entrez le code PIN administrateur / manager :</p>
+            <input type="password" id="admin-pin-input" placeholder="PIN (ex: CHEEZ-ADMIN-2026)" class="bg-slate-950 border border-slate-800 px-3 py-2 rounded w-full text-white"/>
             <div class="flex gap-2">
-                <button onclick="confirmAdminPurge()" class="bg-rose-600 hover:bg-rose-500 text-white py-2 rounded w-full font-bold">Confirmer Purge</button>
+                <button onclick="submitAdminAction()" class="bg-rose-600 hover:bg-rose-500 text-white py-2 rounded w-full font-bold">Valider PIN</button>
                 <button onclick="closeAdminModal()" class="bg-slate-800 py-2 rounded w-full text-slate-300">Annuler</button>
             </div>
         </div>
     </div>
 
     <script>
+        const STORAGE_KEY = 'lexwallet_pos_tx_v1';
+        const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
+
+        // Rubriques fiscales et taux de TVA par régime
+        // plats: 10% sur place / 10% à emporter (ou 20% / 10% selon règle métier)
+        // boissons_soft: 20% sur place / 10% ou 20% selon configuration
+        // vins_alcools: 20% sur place / 20% à emporter
+        const RUBRICS = {
+            plats_emporter: { label: 'Plats à Emporter', vatPlace: 0.10, vatTakeout: 0.10 },
+            plats_sur_place: { label: 'Plats Sur Place', vatPlace: 0.20, vatTakeout: 0.10 },
+            boissons_soft: { label: 'Boissons Normal / Soft', vatPlace: 0.20, vatTakeout: 0.10 },
+            vins_alcools: { label: 'Vins, Alcools & Spiritueux', vatPlace: 0.20, vatTakeout: 0.20 }
+        };
+
+        const CATALOG_CATEGORIES = [
+            {
+                id: 'CAT-PLATS',
+                title: 'Plats & Burgers',
+                items: [
+                    { sku: 'CHEER-BURGER-01', name: 'Cheer Classic Cheese Burger', desc: 'Bœuf charolais, cheddar affiné', price_ht: 9.50, unit_cogs: 2.85, baseGroup: 'plats_sur_place' },
+                    { sku: 'CHEER-BURGER-02', name: 'Cheer Truffle Bacon Burger', desc: 'Bœuf, double cheddar, truffe', price_ht: 12.50, unit_cogs: 3.75, baseGroup: 'plats_sur_place' },
+                    { sku: 'CHEER-BOX-01', name: 'Box Frites & Cheese Emporter', desc: 'Format emballage thermique', price_ht: 8.50, unit_cogs: 2.30, baseGroup: 'plats_emporter' },
+                    { sku: 'CHEESE-PLATE-01', name: 'Plateau de Fromages Affinés', desc: 'Sélection du terroir', price_ht: 14.00, unit_cogs: 4.50, baseGroup: 'plats_sur_place' }
+                ]
+            },
+            {
+                id: 'CAT-SOFT',
+                title: 'Boissons Normal / Soft',
+                items: [
+                    { sku: 'BEV-COLA-01', name: 'Boisson Artisanale / Limonade', desc: '33cl', price_ht: 3.50, unit_cogs: 1.00, baseGroup: 'boissons_soft' },
+                    { sku: 'BEV-JUICE-01', name: 'Jus Pressé Maison', desc: '25cl frais', price_ht: 4.20, unit_cogs: 1.25, baseGroup: 'boissons_soft' }
+                ]
+            },
+            {
+                id: 'CAT-ALCOOL',
+                title: 'Vins, Alcools & Spiritueux',
+                items: [
+                    { sku: 'BEV-WINE-01', name: 'Verre de Vin Sélection', desc: 'Rouge / Blanc / Rosé', price_ht: 6.00, unit_cogs: 2.00, baseGroup: 'vins_alcools' },
+                    { sku: 'SPIRIT-01', name: 'Spiritueux Signature (4cl)', desc: 'Service bar', price_ht: 8.50, unit_cogs: 2.60, baseGroup: 'vins_alcools' }
+                ]
+            }
+        ];
+
+        const VOUCHER_CODES = {
+            'CHEEZVIP': { type: 'percent', value: 10, label: 'Bon VIP (-10%)' },
+            'STAFF': { type: 'percent', value: 20, label: 'Bon Staff (-20%)' },
+            'BONUS5': { type: 'fixed_ht', value: 5.00, label: 'Bon -5.00 € HT' },
+            'BONUS10': { type: 'fixed_ht', value: 10.00, label: 'Bon -10.00 € HT' }
+        };
+
         let cart = [];
-        let transactions = [];
+        let transactions = loadTransactions();
         let saleType = 'sur_place';
-        let discountPercent = 0;
+        let quickDiscountPercent = 0;
+        let activeVoucher = null;
+        let adminActionMode = null;
+        let selectedTicketIndex = null;
+        let zSequenceCounter = 1050;
 
         document.getElementById('pos-date-input').value = new Date().toISOString().split('T')[0];
+        renderCatalog();
+        updateCartUI();
+
+        function loadTransactions() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function persistTransactions() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+            } catch (_) {}
+        }
+
+        function getItemRubricKey(baseGroup, currentSaleType) {
+            if (currentSaleType === 'emporter' && (baseGroup === 'plats_sur_place' || baseGroup === 'plats_emporter')) {
+                return 'plats_emporter';
+            }
+            if (currentSaleType === 'sur_place' && baseGroup === 'plats_emporter') {
+                return 'plats_sur_place';
+            }
+            return baseGroup;
+        }
+
+        function getVatRateForItem(item, currentSaleType) {
+            const rubricKey = getItemRubricKey(item.baseGroup, currentSaleType);
+            const rubric = RUBRICS[rubricKey] || RUBRICS.plats_sur_place;
+            const rate = currentSaleType === 'emporter' ? rubric.vatTakeout : rubric.vatPlace;
+            return { rubricKey, rubricLabel: rubric.label, rate };
+        }
+
+        function computeCartBreakdown(items, currentSaleType, discPct, voucher) {
+            const rawSubtotalHt = items.reduce((acc, i) => acc + (i.price_ht * i.qty), 0);
+            const cogsTotal = items.reduce((acc, i) => acc + (i.unit_cogs * i.qty), 0);
+
+            const pctDiscountAmount = rawSubtotalHt * (Math.min(100, Math.max(0, discPct)) / 100);
+            let voucherDiscountAmount = 0;
+            if (voucher) {
+                if (voucher.type === 'percent') {
+                    voucherDiscountAmount = (rawSubtotalHt - pctDiscountAmount) * (voucher.value / 100);
+                } else if (voucher.type === 'fixed_ht') {
+                    voucherDiscountAmount = Math.min(rawSubtotalHt - pctDiscountAmount, voucher.value);
+                }
+            }
+
+            const totalDiscountHt = Math.min(rawSubtotalHt, pctDiscountAmount + voucherDiscountAmount);
+            const netHt = Math.max(0, rawSubtotalHt - totalDiscountHt);
+            const discountRatio = rawSubtotalHt > 0 ? (netHt / rawSubtotalHt) : 1;
+
+            const bucketMap = {};
+            Object.keys(RUBRICS).forEach(k => {
+                bucketMap[k] = { key: k, label: RUBRICS[k].label, rate: 0, ht: 0, vat: 0, ttc: 0, cogs: 0, margin: 0 };
+            });
+
+            let totalVat = 0;
+            const enrichedLines = items.map(item => {
+                const lineRawHt = item.price_ht * item.qty;
+                const lineNetHt = lineRawHt * discountRatio;
+                const lineCogs = item.unit_cogs * item.qty;
+                const { rubricKey, rubricLabel, rate } = getVatRateForItem(item, currentSaleType);
+                const lineVat = lineNetHt * rate;
+                const lineTtc = lineNetHt + lineVat;
+                const lineMargin = lineNetHt - lineCogs;
+
+                totalVat += lineVat;
+                const b = bucketMap[rubricKey];
+                b.rate = rate;
+                b.ht += lineNetHt;
+                b.vat += lineVat;
+                b.ttc += lineTtc;
+                b.cogs += lineCogs;
+                b.margin += lineMargin;
+
+                return {
+                    ...item,
+                    rubricKey,
+                    rubricLabel,
+                    vatRate: rate,
+                    lineNetHt,
+                    lineVat,
+                    lineTtc,
+                    lineCogs,
+                    lineMargin
+                };
+            });
+
+            const totalTtc = netHt + totalVat;
+            const grossMargin = netHt - cogsTotal;
+
+            return {
+                rawSubtotalHt,
+                totalDiscountHt,
+                netHt,
+                totalVat,
+                totalTtc,
+                cogsTotal,
+                grossMargin,
+                buckets: Object.values(bucketMap),
+                lines: enrichedLines
+            };
+        }
+
+        function renderCatalog() {
+            const container = document.getElementById('catalog-container');
+            container.innerHTML = CATALOG_CATEGORIES.map(cat => `
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                    <h2 class="text-sm font-semibold text-sky-300 mb-3">${cat.title}</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${cat.items.map(item => `
+                            <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-100">${item.name}</h3>
+                                    <p class="text-[11px] text-slate-400">${item.desc}</p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
+                                    <div>
+                                        <span class="text-sky-400 font-mono font-bold">${item.price_ht.toFixed(2)} € HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : ${item.unit_cogs.toFixed(2)} €</span>
+                                    </div>
+                                    <button onclick="addToCart('${item.sku}')" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function findCatalogItem(sku) {
+            for (const cat of CATALOG_CATEGORIES) {
+                const found = cat.items.find(i => i.sku === sku);
+                if (found) return found;
+            }
+            return null;
+        }
 
         function switchTab(tab) {
             ['pos', 'pnl', 'history'].forEach(t => {
@@ -227,9 +439,12 @@
             });
             document.getElementById('view-' + tab).classList.remove('hidden');
             document.getElementById('tab-btn-' + tab).className = "px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition";
+            refreshActiveViews();
+        }
 
-            if (tab === 'pnl') updatePnL();
-            if (tab === 'history') updateHistory();
+        function refreshActiveViews() {
+            if (!document.getElementById('view-pnl').classList.contains('hidden')) updatePnL();
+            if (!document.getElementById('view-history').classList.contains('hidden')) updateHistory();
         }
 
         function setSaleType(type) {
@@ -240,12 +455,56 @@
             updateCartUI();
         }
 
-        function addToCart(sku, name, price_ht, unit_cogs) {
+        function setQuickDiscount(pct) {
+            quickDiscountPercent = pct;
+            [0, 5, 10].forEach(val => {
+                const btn = document.getElementById('disc-btn-' + val);
+                btn.className = val === pct
+                    ? "py-1.5 rounded font-bold bg-sky-600 text-white"
+                    : "py-1.5 rounded font-bold bg-slate-800 text-slate-300";
+            });
+            updateCartUI();
+        }
+
+        function applyCoupon() {
+            const rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
+            if (!rawCode) {
+                alert("Saisissez un code ou bon de réduction.");
+                return;
+            }
+            if (VOUCHER_CODES[rawCode]) {
+                activeVoucher = { code: rawCode, ...VOUCHER_CODES[rawCode] };
+            } else {
+                const matchPct = rawCode.match(/^BON(\d{1,2})$/);
+                if (matchPct) {
+                    const val = Math.min(80, Math.max(1, parseInt(matchPct[1], 10)));
+                    activeVoucher = { code: rawCode, type: 'percent', value: val, label: `Bon ${rawCode} (-${val}%)` };
+                } else {
+                    alert("Code inconnu. Utilisez CHEEZVIP, STAFF, BONUS5, BONUS10 ou BON15.");
+                    return;
+                }
+            }
+            const statusEl = document.getElementById('coupon-status');
+            statusEl.innerText = `Actif : ${activeVoucher.label}`;
+            statusEl.classList.remove('hidden');
+            updateCartUI();
+        }
+
+        function clearCoupon() {
+            activeVoucher = null;
+            document.getElementById('coupon-input').value = '';
+            document.getElementById('coupon-status').classList.add('hidden');
+            updateCartUI();
+        }
+
+        function addToCart(sku) {
+            const base = findCatalogItem(sku);
+            if (!base) return;
             const existing = cart.find(i => i.sku === sku);
             if (existing) {
-                existing.qty++;
+                existing.qty += 1;
             } else {
-                cart.push({ sku, name, price_ht, unit_cogs, qty: 1 });
+                cart.push({ ...base, qty: 1 });
             }
             updateCartUI();
         }
@@ -255,23 +514,10 @@
             updateCartUI();
         }
 
-        function applyCoupon() {
-            const code = document.getElementById('coupon-input').value.trim().toUpperCase();
-            if (code === 'CHEEZVIP') {
-                discountPercent = 10;
-                alert("Coupon VIP appliqué : -10%.");
-            } else if (code === 'STAFF') {
-                discountPercent = 20;
-                alert("Coupon Staff appliqué : -20%.");
-            } else {
-                alert("Code de réduction invalide.");
-                discountPercent = 0;
-            }
-            updateCartUI();
-        }
-
         function updateCartUI() {
             const container = document.getElementById('cart-items-container');
+            const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher);
+
             if (cart.length === 0) {
                 container.innerHTML = '<p class="text-slate-500 text-center py-6">Panier vide.</p>';
                 document.getElementById('cart-ht').innerText = '0.00 €';
@@ -281,111 +527,217 @@
                 return;
             }
 
-            let html = '';
-            let rawSubtotal = 0;
-            let totalCogs = 0;
-
-            cart.forEach((item, idx) => {
-                const itemTotalHt = item.price_ht * item.qty;
-                rawSubtotal += itemTotalHt;
-                totalCogs += item.unit_cogs * item.qty;
-                html += `<div class="py-2 flex justify-between items-center">
+            container.innerHTML = bd.lines.map((line, idx) => `
+                <div class="py-2 flex justify-between items-center gap-2">
                     <div>
-                        <p class="font-medium text-slate-200">${item.name}</p>
-                        <p class="text-[10px] text-slate-400">Qté : ${item.qty} × ${item.price_ht.toFixed(2)} €</p>
+                        <p class="font-medium text-slate-200">${line.name}</p>
+                        <p class="text-[10px] text-slate-400">Qté : ${line.qty} × ${line.price_ht.toFixed(2)} € • TVA ${(line.vatRate * 100).toFixed(0)}%</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="font-mono text-sky-300">${itemTotalHt.toFixed(2)} €</span>
+                        <span class="font-mono text-sky-300">${line.lineNetHt.toFixed(2)} €</span>
                         <button onclick="removeFromCart(${idx})" class="text-rose-400 font-bold px-1">✕</button>
                     </div>
-                </div>`;
-            });
+                </div>
+            `).join('');
 
-            container.innerHTML = html;
-
-            const discountAmount = rawSubtotal * (discountPercent / 100);
-            const netHt = rawSubtotal - discountAmount;
-            const vatRate = saleType === 'emporter' ? 0.10 : 0.20;
-            const vat = netHt * vatRate;
-            const totalTtc = netHt + vat;
-
-            document.getElementById('cart-ht').innerText = netHt.toFixed(2) + ' €';
-            if (discountPercent > 0) {
+            document.getElementById('cart-ht').innerText = bd.netHt.toFixed(2) + ' €';
+            if (bd.totalDiscountHt > 0) {
                 document.getElementById('discount-row').style.display = 'flex';
-                document.getElementById('cart-discount').innerText = '-' + discountAmount.toFixed(2) + ' € (' + discountPercent + '%)';
+                document.getElementById('cart-discount').innerText = '-' + bd.totalDiscountHt.toFixed(2) + ' €';
             } else {
                 document.getElementById('discount-row').style.display = 'none';
             }
-            document.getElementById('cart-vat').innerText = vat.toFixed(2) + ' €';
-            document.getElementById('cart-total').innerText = totalTtc.toFixed(2) + ' €';
+            document.getElementById('cart-vat').innerText = bd.totalVat.toFixed(2) + ' €';
+            document.getElementById('cart-total').innerText = bd.totalTtc.toFixed(2) + ' €';
         }
 
-        function checkout(isTest) {
+        async function checkout(isTest) {
             if (cart.length === 0) return;
-
-            let rawSubtotal = cart.reduce((acc, i) => acc + (i.price_ht * i.qty), 0);
-            let discountAmount = rawSubtotal * (discountPercent / 100);
-            let netHt = rawSubtotal - discountAmount;
-            let cogsTotal = cart.reduce((acc, i) => acc + (i.unit_cogs * i.qty), 0);
-            let vatRate = saleType === 'emporter' ? 0.10 : 0.20;
-            let vat = netHt * vatRate;
-            let totalTtc = netHt + vat;
+            const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher);
+            const selectedDate = document.getElementById('pos-date-input').value;
 
             const tx = {
                 id: 'TX-' + Date.now(),
-                date: document.getElementById('pos-date-input').value,
+                terminalId: 'LEX-POS-TERM-01',
+                date: selectedDate,
+                timestamp: new Date().toISOString(),
                 time: new Date().toLocaleTimeString(),
                 is_test: isTest,
                 sale_type: saleType,
-                total_ttc: totalTtc,
-                total_ht: netHt,
-                vat: vat,
-                cogs: cogsTotal,
-                items: [...cart]
+                quick_discount_pct: quickDiscountPercent,
+                voucher: activeVoucher ? { ...activeVoucher } : null,
+                discount_ht: Number(bd.totalDiscountHt.toFixed(2)),
+                total_ht: Number(bd.netHt.toFixed(2)),
+                vat: Number(bd.totalVat.toFixed(2)),
+                total_ttc: Number(bd.totalTtc.toFixed(2)),
+                cogs: Number(bd.cogsTotal.toFixed(2)),
+                gross_margin: Number(bd.grossMargin.toFixed(2)),
+                buckets: bd.buckets,
+                items: cart.map(i => ({ ...i }))
             };
 
             transactions.unshift(tx);
+            persistTransactions();
+
+            try {
+                await fetch('https://delegal.dev/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(tx)
+                });
+            } catch (_) {}
+
             cart = [];
-            discountPercent = 0;
-            document.getElementById('coupon-input').value = '';
+            quickDiscountPercent = 0;
+            activeVoucher = null;
+            setQuickDiscount(0);
+            clearCoupon();
             updateCartUI();
 
-            alert(isTest ? "[MODE TEST] Enregistré hors CA." : `Encaissement validé !\nTotal : ${totalTtc.toFixed(2)} € TTC`);
+            alert(isTest ? "[MODE TEST] Enregistré hors CA." : `Encaissement validé !\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
+        }
+
+        function aggregateDayData(dateStr) {
+            const activeTxs = transactions.filter(t => !t.is_test && t.date === dateStr);
+            const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
+            const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
+            const vat = activeTxs.reduce((acc, t) => acc + t.vat, 0);
+            const cogs = activeTxs.reduce((acc, t) => acc + t.cogs, 0);
+            const margin = ht - cogs;
+
+            const bucketTotals = {};
+            Object.keys(RUBRICS).forEach(k => {
+                const r = RUBRICS[k];
+                bucketTotals[k] = {
+                    key: k,
+                    label: r.label,
+                    rateLabel: `${(r.vatPlace * 100).toFixed(0)}% / ${(r.vatTakeout * 100).toFixed(0)}%`,
+                    ht: 0,
+                    vat: 0,
+                    ttc: 0,
+                    cogs: 0,
+                    margin: 0
+                };
+            });
+
+            const productMap = {};
+
+            activeTxs.forEach(tx => {
+                const recomputed = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
+                recomputed.buckets.forEach(b => {
+                    const target = bucketTotals[b.key];
+                    if (target) {
+                        target.ht += b.ht;
+                        target.vat += b.vat;
+                        target.ttc += b.ttc;
+                        target.cogs += b.cogs;
+                        target.margin += b.margin;
+                    }
+                });
+
+                recomputed.lines.forEach(line => {
+                    if (!productMap[line.sku]) {
+                        productMap[line.sku] = {
+                            sku: line.sku,
+                            name: line.name,
+                            rubricLabel: line.rubricLabel,
+                            qty: 0,
+                            ht: 0,
+                            cogs: 0,
+                            margin: 0
+                        };
+                    }
+                    productMap[line.sku].qty += line.qty;
+                    productMap[line.sku].ht += line.lineNetHt;
+                    productMap[line.sku].cogs += line.lineCogs;
+                    productMap[line.sku].margin += line.lineMargin;
+                });
+            });
+
+            const topProducts = Object.values(productMap).sort((a, b) => b.qty - a.qty);
+
+            return {
+                activeTxs,
+                ca,
+                ht,
+                vat,
+                cogs,
+                margin,
+                buckets: Object.values(bucketTotals),
+                topProducts
+            };
         }
 
         function updatePnL() {
             const selectedDate = document.getElementById('pos-date-input').value;
-            const activeTxs = transactions.filter(t => !t.is_test && t.date === selectedDate);
+            document.getElementById('pnl-date-label').innerText = selectedDate;
+            const data = aggregateDayData(selectedDate);
 
-            const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
-            const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
-            const cogs = activeTxs.reduce((acc, t) => acc + t.cogs, 0);
-            const margin = ht - cogs;
+            document.getElementById('pnl-ca').innerText = data.ca.toFixed(2) + ' €';
+            document.getElementById('pnl-ht').innerText = data.ht.toFixed(2) + ' €';
+            document.getElementById('pnl-cogs').innerText = '-' + data.cogs.toFixed(2) + ' €';
+            document.getElementById('pnl-margin').innerText = data.margin.toFixed(2) + ' €';
 
-            document.getElementById('pnl-ca').innerText = ca.toFixed(2) + ' €';
-            document.getElementById('pnl-ht').innerText = ht.toFixed(2) + ' €';
-            document.getElementById('pnl-cogs').innerText = '-' + cogs.toFixed(2) + ' €';
-            document.getElementById('pnl-margin').innerText = margin.toFixed(2) + ' €';
+            document.getElementById('pnl-buckets-body').innerHTML = data.buckets.map(b => `
+                <tr>
+                    <td class="p-3 text-slate-200 font-semibold">${b.label}</td>
+                    <td class="p-3 text-amber-300">${b.rateLabel}</td>
+                    <td class="p-3 text-slate-200">${b.ht.toFixed(2)} €</td>
+                    <td class="p-3 text-slate-300">${b.vat.toFixed(2)} €</td>
+                    <td class="p-3 text-sky-400 font-bold">${b.ttc.toFixed(2)} €</td>
+                    <td class="p-3 text-amber-400">-${b.cogs.toFixed(2)} €</td>
+                    <td class="p-3 text-emerald-400 font-bold">${b.margin.toFixed(2)} €</td>
+                </tr>
+            `).join('');
+
+            const prodBody = document.getElementById('pnl-products-body');
+            if (data.topProducts.length === 0) {
+                prodBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date.</td></tr>';
+            } else {
+                prodBody.innerHTML = data.topProducts.map(p => `
+                    <tr>
+                        <td class="p-3 text-slate-100 font-bold">${p.name}</td>
+                        <td class="p-3 text-slate-400">${p.rubricLabel}</td>
+                        <td class="p-3 text-sky-300 font-bold">${p.qty}</td>
+                        <td class="p-3 text-slate-200">${p.ht.toFixed(2)} €</td>
+                        <td class="p-3 text-amber-400">-${p.cogs.toFixed(2)} €</td>
+                        <td class="p-3 text-emerald-400 font-bold">${p.margin.toFixed(2)} €</td>
+                    </tr>
+                `).join('');
+            }
         }
 
         function generateZReport() {
             const selectedDate = document.getElementById('pos-date-input').value;
-            const activeTxs = transactions.filter(t => !t.is_test && t.date === selectedDate);
+            const data = aggregateDayData(selectedDate);
+            zSequenceCounter += 1;
 
-            const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
-            const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
-            const vat = activeTxs.reduce((acc, t) => acc + t.vat, 0);
+            const bucketLines = data.buckets.map(b =>
+                `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`
+            ).join('');
+
+            const topProductLines = data.topProducts.slice(0, 5).map(p =>
+                `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (Marge ${p.margin.toFixed(2)} €)</p>`
+            ).join('');
 
             const card = document.getElementById('z-report-card');
             card.classList.remove('hidden');
             document.getElementById('z-report-content').innerHTML = `
                 <p><strong>Terminal ID :</strong> LEX-POS-TERM-01</p>
-                <p><strong>Séquence Z # :</strong> 1050</p>
+                <p><strong>Séquence Z # :</strong> ${zSequenceCounter}</p>
                 <p><strong>Date ciblée :</strong> ${selectedDate}</p>
-                <p><strong>Tickets émis :</strong> ${activeTxs.length}</p>
-                <p><strong>Total HT :</strong> ${ht.toFixed(2)} €</p>
-                <p><strong>TVA Collectée :</strong> ${vat.toFixed(2)} €</p>
-                <p class="text-white pt-1 border-t border-slate-800"><strong>Grand Total TTC :</strong> ${ca.toFixed(2)} €</p>
+                <p><strong>Tickets valides :</strong> ${data.activeTxs.length}</p>
+                <p class="pt-2 text-amber-300 font-bold">Ventilation par Rubrique & TVA :</p>
+                ${bucketLines}
+                <p class="pt-2 text-emerald-300 font-bold">Top Produits Vendus :</p>
+                ${topProductLines || '<p class="pl-2 text-slate-500">Aucun produit vendu</p>'}
+                <div class="pt-2 mt-2 border-t border-slate-800 text-white space-y-1">
+                    <p><strong>Total Net HT :</strong> ${data.ht.toFixed(2)} €</p>
+                    <p><strong>TVA Totale Collectée :</strong> ${data.vat.toFixed(2)} €</p>
+                    <p><strong>COGS Total :</strong> -${data.cogs.toFixed(2)} €</p>
+                    <p><strong>Marge Brute :</strong> ${data.margin.toFixed(2)} €</p>
+                    <p class="text-sky-400"><strong>Grand Total TTC :</strong> ${data.ca.toFixed(2)} €</p>
+                </div>
             `;
         }
 
@@ -396,20 +748,69 @@
                 return;
             }
 
-            let html = '';
-            transactions.forEach(t => {
-                html += `<div class="p-3 rounded-lg border ${t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300'}">
-                    <div class="flex justify-between font-bold text-sm mb-1">
-                        <span>${t.id} ${t.is_test ? '(TEST)' : ''}</span>
-                        <span class="text-sky-400">${t.total_ttc.toFixed(2)} € TTC</span>
+            container.innerHTML = transactions.map((t, idx) => {
+                const qtySum = (t.items || []).reduce((a, b) => a + b.qty, 0);
+                return `
+                    <div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border transition hover:border-sky-500 ${t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300'}">
+                        <div class="flex justify-between font-bold text-sm mb-1">
+                            <span>${t.id} ${t.is_test ? '(TEST)' : ''} ${t.edited_at ? '(MODIFIÉ)' : ''}</span>
+                            <span class="text-sky-400">${Number(t.total_ttc).toFixed(2)} € TTC</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500">${t.date} à ${t.time} • Régime : ${t.sale_type} • Articles : ${qtySum} • Cliquer pour inspecter</p>
                     </div>
-                    <p class="text-[10px] text-slate-500">${t.date} à ${t.time} • Régime : ${t.sale_type} • Articles : ${t.items.reduce((a, b) => a + b.qty, 0)}</p>
-                </div>`;
-            });
-            container.innerHTML = html;
+                `;
+            }).join('');
         }
 
-        function openAdminModal() {
+        function openTicketModal(index) {
+            selectedTicketIndex = index;
+            const tx = transactions[index];
+            if (!tx) return;
+            const bd = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
+
+            document.getElementById('modal-tx-id').innerText = tx.id;
+            document.getElementById('modal-tx-meta').innerHTML = `
+                <p>Date : ${tx.date} à ${tx.time}</p>
+                <p>Régime : ${tx.sale_type === 'emporter' ? 'À Emporter' : 'Sur Place'} • Type : ${tx.is_test ? 'TEST' : 'RÉEL'}</p>
+                ${tx.voucher ? `<p class="text-emerald-400">Bon : ${tx.voucher.label}</p>` : ''}
+                ${tx.edited_at ? `<p class="text-amber-400">Dernière correction : ${tx.edited_at}</p>` : ''}
+            `;
+
+            document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `
+                <div class="py-1.5 flex justify-between">
+                    <span>${l.name} (x${l.qty}) <span class="text-[10px] text-slate-500">[TVA ${(l.vatRate * 100).toFixed(0)}%]</span></span>
+                    <span class="text-sky-300">${l.lineNetHt.toFixed(2)} € HT</span>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-tx-totals').innerHTML = `
+                <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
+                <div class="flex justify-between"><span>TVA :</span><span>${bd.totalVat.toFixed(2)} €</span></div>
+                <div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${bd.totalTtc.toFixed(2)} €</span></div>
+            `;
+
+            document.getElementById('ticket-modal').classList.remove('hidden');
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticket-modal').classList.add('hidden');
+        }
+
+        function requestEditCurrentTicket() {
+            closeTicketModal();
+            openAdminModal('edit_ticket');
+        }
+
+        function openAdminModal(mode) {
+            adminActionMode = mode;
+            document.getElementById('admin-pin-input').value = '';
+            if (mode === 'edit_ticket') {
+                document.getElementById('admin-modal-title').innerText = 'AUTORISATION MANAGER — ÉDITION TICKET';
+                document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Manager pour modifier ce ticket :';
+            } else {
+                document.getElementById('admin-modal-title').innerText = 'SÉCURITÉ ADMIN HOLDING';
+                document.getElementById('admin-modal-desc').innerText = 'Entrez le code PIN maître pour purger les tests :';
+            }
             document.getElementById('admin-modal').classList.remove('hidden');
         }
 
@@ -418,16 +819,84 @@
             document.getElementById('admin-pin-input').value = '';
         }
 
-        function confirmAdminPurge() {
+        function submitAdminAction() {
             const pin = document.getElementById('admin-pin-input').value.trim();
-            if (pin !== 'CHEEZ-ADMIN-2026') {
-                alert("Code PIN Administrateur Holding incorrect.");
+            if (pin !== MANAGER_PIN) {
+                alert("Code PIN Administrateur / Manager incorrect.");
                 return;
             }
-            transactions = transactions.filter(t => !t.is_test);
-            alert("Purge des transactions de test effectuée avec succès.");
+            const mode = adminActionMode;
             closeAdminModal();
-            updateHistory();
+
+            if (mode === 'purge') {
+                transactions = transactions.filter(t => !t.is_test);
+                persistTransactions();
+                alert("Purge des transactions de test effectuée avec succès.");
+                refreshActiveViews();
+            } else if (mode === 'edit_ticket' && selectedTicketIndex !== null) {
+                openEditTicketModal(selectedTicketIndex);
+            }
+        }
+
+        function openEditTicketModal(index) {
+            const tx = transactions[index];
+            if (!tx) return;
+            document.getElementById('edit-tx-id').innerText = tx.id;
+            document.getElementById('edit-sale-type').value = tx.sale_type || 'sur_place';
+            document.getElementById('edit-discount-pct').value = tx.quick_discount_pct || 0;
+
+            document.getElementById('edit-items-list').innerHTML = (tx.items || []).map((item, idx) => `
+                <div class="flex justify-between items-center gap-2 py-1 border-b border-slate-900">
+                    <span class="text-slate-200">${item.name}</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-slate-400">Qté</span>
+                        <input type="number" min="0" id="edit-qty-${idx}" value="${item.qty}" class="w-14 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('edit-ticket-modal').classList.remove('hidden');
+        }
+
+        function closeEditTicketModal() {
+            document.getElementById('edit-ticket-modal').classList.add('hidden');
+        }
+
+        function saveEditedTicket() {
+            const tx = transactions[selectedTicketIndex];
+            if (!tx) return;
+
+            const newSaleType = document.getElementById('edit-sale-type').value;
+            const newDiscPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('edit-discount-pct').value) || 0));
+
+            const updatedItems = (tx.items || [])
+                .map((item, idx) => {
+                    const q = Math.max(0, parseInt(document.getElementById(`edit-qty-${idx}`).value, 10) || 0);
+                    return { ...item, qty: q };
+                })
+                .filter(i => i.qty > 0);
+
+            const bd = computeCartBreakdown(updatedItems, newSaleType, newDiscPct, tx.voucher || null);
+
+            transactions[selectedTicketIndex] = {
+                ...tx,
+                sale_type: newSaleType,
+                quick_discount_pct: newDiscPct,
+                items: updatedItems,
+                discount_ht: Number(bd.totalDiscountHt.toFixed(2)),
+                total_ht: Number(bd.netHt.toFixed(2)),
+                vat: Number(bd.totalVat.toFixed(2)),
+                total_ttc: Number(bd.totalTtc.toFixed(2)),
+                cogs: Number(bd.cogsTotal.toFixed(2)),
+                gross_margin: Number(bd.grossMargin.toFixed(2)),
+                buckets: bd.buckets,
+                edited_at: new Date().toLocaleTimeString()
+            };
+
+            persistTransactions();
+            closeEditTicketModal();
+            refreshActiveViews();
+            alert("Ticket mis à jour et P&L recalculé.");
         }
     </script>
 </body>
