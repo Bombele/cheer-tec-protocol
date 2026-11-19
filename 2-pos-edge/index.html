@@ -12,13 +12,14 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé, Stocks, Fournisseurs & Traçabilité QR</p>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Hyper-Ventilé, Stocks, Fournisseurs, Recettes & QR</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
                 <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
                 <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique & QR</button>
                 <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks & Fournisseurs</button>
+                <button onclick="switchTab('recipes')" id="tab-btn-recipes" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Recettes & Traçabilité</button>
                 <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
             </div>
         </header>
@@ -87,7 +88,10 @@
                         <h2 class="text-base font-bold text-amber-400">Tableau de Bord P&L Hyper-Ventilé & Clôture Z</h2>
                         <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span></p>
                     </div>
-                    <button onclick="generateZReport()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold transition">Générer Clôture Z</button>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold transition">Export CSV Audit / Subvention</button>
+                        <button onclick="generateZReport()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold transition">Générer Clôture Z</button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono">
@@ -158,8 +162,8 @@
         <!-- VUE 3 : HISTORIQUE DES COMMANDES & TRAÇABILITÉ QR -->
         <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-base font-bold text-sky-300">Registre, Traçabilité QR & Historique</h2>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <h2 class="text-base font-bold text-sky-300">Registre, Traçabilité QR & Historique Horodaté</h2>
                     <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR traçabilité, modification ou annulation</span>
                 </div>
                 <div id="history-container" class="space-y-2 font-mono text-xs">
@@ -174,9 +178,10 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
                         <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé, Fournisseurs & Bons de Commande</h2>
-                        <p class="text-xs text-slate-400 font-mono">Stock de départ éditable • Déduction synchronisée sur ventes réelles • Validation superviseur</p>
+                        <p class="text-xs text-slate-400 font-mono">Stock de départ éditable • Sélecteur fournisseur par ingrédient • Validation superviseur</p>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs font-mono">
+                        <button onclick="exportAuditCsv()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export CSV</button>
                         <button onclick="exportBackupJson()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Export JSON</button>
                         <label class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded font-bold cursor-pointer">
                             Import JSON
@@ -185,13 +190,13 @@
                     </div>
                 </div>
 
-                <!-- Tableau des stocks synchronisés -->
+                <!-- Tableau des stocks synchronisés avec sélecteur fournisseur -->
                 <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
                     <table class="w-full text-left font-mono text-xs">
                         <thead class="border-b border-slate-800 text-slate-400">
                             <tr>
                                 <th class="p-3">Ingrédient</th>
-                                <th class="p-3">Fournisseur & Lot</th>
+                                <th class="p-3">Fournisseur Assigné</th>
                                 <th class="p-3">Stock Départ</th>
                                 <th class="p-3">Consommé</th>
                                 <th class="p-3">Stock Actuel</th>
@@ -202,35 +207,60 @@
                     </table>
                 </div>
 
-                <!-- Portefeuille Fournisseurs & Ajout Fournisseur -->
+                <!-- Fiches Fournisseurs Complètes & Portefeuille Produits -->
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
-                        <h3 class="text-sm font-bold text-sky-300">Portefeuille Fournisseurs</h3>
-                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                            <input type="text" id="new-sup-name" placeholder="Nom fournisseur" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                            <input type="text" id="new-sup-origin" placeholder="Origine / Certif" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                            <button onclick="addSupplier()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded font-bold text-xs">+ Fournisseur</button>
-                        </div>
+                    <h3 class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                        <input type="text" id="new-sup-name" placeholder="Nom fournisseur*" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="new-sup-address" placeholder="Adresse complète" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="new-sup-contact" placeholder="Contact (tél / email)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="new-sup-vat-reg" placeholder="N° TVA & N° Entreprise" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <button onclick="addSupplier()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
                     </div>
                     <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                 </div>
 
                 <!-- Suggestions Automatiques de Bons de Commande à Valider par le Superviseur -->
                 <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-4 font-mono text-xs">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
-                            <p class="text-[11px] text-slate-400">Générées automatiquement lorsque Stock Actuel &lt; Seuil Min</p>
-                        </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
+                        <p class="text-[11px] text-slate-400">Générées automatiquement lorsque Stock Actuel &lt; Seuil Min</p>
                     </div>
                     <div id="suggested-po-container" class="space-y-3"></div>
                     <div id="validated-po-history" class="space-y-2 pt-3 border-t border-slate-800"></div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Correspondance Articles <-> Ingrédients -->
-                <div class="space-y-3">
-                    <h3 class="text-sm font-bold text-emerald-300">Recettes Articles & Traçabilité Matières</h3>
-                    <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 font-mono text-xs"></div>
+        <!-- VUE 5 : RECETTES ARTICLES & TRAÇABILITÉ MATIÈRES (ONGLET DÉDIÉ) -->
+        <div id="view-recipes" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-emerald-400">Recettes Articles & Traçabilité Matières</h2>
+                        <p class="text-xs text-slate-400 font-mono">Synchronisation temps réel avec l'inventaire, les lots de provenance et les fournisseurs</p>
+                    </div>
+                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold font-mono">Export Traçabilité CSV</button>
+                </div>
+
+                <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs"></div>
+
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 font-mono text-xs">
+                    <h3 class="text-sm font-bold text-sky-300">Registre des Lots & Provenances Actifs</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="border-b border-slate-800 text-slate-400">
+                                <tr>
+                                    <th class="p-2.5">Ingrédient</th>
+                                    <th class="p-2.5">N° Lot</th>
+                                    <th class="p-2.5">Fournisseur</th>
+                                    <th class="p-2.5">N° TVA / Entreprise</th>
+                                    <th class="p-2.5">Stock Actuel</th>
+                                </tr>
+                            </thead>
+                            <tbody id="traceability-lots-body" class="divide-y divide-slate-900"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -305,7 +335,8 @@
     </div>
 
     <script>
-        const TX_STORAGE_KEY = 'lexwallet_pos_tx_v2';
+        const TX_STORAGE_KEY_V2 = 'lexwallet_pos_tx_v2';
+        const TX_STORAGE_KEY_V1 = 'lexwallet_pos_tx_v1';
         const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
         const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
         const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
@@ -319,9 +350,33 @@
         };
 
         const DEFAULT_SUPPLIERS = [
-            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', origin: 'Farine CRC • Lot BN-2026-11' },
-            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', origin: 'Charolais / Fromages • Lot FT-2026-11' },
-            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', origin: 'Cave / Softs • Lot CB-2026-11' }
+            {
+                id: 'SUP-BOULANGERIE',
+                name: 'Boulangerie Artisanale Nord',
+                address: '14 Rue des Artisans, 1000 Bruxelles',
+                contact: '+32 2 555 0140 • compta@boulangerienord.example',
+                vatNumber: 'BE0412345678',
+                companyNumber: '0412.345.678',
+                origin: 'Farine CRC • Traçabilité Nord'
+            },
+            {
+                id: 'SUP-ELEVAGE',
+                name: 'Filière Bœuf & Terroir',
+                address: '88 Avenue du Marché, 4000 Liège',
+                contact: '+32 4 555 0192 • logistique@filiereterroir.example',
+                vatNumber: 'BE0523456789',
+                companyNumber: '0523.456.789',
+                origin: 'Élevage & Fromages Affinés'
+            },
+            {
+                id: 'SUP-CAVE',
+                name: 'Domaine & Boissons Pro',
+                address: '5 Quai des Chais, 2000 Anvers',
+                contact: '+32 3 555 0175 • commandes@domainecave.example',
+                vatNumber: 'BE0634567890',
+                companyNumber: '0634.567.890',
+                origin: 'Boissons Soft, Vins & Spiritueux'
+            }
         ];
 
         const DEFAULT_INGREDIENTS = [
@@ -423,12 +478,38 @@
         renderCatalog();
         updateCartUI();
 
+        function formatNowDateTime() {
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const time = now.toLocaleTimeString('fr-FR', { hour12: false });
+            return { date, time, full: `${date} ${time}` };
+        }
+
         function loadTransactions() {
-            try { return JSON.parse(localStorage.getItem(TX_STORAGE_KEY) || '[]'); } catch (_) { return []; }
+            try {
+                const v2Raw = localStorage.getItem(TX_STORAGE_KEY_V2);
+                const v1Raw = localStorage.getItem(TX_STORAGE_KEY_V1);
+                const v2List = v2Raw ? JSON.parse(v2Raw) : [];
+                const v1List = v1Raw ? JSON.parse(v1Raw) : [];
+
+                if (Array.isArray(v2List) && v2List.length > 0) return v2List;
+                if (Array.isArray(v1List) && v1List.length > 0) {
+                    localStorage.setItem(TX_STORAGE_KEY_V2, JSON.stringify(v1List));
+                    return v1List;
+                }
+                return [];
+            } catch (_) {
+                return [];
+            }
         }
+
         function persistTransactions() {
-            try { localStorage.setItem(TX_STORAGE_KEY, JSON.stringify(transactions)); } catch (_) {}
+            try {
+                localStorage.setItem(TX_STORAGE_KEY_V2, JSON.stringify(transactions));
+                localStorage.setItem(TX_STORAGE_KEY_V1, JSON.stringify(transactions));
+            } catch (_) {}
         }
+
         function loadIngredientsConfig() {
             try {
                 const raw = localStorage.getItem(STOCK_STORAGE_KEY);
@@ -437,23 +518,28 @@
                 return DEFAULT_INGREDIENTS.map(def => ({ ...def, ...(parsed[def.id] || {}) }));
             } catch (_) { return DEFAULT_INGREDIENTS.map(x => ({ ...x })); }
         }
+
         function persistIngredientsConfig() {
             const map = {};
             ingredientsConfig.forEach(i => { map[i.id] = i; });
             try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
         }
+
         function loadSuppliers() {
             try {
                 const raw = localStorage.getItem(SUP_STORAGE_KEY);
                 return raw ? JSON.parse(raw) : DEFAULT_SUPPLIERS.map(s => ({ ...s }));
             } catch (_) { return DEFAULT_SUPPLIERS.map(s => ({ ...s })); }
         }
+
         function persistSuppliers() {
             try { localStorage.setItem(SUP_STORAGE_KEY, JSON.stringify(suppliers)); } catch (_) {}
         }
+
         function loadValidatedPOs() {
             try { return JSON.parse(localStorage.getItem(PO_STORAGE_KEY) || '[]'); } catch (_) { return []; }
         }
+
         function persistValidatedPOs() {
             try { localStorage.setItem(PO_STORAGE_KEY, JSON.stringify(validatedPOs)); } catch (_) {}
         }
@@ -472,7 +558,6 @@
             return (catItem && catItem.recipe) ? catItem.recipe : {};
         }
 
-        // Fonction centrale synchronisée pour toutes les variables de stock
         function computeStockState() {
             const consumedMap = {};
             ingredientsConfig.forEach(ing => { consumedMap[ing.id] = 0; });
@@ -590,7 +675,7 @@
         }
 
         function switchTab(tab) {
-            ['pos', 'pnl', 'history', 'stock'].forEach(t => {
+            ['pos', 'pnl', 'history', 'stock', 'recipes'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('tab-btn-' + t).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
             });
@@ -603,6 +688,7 @@
             if (!document.getElementById('view-pnl').classList.contains('hidden')) updatePnL();
             if (!document.getElementById('view-history').classList.contains('hidden')) updateHistory();
             if (!document.getElementById('view-stock').classList.contains('hidden')) updateStockView();
+            if (!document.getElementById('view-recipes').classList.contains('hidden')) updateRecipesView();
         }
 
         function setSaleType(type) {
@@ -698,13 +784,15 @@
             if (cart.length === 0) return;
             const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher);
             const selectedDate = document.getElementById('pos-date-input').value;
+            const stamp = formatNowDateTime();
 
             const tx = {
                 id: 'TX-' + Date.now(),
                 terminalId: 'LEX-POS-TERM-01',
                 date: selectedDate,
+                time: stamp.time,
+                created_at: stamp.full,
                 timestamp: new Date().toISOString(),
-                time: new Date().toLocaleTimeString(),
                 is_test: isTest,
                 cancelled: false,
                 sale_type: saleType,
@@ -738,7 +826,7 @@
             clearCoupon();
             updateCartUI();
             refreshActiveViews();
-            alert(isTest ? "[MODE TEST] Enregistré hors CA et hors stock." : `Encaissement validé !\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
+            alert(isTest ? `[MODE TEST] ${stamp.full} — Enregistré hors CA et hors stock.` : `Encaissement validé (${stamp.full})\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
         }
 
         function aggregateDayData(dateStr) {
@@ -816,6 +904,7 @@
         function generateZReport() {
             const selectedDate = document.getElementById('pos-date-input').value;
             const data = aggregateDayData(selectedDate);
+            const stamp = formatNowDateTime();
             zSequenceCounter += 1;
             const bucketLines = data.buckets.map(b => `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`).join('');
             const topProductLines = data.topProducts.slice(0, 5).map(p => `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (Marge ${p.margin.toFixed(2)} €)</p>`).join('');
@@ -823,7 +912,7 @@
             document.getElementById('z-report-content').innerHTML = `
                 <p><strong>Terminal ID :</strong> LEX-POS-TERM-01</p>
                 <p><strong>Séquence Z # :</strong> ${zSequenceCounter}</p>
-                <p><strong>Date ciblée :</strong> ${selectedDate}</p>
+                <p><strong>Date ciblée :</strong> ${selectedDate} • <strong>Émis le :</strong> ${stamp.full}</p>
                 <p><strong>Tickets valides :</strong> ${data.activeTxs.length}</p>
                 <p class="pt-2 text-amber-300 font-bold">Ventilation par Rubrique & TVA :</p>
                 ${bucketLines}
@@ -848,19 +937,19 @@
             container.innerHTML = transactions.map((t, idx) => {
                 const qtySum = (t.items || []).reduce((a, b) => a + b.qty, 0);
                 const statusBadge = t.cancelled ? '(ANNULÉ)' : (t.is_test ? '(TEST)' : (t.edited_at ? '(MODIFIÉ)' : ''));
+                const dtLabel = t.created_at || `${t.date} ${t.time || ''}`;
                 return `
                     <div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border transition hover:border-sky-500 ${t.cancelled ? 'border-rose-900/70 bg-rose-950/20 text-rose-300 line-through opacity-80' : (t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300')}">
                         <div class="flex justify-between font-bold text-sm mb-1">
                             <span>${t.id} ${statusBadge}</span>
                             <span class="text-sky-400">${Number(t.total_ttc).toFixed(2)} € TTC</span>
                         </div>
-                        <p class="text-[10px] text-slate-500">${t.date} à ${t.time} • Régime : ${t.sale_type} • Articles : ${qtySum} • Cliquer pour QR & actions</p>
+                        <p class="text-[10px] text-slate-500">Horodatage : ${dtLabel} • Régime : ${t.sale_type} • Articles : ${qtySum} • Cliquer pour QR & actions</p>
                     </div>
                 `;
             }).join('');
         }
 
-        // Génération QR Code vectoriel léger (matrice déterministe basée sur le payload de traçabilité)
         function buildQrSvg(payloadText) {
             const size = 21;
             const cells = Array.from({ length: size }, () => Array(size).fill(false));
@@ -915,11 +1004,11 @@
                 Object.keys(rec).forEach(ingId => {
                     const ing = ingMap[ingId];
                     if (!ing) return;
-                    const sup = supMap[ing.supplierId] || { name: 'Fournisseur Standard', origin: 'Origine contrôlée' };
+                    const sup = supMap[ing.supplierId] || { name: 'Fournisseur Standard', vatNumber: '-', origin: 'Origine contrôlée' };
                     const used = Number(rec[ingId]) * Number(line.qty);
                     const key = `${ing.id}-${ing.lot}`;
                     if (!traceMap[key]) {
-                        traceMap[key] = { ingName: ing.name, lot: ing.lot, supName: sup.name, origin: sup.origin, qty: used, unit: ing.unit };
+                        traceMap[key] = { ingName: ing.name, lot: ing.lot, supName: sup.name, vatNumber: sup.vatNumber, qty: used, unit: ing.unit };
                     } else {
                         traceMap[key].qty += used;
                     }
@@ -934,13 +1023,15 @@
             if (!tx) return;
             const bd = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
             const traceList = getTicketTraceabilityList(tx);
+            const dtLabel = tx.created_at || `${tx.date} ${tx.time || ''}`;
 
             document.getElementById('modal-tx-id').innerText = tx.id;
             document.getElementById('modal-tx-meta').innerHTML = `
-                <p>Date : ${tx.date} à ${tx.time} • Statut : ${tx.cancelled ? 'ANNULÉ' : (tx.is_test ? 'TEST' : 'RÉEL')}</p>
+                <p>Date & Heure : ${dtLabel} • Statut : ${tx.cancelled ? 'ANNULÉ' : (tx.is_test ? 'TEST' : 'RÉEL')}</p>
                 <p>Régime : ${tx.sale_type === 'emporter' ? 'À Emporter' : 'Sur Place'}</p>
                 ${tx.voucher ? `<p class="text-emerald-400">Bon : ${tx.voucher.label}</p>` : ''}
-                ${tx.edited_at ? `<p class="text-amber-400">Modifié à : ${tx.edited_at}</p>` : ''}
+                ${tx.edited_at ? `<p class="text-amber-400">Modifié : ${tx.edited_at}</p>` : ''}
+                ${tx.cancelled_at ? `<p class="text-rose-400">Annulé : ${tx.cancelled_at}</p>` : ''}
             `;
 
             document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `
@@ -954,18 +1045,18 @@
                 <p class="font-bold text-emerald-400">Traçabilité Provenance & Lots :</p>
                 ${traceList.length === 0
                     ? '<p class="text-slate-500">Aucun ingrédient tracé.</p>'
-                    : traceList.map(tr => `<p>• ${tr.ingName} (${tr.qty} ${tr.unit}) — ${tr.supName} | Lot: ${tr.lot} (${tr.origin})</p>`).join('')
+                    : traceList.map(tr => `<p>• ${tr.ingName} (${tr.qty} ${tr.unit}) — ${tr.supName} [${tr.vatNumber}] | Lot: ${tr.lot}</p>`).join('')
                 }
             `;
 
             const qrPayload = JSON.stringify({
                 tx: tx.id,
-                date: tx.date,
+                dt: dtLabel,
                 ttc: tx.total_ttc,
                 lots: traceList.map(t => `${t.ingName}:${t.lot}:${t.supName}`)
             });
             document.getElementById('modal-qr-container').innerHTML = buildQrSvg(qrPayload);
-            document.getElementById('modal-qr-summary').innerText = `${tx.id} | ${traceList.length} lot(s) tracé(s) | Total ${Number(tx.total_ttc).toFixed(2)} €`;
+            document.getElementById('modal-qr-summary').innerText = `${tx.id} | ${dtLabel} | ${traceList.length} lot(s) | ${Number(tx.total_ttc).toFixed(2)} €`;
 
             document.getElementById('modal-tx-totals').innerHTML = `
                 <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
@@ -1020,6 +1111,7 @@
             if (pin !== MANAGER_PIN) return alert("Code PIN Administrateur / Superviseur incorrect.");
             const mode = adminActionMode;
             const supId = pendingSupplierId;
+            const stamp = formatNowDateTime();
             closeAdminModal();
 
             if (mode === 'purge') {
@@ -1031,10 +1123,10 @@
                 openEditTicketModal(selectedTicketIndex);
             } else if (mode === 'cancel_ticket' && selectedTicketIndex !== null) {
                 transactions[selectedTicketIndex].cancelled = true;
-                transactions[selectedTicketIndex].cancelled_at = new Date().toLocaleTimeString();
+                transactions[selectedTicketIndex].cancelled_at = stamp.full;
                 persistTransactions();
                 refreshActiveViews();
-                alert("Ticket annulé : P&L et stocks synchronisés.");
+                alert(`Ticket annulé (${stamp.full}) : P&L et stocks synchronisés.`);
             } else if (mode === 'validate_po' && supId) {
                 validateSupplierPurchaseOrder(supId);
             }
@@ -1065,6 +1157,7 @@
         function saveEditedTicket() {
             const tx = transactions[selectedTicketIndex];
             if (!tx) return;
+            const stamp = formatNowDateTime();
             const newSaleType = document.getElementById('edit-sale-type').value;
             const newDiscPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('edit-discount-pct').value) || 0));
             const updatedItems = (tx.items || [])
@@ -1085,27 +1178,29 @@
                 cogs: Number(bd.cogsTotal.toFixed(2)),
                 gross_margin: Number(bd.grossMargin.toFixed(2)),
                 buckets: bd.buckets,
-                edited_at: new Date().toLocaleTimeString()
+                edited_at: stamp.full
             };
 
             persistTransactions();
             closeEditTicketModal();
             refreshActiveViews();
-            alert("Ticket mis à jour : P&L et stocks synchronisés.");
+            alert(`Ticket mis à jour (${stamp.full}) : P&L et stocks synchronisés.`);
         }
 
         function updateStockView() {
             const stockState = computeStockState();
-            const supMap = {};
-            suppliers.forEach(s => { supMap[s.id] = s; });
 
             document.getElementById('stock-table-body').innerHTML = stockState.map(st => {
-                const sup = supMap[st.supplierId] || { name: 'Non assigné' };
                 const stockColor = st.needsOrder ? 'text-rose-400' : 'text-emerald-400';
+                const supOptions = suppliers.map(s => `<option value="${s.id}" ${s.id === st.supplierId ? 'selected' : ''}>${s.name}</option>`).join('');
                 return `
                     <tr>
-                        <td class="p-3 text-slate-100 font-bold">${st.name} <span class="text-[10px] text-slate-500">(${st.unit})</span></td>
-                        <td class="p-3 text-slate-300">${sup.name}<span class="block text-[10px] text-slate-500">${st.lot}</span></td>
+                        <td class="p-3 text-slate-100 font-bold">${st.name} <span class="text-[10px] text-slate-500">(${st.unit} • ${st.lot})</span></td>
+                        <td class="p-3">
+                            <select onchange="assignIngredientSupplier('${st.id}', this.value)" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-sky-300 text-xs">
+                                ${supOptions}
+                            </select>
+                        </td>
                         <td class="p-3">
                             <input type="number" min="0" value="${st.initialQty}" onchange="updateInitialStock('${st.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
                         </td>
@@ -1118,32 +1213,36 @@
                 `;
             }).join('');
 
-            // Portefeuille Fournisseurs
             document.getElementById('suppliers-portfolio-grid').innerHTML = suppliers.map(sup => {
                 const portfolioItems = stockState.filter(i => i.supplierId === sup.id);
                 return `
-                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-2">
-                        <p class="font-bold text-sky-300">${sup.name}</p>
-                        <p class="text-[10px] text-slate-400">${sup.origin}</p>
-                        <ul class="text-[11px] text-slate-200 space-y-1 pt-1 border-t border-slate-800">
-                            ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit assigné</li>' : portfolioItems.map(p => `<li>• ${p.name} (Stock: ${p.currentQty})</li>`).join('')}
+                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-1.5">
+                        <p class="font-bold text-sky-300 text-sm">${sup.name}</p>
+                        <p class="text-[11px] text-slate-300">Adresse : ${sup.address || '-'}</p>
+                        <p class="text-[11px] text-slate-300">Contact : ${sup.contact || '-'}</p>
+                        <p class="text-[11px] text-amber-300">TVA : ${sup.vatNumber || '-'} • Ent. : ${sup.companyNumber || '-'}</p>
+                        <p class="text-[10px] text-slate-400 font-bold pt-1 border-t border-slate-800">Portefeuille Produits :</p>
+                        <ul class="text-[11px] text-emerald-300 space-y-0.5">
+                            ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit assigné</li>' : portfolioItems.map(p => `<li>• ${p.name} (Stock: ${p.currentQty} ${p.unit})</li>`).join('')}
                         </ul>
                     </div>
                 `;
             }).join('');
 
-            // Suggestions de bons de commande par fournisseur
             const poContainer = document.getElementById('suggested-po-container');
             const poCards = suppliers.map(sup => {
                 const neededLines = stockState.filter(i => i.supplierId === sup.id && i.needsOrder);
                 if (neededLines.length === 0) return '';
                 return `
                     <div class="bg-slate-900 border border-amber-700/50 p-4 rounded-xl space-y-2">
-                        <div class="flex justify-between items-center">
-                            <p class="font-bold text-amber-300">Bon Suggéré — ${sup.name}</p>
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                                <p class="font-bold text-amber-300">Bon Suggéré — ${sup.name}</p>
+                                <p class="text-[10px] text-slate-400">TVA: ${sup.vatNumber || '-'} • Contact: ${sup.contact || '-'}</p>
+                            </div>
                             <button onclick="openAdminModal('validate_po', '${sup.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">Valider Bon (Superviseur)</button>
                         </div>
-                        ${neededLines.map(nl => `<p class="text-slate-300">• ${nl.name} : Stock ${nl.currentQty} / Min ${nl.minThreshold} → Commander <strong>+${nl.suggestedQty} ${nl.unit}</strong></p>`).join('')}
+                        ${neededLines.map(nl => `<p class="text-slate-300">• ${nl.name} (Lot ${nl.lot}) : Stock ${nl.currentQty} / Min ${nl.minThreshold} → Commander <strong>+${nl.suggestedQty} ${nl.unit}</strong></p>`).join('')}
                     </div>
                 `;
             }).filter(Boolean);
@@ -1155,52 +1254,96 @@
             const poHistEl = document.getElementById('validated-po-history');
             poHistEl.innerHTML = validatedPOs.length === 0
                 ? '<p class="text-slate-500 text-[11px]">Aucun bon de commande validé récemment.</p>'
-                : `<p class="text-sky-300 font-bold">Bons Validés par Superviseur :</p>` + validatedPOs.slice(0, 5).map(po => `
-                    <p class="text-[11px] text-slate-300">• ${po.poId} (${po.date}) — ${po.supplierName} : ${po.lines.map(l => `${l.name} +${l.qty}`).join(', ')}</p>
+                : `<p class="text-sky-300 font-bold">Bons Validés par Superviseur (Horodatés) :</p>` + validatedPOs.slice(0, 5).map(po => `
+                    <p class="text-[11px] text-slate-300">• ${po.poId} [${po.validated_at}] — ${po.supplierName} : ${po.lines.map(l => `${l.name} +${l.qty}`).join(', ')}</p>
                 `).join('');
+        }
+
+        function updateRecipesView() {
+            const stockState = computeStockState();
+            const stateMap = {};
+            stockState.forEach(s => { stateMap[s.id] = s; });
+            const supMap = {};
+            suppliers.forEach(s => { supMap[s.id] = s; });
 
             const allItems = [];
-            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push(i)));
-            const ingNameMap = {};
-            ingredientsConfig.forEach(i => { ingNameMap[i.id] = i; });
+            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push({ ...i, catTitle: c.title })));
 
             document.getElementById('recipes-grid').innerHTML = allItems.map(item => {
-                const recEntries = Object.entries(item.recipe || {}).map(([ingId, q]) => {
-                    const meta = ingNameMap[ingId];
-                    return `${meta ? meta.name : ingId} (x${q}, Lot ${meta ? meta.lot : '-'})`;
-                }).join(' • ');
+                const linesHtml = Object.entries(item.recipe || {}).map(([ingId, q]) => {
+                    const st = stateMap[ingId];
+                    const sup = st ? (supMap[st.supplierId] || {}) : {};
+                    return `<li class="text-slate-300">• <strong>${st ? st.name : ingId}</strong> : ${q} ${st ? st.unit : ''} / unité — <span class="text-amber-300">Lot ${st ? st.lot : '-'}</span> • <span class="text-sky-300">${sup.name || '-'}</span> (Stock: ${st ? st.currentQty : 0})</li>`;
+                }).join('');
+
                 return `
-                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl">
-                        <p class="font-bold text-sky-300">${item.name}</p>
-                        <p class="text-[11px] text-slate-400 mt-1">${recEntries}</p>
+                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                            <span class="font-bold text-sky-300 text-sm">${item.name}</span>
+                            <span class="text-[10px] text-slate-400">${item.catTitle}</span>
+                        </div>
+                        <ul class="space-y-1 text-[11px]">${linesHtml}</ul>
                     </div>
                 `;
             }).join('');
+
+            document.getElementById('traceability-lots-body').innerHTML = stockState.map(st => {
+                const sup = supMap[st.supplierId] || {};
+                return `
+                    <tr>
+                        <td class="p-2.5 text-slate-100 font-bold">${st.name}</td>
+                        <td class="p-2.5 text-amber-300">${st.lot}</td>
+                        <td class="p-2.5 text-sky-300">${sup.name || '-'}</td>
+                        <td class="p-2.5 text-slate-300">${sup.vatNumber || '-'} / ${sup.companyNumber || '-'}</td>
+                        <td class="p-2.5 text-emerald-400 font-bold">${st.currentQty} ${st.unit}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function assignIngredientSupplier(ingId, supId) {
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, supplierId: supId } : i);
+            persistIngredientsConfig();
+            refreshActiveViews();
         }
 
         function updateInitialStock(ingId, val) {
             const num = Math.max(0, parseInt(val, 10) || 0);
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, initialQty: num } : i);
             persistIngredientsConfig();
-            updateStockView();
+            refreshActiveViews();
         }
 
         function updateMinThreshold(ingId, val) {
             const num = Math.max(0, parseInt(val, 10) || 0);
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: num } : i);
             persistIngredientsConfig();
-            updateStockView();
+            refreshActiveViews();
         }
 
         function addSupplier() {
             const name = document.getElementById('new-sup-name').value.trim();
-            const origin = document.getElementById('new-sup-origin').value.trim() || 'Origine vérifiée';
+            const address = document.getElementById('new-sup-address').value.trim();
+            const contact = document.getElementById('new-sup-contact').value.trim();
+            const vatReg = document.getElementById('new-sup-vat-reg').value.trim();
             if (!name) return alert("Saisissez le nom du fournisseur.");
-            suppliers.push({ id: 'SUP-' + Date.now(), name, origin });
+
+            const parts = vatReg.split('/').map(s => s.trim());
+            suppliers.push({
+                id: 'SUP-' + Date.now(),
+                name,
+                address: address || 'Adresse à compléter',
+                contact: contact || 'Contact à compléter',
+                vatNumber: parts[0] || 'TVA-À-RENSEIGNER',
+                companyNumber: parts[1] || parts[0] || 'ENT-À-RENSEIGNER',
+                origin: address || 'Origine vérifiée'
+            });
             persistSuppliers();
-            document.getElementById('new-sup-name').value = '';
-            document.getElementById('new-sup-origin').value = '';
-            updateStockView();
+
+            ['new-sup-name', 'new-sup-address', 'new-sup-contact', 'new-sup-vat-reg'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            refreshActiveViews();
         }
 
         function validateSupplierPurchaseOrder(supId) {
@@ -1208,6 +1351,7 @@
             const stockState = computeStockState();
             const needed = stockState.filter(i => i.supplierId === supId && i.needsOrder);
             if (!sup || needed.length === 0) return;
+            const stamp = formatNowDateTime();
 
             ingredientsConfig = ingredientsConfig.map(ing => {
                 const match = needed.find(n => n.id === ing.id);
@@ -1218,18 +1362,50 @@
 
             validatedPOs.unshift({
                 poId: 'PO-' + Date.now(),
-                date: new Date().toLocaleString(),
+                validated_at: stamp.full,
                 supplierName: sup.name,
                 lines: needed.map(n => ({ name: n.name, qty: n.suggestedQty }))
             });
             persistValidatedPOs();
-            updateStockView();
-            alert(`Bon de commande ${sup.name} validé par superviseur et stock réapprovisionné.`);
+            refreshActiveViews();
+            alert(`Bon de commande ${sup.name} validé par superviseur (${stamp.full}) et stock réapprovisionné.`);
+        }
+
+        function exportAuditCsv() {
+            const rows = [
+                ['Ticket_ID', 'Horodatage', 'Statut', 'Regime', 'Net_HT', 'TVA', 'Total_TTC', 'COGS', 'Marge_Brute', 'Lots_Fournisseurs']
+            ];
+            transactions.forEach(tx => {
+                const status = tx.cancelled ? 'ANNULE' : (tx.is_test ? 'TEST' : 'VALIDE');
+                const dtLabel = tx.created_at || `${tx.date} ${tx.time || ''}`;
+                const lots = getTicketTraceabilityList(tx).map(l => `${l.ingName}(${l.lot}/${l.supName})`).join(' | ');
+                rows.push([
+                    tx.id,
+                    dtLabel,
+                    status,
+                    tx.sale_type || '',
+                    Number(tx.total_ht || 0).toFixed(2),
+                    Number(tx.vat || 0).toFixed(2),
+                    Number(tx.total_ttc || 0).toFixed(2),
+                    Number(tx.cogs || 0).toFixed(2),
+                    Number(tx.gross_margin || 0).toFixed(2),
+                    `"${lots.replace(/"/g, '""')}"`
+                ]);
+            });
+
+            const csvContent = rows.map(r => r.join(';')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `lexwallet-audit-subvention-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function exportBackupJson() {
             const payload = {
-                exported_at: new Date().toISOString(),
+                exported_at: formatNowDateTime().full,
                 transactions,
                 ingredientsConfig,
                 suppliers,
