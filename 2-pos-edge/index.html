@@ -3,143 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexwallet.app — Point Zero POS, KYC, Finance, Supply Chain & RH</title>
+    <title>lexwallet.app — Accueil KYC, POS & Modules</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8">
     <div class="max-w-6xl mx-auto space-y-6">
 
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3 font-mono text-xs">
             <div>
-                <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p id="header-context-label" class="text-xs text-slate-400 font-mono">Client : CHEER-FLAGSHIP-01 • Accès : Holding (cbltec@proton.me) • Juridiction : BE</p>
+                <h1 class="text-lg md:text-2xl font-bold text-sky-400">lexwallet.app</h1>
+                <p id="route-url-display" class="text-amber-300 font-bold">Route active : https://lexwallet.app/</p>
+                <p id="header-context-label" class="text-[11px] text-slate-400">Client : CHEER-FLAGSHIP-01 • Holding (cbltec@proton.me) • Juridiction : BE</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="switchPage('kyc')" id="page-btn-kyc" class="px-3 py-2 rounded text-xs font-bold bg-amber-600 text-white transition">KYC & Paramètres</button>
-                <button onclick="switchPage('pos')" id="page-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Caisse (Page Seule)</button>
-                <button onclick="switchPage('finance')" id="page-btn-finance" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">P&L, Coûts & Tickets</button>
-                <button onclick="switchPage('supply')" id="page-btn-supply" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks, IoT & Scanners</button>
-                <button onclick="switchPage('hr')" id="page-btn-hr" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">RH & Paie</button>
-                <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
+                <button onclick="navigateRoute('/')" class="px-3 py-2 rounded font-bold bg-slate-900 border border-slate-700 hover:border-amber-400 text-amber-300">Accueil & KYC (/)</button>
+                <button onclick="navigateRoute('/POS')" class="px-3 py-2 rounded font-bold bg-sky-700 hover:bg-sky-600 text-white">Menu POS (/POS)</button>
+                <button onclick="navigateRoute('/POS/caisse')" class="px-3 py-2 rounded font-bold bg-emerald-700 hover:bg-emerald-600 text-white">Caisse (/POS/caisse)</button>
+                <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded font-bold">Admin</button>
             </div>
         </header>
 
-        <!-- PAGE 1 : KYC D'ENTRÉE, BYPASS HOLDING (cbltec@proton.me) & PARAMÈTRES PAYS/FISCAUX/SOCIAUX -->
-        <div id="page-kyc" class="space-y-6">
-            <div class="flex flex-wrap gap-2 font-mono text-xs">
-                <button onclick="switchSubTab('kyc', 'entry')" id="sub-kyc-entry" class="px-3 py-1.5 rounded font-bold bg-amber-600 text-white">Sous-onglet : KYC & Connexion</button>
-                <button onclick="switchSubTab('kyc', 'fiscal')" id="sub-kyc-fiscal" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Paramètres Pays, Fiscal & Social</button>
-            </div>
-
-            <div id="panel-kyc-entry" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5 font-mono text-xs">
+        <!-- ROUTE 1 : https://lexwallet.app/ (ACCUEIL & CONNEXION / KYC) -->
+        <section id="view-home" class="space-y-6 font-mono text-xs">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-3 gap-2">
                     <div>
-                        <h2 class="text-base font-bold text-amber-400">Portail d'Entrée — KYC & Accès Direct Holding</h2>
-                        <p class="text-slate-400">Seul l'administrateur Holding (<span class="text-emerald-300">cbltec@proton.me</span>) entre sans KYC. Les autres profils valident leur KYC.</p>
+                        <p class="text-[11px] text-sky-400">https://lexwallet.app/</p>
+                        <h2 class="text-base font-bold text-amber-400">Accueil — Connexion & Vérification KYC</h2>
+                        <p class="text-slate-400">Accès direct Holding sans KYC pour <span class="text-emerald-300">cbltec@proton.me</span> • Accès standard via KYC.</p>
                     </div>
                     <span id="kyc-status-badge" class="px-3 py-1.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 font-bold">Statut : Actif</span>
                 </div>
 
                 <div class="bg-slate-950 border border-emerald-800/60 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-emerald-400">Accès Direct Administrateur Holding (Sans KYC)</h3>
+                    <h3 class="text-sm font-bold text-emerald-400">Connexion Directe Administrateur Holding (Sans KYC)</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Email Administrateur Holding</label>
+                            <label class="text-[11px] text-slate-400 block mb-1">Email Holding</label>
                             <input type="email" id="holding-email-input" value="cbltec@proton.me" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Code / Mot de passe (optionnel en test)</label>
-                            <input type="password" id="holding-pass-input" placeholder="Ne pas coller de secret sensible en clair" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                            <label class="text-[11px] text-slate-400 block mb-1">Mot de passe (ne pas envoyer en clair)</label>
+                            <input type="password" id="holding-pass-input" placeholder="Vérification locale / hash" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
-                        <div class="flex items-end">
-                            <button onclick="loginHoldingDirect()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold w-full">Entrer Directement (Holding sans KYC)</button>
+                        <div class="flex items-end gap-2">
+                            <button onclick="loginHoldingDirect()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded font-bold flex-1">Entrer (Sans KYC)</button>
+                            <button onclick="navigateRoute('/POS')" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded font-bold">Aller au POS</button>
                         </div>
                     </div>
                     <p id="holding-login-msg" class="text-[11px] text-emerald-300"></p>
                 </div>
 
                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-sky-300">Validation KYC — Master Franchisé / Franchisé / Gestion Propre / Opérateur</h3>
+                    <h3 class="text-sm font-bold text-sky-300">Entrée KYC — Partenaire / Franchisé / Gestion / Opérateur</h3>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Rôle / Niveau</label>
+                            <label class="text-[11px] text-slate-400 block mb-1">Rôle</label>
                             <select id="kyc-role-select" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white">
                                 <option value="master_franchise">Master Franchisé</option>
                                 <option value="franchise">Franchisé</option>
-                                <option value="own_managed">Restaurant en Gestion Propre</option>
-                                <option value="staff_pos">Opérateur Caisse / Staff</option>
+                                <option value="own_managed">Gestion Propre</option>
+                                <option value="staff_pos">Opérateur Caisse</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Identité / Raison Sociale</label>
-                            <input type="text" id="kyc-full-name" placeholder="Nom complet ou entité" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                            <label class="text-[11px] text-slate-400 block mb-1">Identité / Société</label>
+                            <input type="text" id="kyc-full-name" placeholder="Nom ou entité" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">N° Registre / ID Document KYC</label>
-                            <input type="text" id="kyc-doc-id" placeholder="Ex: ENT-123456 / ID-987" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                            <label class="text-[11px] text-slate-400 block mb-1">Référence KYC / Registre</label>
+                            <input type="text" id="kyc-doc-id" placeholder="Ex: ENT-001" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Identifiant Client (`client_id`)</label>
+                            <label class="text-[11px] text-slate-400 block mb-1">Identifiant Client</label>
                             <input type="text" id="kyc-client-id" value="CHEER-FLAGSHIP-01" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
                     </div>
-                    <button onclick="submitKycVerification()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold">Valider le KYC & Accéder</button>
-                    <div id="kyc-audit-logs" class="space-y-1 pt-2 border-t border-slate-800 text-[11px] text-slate-400 max-h-36 overflow-y-auto"></div>
+                    <button onclick="submitKycVerification()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold">Valider KYC & Ouvrir /POS</button>
+                    <div id="kyc-audit-logs" class="space-y-1 pt-2 border-t border-slate-800 text-[11px] text-slate-400 max-h-32 overflow-y-auto"></div>
                 </div>
             </div>
+        </section>
 
-            <div id="panel-kyc-fiscal" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 font-mono text-xs">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <div>
-                        <h2 class="text-base font-bold text-sky-300">Paramètres Pays, Fiscaux & Sociaux (Réservé Holding / Paramétrable Client)</h2>
-                        <p class="text-slate-400">Modifiable par le niveau Holding (`cbltec@proton.me`) ou par identifiant client.</p>
-                    </div>
+        <!-- ROUTE 2 : https://lexwallet.app/POS (MENU GÉNÉRAL / PRÉSENTATION POS) -->
+        <section id="view-pos-hub" class="hidden space-y-6 font-mono text-xs">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
+                <div class="border-b border-slate-800 pb-4">
+                    <p class="text-[11px] text-sky-400">https://lexwallet.app/POS</p>
+                    <h2 class="text-lg font-bold text-white">Présentation & Menu Général du POS</h2>
+                    <p class="text-slate-400 mt-1">Sélectionnez une sous-page dédiée du POS (encaissement isolé, pilotage fiscal/Z, coûts/trésorerie réels, supply chain & capteurs, RH, paramètres).</p>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Pays / Juridiction</label>
-                        <select id="jur-country" onchange="applyJurisdictionPreset()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white">
-                            <option value="BE">Belgique (BE)</option>
-                            <option value="FR">France (FR)</option>
-                            <option value="ES">Espagne (ES)</option>
-                            <option value="VE">Venezuela (VE)</option>
-                            <option value="CUSTOM">Personnalisé (Firme / Client)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">TVA Sur Place (%)</label>
-                        <input type="number" step="0.5" id="jur-vat-place" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">TVA Emporter (%)</label>
-                        <input type="number" step="0.5" id="jur-vat-takeout" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Charges Patronales RH (%)</label>
-                        <input type="number" step="0.5" id="jur-employer-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Retenue Salariale Est. (%)</label>
-                        <input type="number" step="0.5" id="jur-employee-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Devise</label>
-                        <input type="text" id="jur-currency" value="€" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
-                    </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <button onclick="navigateRoute('/POS/caisse')" class="text-left bg-slate-950 hover:border-emerald-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-emerald-400 font-bold text-sm">/POS/caisse — Caisse (Page Seule)</p>
+                        <p class="text-slate-400">Écran d'encaissement isolé : Sur Place / À Emporter, remises, bons et validation ticket.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/rapport-pnl-z')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-amber-400 font-bold text-sm">/POS/Rapport P&L Fiscal & Clôture Z</p>
+                        <p class="text-slate-400">CA TTC/HT, TVA par rubrique, classement produits vendus et clôture Z.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/couts-tresorerie')" class="text-left bg-slate-950 hover:border-sky-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-sky-400 font-bold text-sm">/POS/couts-tresorerie — Coûts & Trésorerie</p>
+                        <p class="text-slate-400">Calcul réel sur tickets (Loyer ≤ 7%, Trésorerie 5%), Net Avant Réserves & Gain Net.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/historique-qr')" class="text-left bg-slate-950 hover:border-sky-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-sky-300 font-bold text-sm">/POS/historique-qr — Historique & QR</p>
+                        <p class="text-slate-400">Tickets horodatés, QR code de traçabilité, modification PIN et annulation.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/stocks-iot-scanners')" class="text-left bg-slate-950 hover:border-emerald-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-emerald-300 font-bold text-sm">/POS/stocks-iot-scanners — Stocks, IoT & Scanners</p>
+                        <p class="text-slate-400">Onglets dédiés : Stocks & Casse, Capteurs IoT (froid/énergie), Scanner codes/lots.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/fournisseurs-recettes')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-amber-300 font-bold text-sm">/POS/fournisseurs-recettes — Fournisseurs & Recettes</p>
+                        <p class="text-slate-400">Portefeuille fournisseurs, bons de commande automatiques et recettes/lots.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/rh-paie')" class="text-left bg-slate-950 hover:border-sky-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-sky-300 font-bold text-sm">/POS/rh-paie — RH, Badgeage & Paie</p>
+                        <p class="text-slate-400">Badgeuse UID, heures signées, brut/net/charges sociales et échéancier.</p>
+                    </button>
+
+                    <button onclick="navigateRoute('/POS/parametres-fiscaux')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
+                        <p class="text-amber-300 font-bold text-sm">/POS/parametres-fiscaux — Paramètres Pays & Fiscaux</p>
+                        <p class="text-slate-400">Pays, taux TVA sur place/emporter, charges sociales et devise.</p>
+                    </button>
                 </div>
-                <p id="jur-summary-line" class="text-amber-300"></p>
             </div>
-        </div>
+        </section>
 
-        <!-- PAGE 2 : CAISSE (POS) SUR UNE PAGE SEULE -->
-        <div id="page-pos" class="hidden space-y-6">
+        <!-- BARRE DE SOUS-NAVIGATION QUAND ON EST DANS UNE SOUS-PAGE /POS/... -->
+        <nav id="pos-subnav" class="hidden flex flex-wrap gap-2 font-mono text-xs bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
+            <button onclick="navigateRoute('/POS')" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold">← /POS</button>
+            <button onclick="navigateRoute('/POS/caisse')" id="subnav-caisse" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Caisse</button>
+            <button onclick="navigateRoute('/POS/rapport-pnl-z')" id="subnav-pnl" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Rapport P&L Fiscal & Clôture Z</button>
+            <button onclick="navigateRoute('/POS/couts-tresorerie')" id="subnav-costs" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Coûts & Trésorerie</button>
+            <button onclick="navigateRoute('/POS/historique-qr')" id="subnav-history" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Historique & QR</button>
+            <button onclick="navigateRoute('/POS/stocks-iot-scanners')" id="subnav-supply" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Stocks, IoT & Scanners</button>
+            <button onclick="navigateRoute('/POS/fournisseurs-recettes')" id="subnav-suppliers" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Fournisseurs & Recettes</button>
+            <button onclick="navigateRoute('/POS/rh-paie')" id="subnav-hr" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">RH & Paie</button>
+            <button onclick="navigateRoute('/POS/parametres-fiscaux')" id="subnav-fiscal" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">Paramètres Pays/Fiscaux</button>
+        </nav>
+
+        <!-- SOUS-PAGE : /POS/caisse (CAISSE SUR UNE PAGE SEULE) -->
+        <section id="view-caisse" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 gap-3">
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="text-xs text-slate-400">Régime Service :</span>
                     <button onclick="setSaleType('sur_place')" id="btn-sur-place" class="px-3 py-1.5 rounded text-xs font-bold bg-sky-600 text-white transition">Sur Place</button>
                     <button onclick="setSaleType('emporter')" id="btn-emporter" class="px-3 py-1.5 rounded text-xs font-bold bg-slate-800 text-slate-400 transition">À Emporter</button>
                 </div>
-                <input type="date" id="pos-date-input" onchange="syncAllTabs()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
+                <input type="date" id="pos-date-input" onchange="syncAllViews()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -185,236 +205,216 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- PAGE 3 : P&L, COÛTS & HISTORIQUE TICKETS (SOUS-ONGLETS) -->
-        <div id="page-finance" class="hidden space-y-6">
-            <div class="flex flex-wrap gap-2 font-mono text-xs">
-                <button onclick="switchSubTab('finance', 'pnl')" id="sub-finance-pnl" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Sous-onglet : Rapport P&L & Z</button>
-                <button onclick="switchSubTab('finance', 'costs')" id="sub-finance-costs" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Analyse Coûts & Réserves</button>
-                <button onclick="switchSubTab('finance', 'history')" id="sub-finance-history" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Historique & QR</button>
-            </div>
-
-            <div id="panel-finance-pnl" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-amber-400">Rapport P&L Fiscal & Clôture Z</h2>
-                        <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span> • Source : Tickets & Commandes POS</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold transition">Export CSV Audit / Subvention</button>
-                        <button onclick="generateZReport()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold transition">Générer Clôture Z</button>
-                    </div>
+        <!-- SOUS-PAGE : /POS/rapport-pnl-z (RAPPORT P&L FISCAL & CLÔTURE Z) -->
+        <section id="view-pnl" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
+                <div>
+                    <p class="text-[11px] text-sky-400 font-mono">https://lexwallet.app/POS/Rapport P&L Fiscal & Clôture Z</p>
+                    <h2 class="text-base font-bold text-amber-400">Rapport P&L Fiscal & Clôture Z</h2>
+                    <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span> • Données réelles des tickets</p>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">CA Total TTC</p>
-                        <p id="pnl-ca" class="text-xl font-bold text-sky-400 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">CA Net HT</p>
-                        <p id="pnl-ht" class="text-xl font-bold text-slate-200 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">TVA Collectée</p>
-                        <p id="pnl-vat" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <h3 class="text-sm font-bold text-sky-300">Ventilation Fiscale par Rubrique & Taux TVA</h3>
-                    <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
-                        <table class="w-full text-left font-mono text-xs">
-                            <thead class="border-b border-slate-800 text-slate-400">
-                                <tr>
-                                    <th class="p-3">Rubrique</th>
-                                    <th class="p-3">Taux TVA</th>
-                                    <th class="p-3">Net HT</th>
-                                    <th class="p-3">TVA</th>
-                                    <th class="p-3">Total TTC</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pnl-buckets-body" class="divide-y divide-slate-900"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <h3 class="text-sm font-bold text-emerald-300">Analyse par Produit (Classement par Volume Vendu)</h3>
-                    <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
-                        <table class="w-full text-left font-mono text-xs">
-                            <thead class="border-b border-slate-800 text-slate-400">
-                                <tr>
-                                    <th class="p-3">Produit</th>
-                                    <th class="p-3">Rubrique</th>
-                                    <th class="p-3">Qté Vendue</th>
-                                    <th class="p-3">CA Net HT</th>
-                                    <th class="p-3">Total TTC</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pnl-products-body" class="divide-y divide-slate-900"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div id="z-report-card" class="hidden bg-slate-950 border border-amber-600/50 p-6 rounded-xl space-y-3 font-mono text-xs">
-                    <h3 class="font-bold text-amber-400 text-sm">Rapport Z Officiel Détaillé</h3>
-                    <div id="z-report-content" class="space-y-1 text-slate-300"></div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold transition">Export CSV Audit</button>
+                    <button onclick="generateZReport()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold transition">Générer Clôture Z</button>
                 </div>
             </div>
 
-            <div id="panel-finance-costs" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-emerald-400">Analyse des Coûts, Charges & Ventilation Trésorerie</h2>
-                        <p class="text-xs text-slate-400 font-mono">Date ciblée : <span id="costs-date-label"></span> • Synchronisé P&L & Tickets • CA Réel HT : <span id="costs-real-ht-label" class="text-sky-300">0.00 €</span></p>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
-                        <button onclick="setCostPeriodMode('daily')" id="period-btn-daily" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Journalier</button>
-                        <button onclick="setCostPeriodMode('monthly')" id="period-btn-monthly" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Mensuel (×30j)</button>
-                        <button onclick="generateRndGrantDossier()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded font-bold">Dossier Subvention / R&D</button>
-                        <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold">Export CSV Financier</button>
-                    </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">CA Réel TTC (Date)</p>
+                    <p id="pnl-ca" class="text-xl font-bold text-sky-400 mt-1">0.00 €</p>
                 </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 font-mono text-xs">
-                    <div>
-                        <span class="text-sky-300 font-bold block">Simulation Volume Cible / Test P&L (0 = CA Réel des Tickets)</span>
-                        <span class="text-[11px] text-slate-400">Ex. saisissez 1500 pour simuler 1 500 € HT sur la période ou laissez 0 pour lire directement les tickets</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" step="50" min="0" id="sim-target-ht" value="0" onchange="syncAllTabs()" class="w-32 bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-right"/>
-                        <button onclick="document.getElementById('sim-target-ht').value='0'; syncAllTabs();" class="bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded text-slate-300">Réel Tickets</button>
-                    </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">CA Réel Net HT (Date)</p>
+                    <p id="pnl-ht" class="text-xl font-bold text-slate-200 mt-1">0.00 €</p>
                 </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 font-mono">
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-[11px] text-slate-400">COGS Matières + Casse</p>
-                        <p id="cost-cogs-val" class="text-lg font-bold text-amber-400 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-[11px] text-slate-400">Charges Exploitation</p>
-                        <p id="cost-opex-val" class="text-lg font-bold text-rose-400 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-[11px] text-slate-400">Net Avant Réserves</p>
-                        <p id="cost-pre-reserve-val" class="text-lg font-bold text-sky-300 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-[11px] text-slate-400">À Isoler (TVA + Réserves)</p>
-                        <p id="cost-reserve-val" class="text-lg font-bold text-amber-300 mt-1">0.00 €</p>
-                    </div>
-                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-[11px] text-slate-400">Gain Net Disponible</p>
-                        <p id="cost-net-gain-val" class="text-lg font-bold text-emerald-400 mt-1">0.00 €</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono text-xs">
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-sm font-bold text-sky-300">Charges en % du CA Net HT (Pilotage Modèle)</h3>
-                            <button onclick="applyCheerCheeseDefaults()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-amber-300 px-2.5 py-1 rounded font-bold">Repères Cheer Cheese</button>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Loyer (% Net HT) — Cible 10%</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-rent-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                                <span id="calc-rent-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Royalties Holding (% Net HT) — Cible 5%</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-royalties-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                                <span id="calc-royalties-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Frais de Personnel (% Net HT) — Cible 25%</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-staff-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                                <span id="calc-staff-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Entretiens & Grosses Réparations (% Net HT) — Cible 3%</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-maint-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                                <span id="calc-maint-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (% Net HT) — Cible 5%</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-other-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                                <span id="calc-other-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <h3 class="text-sm font-bold text-amber-300">Mise de Côté & Point Mort (Seuil de Rentabilité)</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Provision Fiscalité / Impôts (% Net HT)</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-tax-reserve-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Réserve Trésorerie / R&D (% Net HT)</label>
-                                <input type="number" step="0.5" min="0" max="100" id="cfg-cap-reserve-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                        </div>
-                        <div id="cost-breakdown-summary" class="space-y-1 pt-2 border-t border-slate-800 text-slate-300"></div>
-                    </div>
-                </div>
-
-                <div id="rnd-grant-card" class="hidden bg-slate-950 border border-emerald-700/50 p-5 rounded-xl space-y-2 font-mono text-xs">
-                    <h3 class="text-sm font-bold text-emerald-400">Synthèse Preuve R&D / Subvention</h3>
-                    <div id="rnd-grant-content" class="space-y-1 text-slate-300"></div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-xs text-slate-400">TVA Réelle Collectée</p>
+                    <p id="pnl-vat" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
                 </div>
             </div>
 
-            <div id="panel-finance-history" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div class="space-y-3">
+                <h3 class="text-sm font-bold text-sky-300">Ventilation Fiscale par Rubrique & Taux TVA</h3>
+                <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
+                    <table class="w-full text-left font-mono text-xs">
+                        <thead class="border-b border-slate-800 text-slate-400">
+                            <tr>
+                                <th class="p-3">Rubrique</th>
+                                <th class="p-3">Taux TVA</th>
+                                <th class="p-3">Net HT</th>
+                                <th class="p-3">TVA</th>
+                                <th class="p-3">Total TTC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pnl-buckets-body" class="divide-y divide-slate-900"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h3 class="text-sm font-bold text-emerald-300">Analyse par Produit (Classement par Volume Vendu)</h3>
+                <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
+                    <table class="w-full text-left font-mono text-xs">
+                        <thead class="border-b border-slate-800 text-slate-400">
+                            <tr>
+                                <th class="p-3">Produit</th>
+                                <th class="p-3">Rubrique</th>
+                                <th class="p-3">Qté Vendue</th>
+                                <th class="p-3">CA Net HT</th>
+                                <th class="p-3">Total TTC</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pnl-products-body" class="divide-y divide-slate-900"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="z-report-card" class="hidden bg-slate-950 border border-amber-600/50 p-6 rounded-xl space-y-3 font-mono text-xs">
+                <h3 class="font-bold text-amber-400 text-sm">Rapport Z Officiel Détaillé</h3>
+                <div id="z-report-content" class="space-y-1 text-slate-300"></div>
+            </div>
+        </section>
+
+        <!-- SOUS-PAGE : /POS/couts-tresorerie (RÉEL SUR TICKETS, LOYER MAX 7%, TRÉSORERIE 5%) -->
+        <section id="view-costs" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
+                <div>
+                    <p class="text-[11px] text-sky-400 font-mono">https://lexwallet.app/POS/couts-tresorerie</p>
+                    <h2 class="text-base font-bold text-emerald-400">Analyse Réelle des Coûts, Charges & Ventilation Trésorerie</h2>
+                    <p class="text-xs text-slate-400 font-mono">100% Réel (Tickets enregistrés) • Date : <span id="costs-date-label"></span> • CA Réel HT : <span id="costs-real-ht-label" class="text-sky-300">0.00 €</span></p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+                    <button onclick="setCostScopeMode('day')" id="scope-btn-day" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Tickets Date Active</button>
+                    <button onclick="setCostScopeMode('all_real')" id="scope-btn-all_real" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Cumul Réel Tickets</button>
+                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold">Export CSV</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 font-mono">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-[11px] text-slate-400">COGS Réel + Casse</p>
+                    <p id="cost-cogs-val" class="text-lg font-bold text-amber-400 mt-1">0.00 €</p>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-[11px] text-slate-400">Charges Exploitation</p>
+                    <p id="cost-opex-val" class="text-lg font-bold text-rose-400 mt-1">0.00 €</p>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-[11px] text-slate-400">Net Avant Réserves</p>
+                    <p id="cost-pre-reserve-val" class="text-lg font-bold text-sky-300 mt-1">0.00 €</p>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-[11px] text-slate-400">À Isoler (TVA + Réserves)</p>
+                    <p id="cost-reserve-val" class="text-lg font-bold text-amber-300 mt-1">0.00 €</p>
+                </div>
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <p class="text-[11px] text-slate-400">Bénéfice Net Disponible</p>
+                    <p id="cost-net-gain-val" class="text-lg font-bold text-emerald-400 mt-1">0.00 €</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 font-mono text-xs">
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-sky-300">Charges en % du CA Réel HT (Loyer max 7%)</h3>
+                        <button onclick="applyProfitableDefaults()" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-emerald-300 px-2.5 py-1 rounded font-bold">Profil Rentable (Loyer 7%)</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Loyer (% Net HT) — Max 7%</label>
+                            <input type="number" step="0.5" min="0" max="7" id="cfg-rent-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            <span id="calc-rent-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Royalties Holding (% Net HT)</label>
+                            <input type="number" step="0.5" min="0" max="100" id="cfg-royalties-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            <span id="calc-royalties-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Frais de Personnel (% Net HT)</label>
+                            <input type="number" step="0.5" min="0" max="100" id="cfg-staff-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            <span id="calc-staff-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Entretiens & Réparations (% Net HT)</label>
+                            <input type="number" step="0.5" min="0" max="100" id="cfg-maint-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            <span id="calc-maint-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (% Net HT)</label>
+                            <input type="number" step="0.5" min="0" max="100" id="cfg-other-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                            <span id="calc-other-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-amber-300">Réserves Trésorerie (5%) & Fiscalité</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Provision Fiscalité / Impôts (% Net HT)</label>
+                            <input type="number" step="0.5" min="0" max="100" id="cfg-tax-reserve-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Réserve Trésorerie (% Net HT) — Cible 5%</label>
+                            <input type="number" step="0.5" min="0" max="100" id="cfg-cap-reserve-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                        </div>
+                    </div>
+                    <div id="cost-breakdown-summary" class="space-y-1 pt-2 border-t border-slate-800 text-slate-300"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SOUS-PAGE : /POS/historique-qr -->
+        <section id="view-history" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <p class="text-[11px] text-sky-400 font-mono">https://lexwallet.app/POS/historique-qr</p>
                     <h2 class="text-base font-bold text-sky-300">Registre, QR Traçabilité & Historique Horodaté</h2>
-                    <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR traçabilité, modification ou annulation</span>
                 </div>
-                <div id="history-container" class="space-y-2 font-mono text-xs">
-                    <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
+                <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR, modification ou annulation</span>
+            </div>
+            <div id="history-container" class="space-y-2 font-mono text-xs">
+                <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
+            </div>
+        </section>
+
+        <!-- SOUS-PAGE : /POS/stocks-iot-scanners (STOCKS + CAPTEURS IoT + SCANNERS PAR ONGLETS) -->
+        <section id="view-supply" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+                <div>
+                    <p class="text-[11px] text-sky-400">https://lexwallet.app/POS/stocks-iot-scanners</p>
+                    <h2 class="text-base font-bold text-emerald-400">Stocks, Capteurs IoT & Scanners</h2>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="switchSupplySubTab('stock')" id="sup-tab-stock" class="px-3 py-1.5 rounded font-bold bg-emerald-600 text-white">Onglet Stock & Casse</button>
+                    <button onclick="switchSupplySubTab('iot')" id="sup-tab-iot" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Onglet Capteurs IoT</button>
+                    <button onclick="switchSupplySubTab('scanner')" id="sup-tab-scanner" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Onglet Scanner Lots</button>
                 </div>
             </div>
-        </div>
 
-        <!-- PAGE 4 : SUPPLY CHAIN — STOCKS, CAPTEURS IoT, SCANNERS, FOURNISSEURS & RECETTES (SOUS-ONGLETS) -->
-        <div id="page-supply" class="hidden space-y-6">
-            <div class="flex flex-wrap gap-2 font-mono text-xs">
-                <button onclick="switchSubTab('supply', 'stock')" id="sub-supply-stock" class="px-3 py-1.5 rounded font-bold bg-emerald-600 text-white">Sous-onglet : Stocks & Casse</button>
-                <button onclick="switchSubTab('supply', 'iotscan')" id="sub-supply-iotscan" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Capteurs IoT & Scanners</button>
-                <button onclick="switchSubTab('supply', 'suppliers')" id="sub-supply-suppliers" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Fournisseurs & Bons</button>
-                <button onclick="switchSubTab('supply', 'recipes')" id="sub-supply-recipes" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Recettes & Lots</button>
-            </div>
-
-            <div id="panel-supply-stock" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé & Casse / Pertes</h2>
-                        <p class="text-xs text-slate-400 font-mono">Stock théorique vs casse réelle • Synchronisé avec les tickets POS</p>
-                    </div>
-                    <div class="flex flex-wrap gap-2 text-xs font-mono">
-                        <button onclick="exportAuditCsv()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export CSV</button>
-                        <button onclick="exportBackupJson()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Export JSON</button>
-                        <label class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded font-bold cursor-pointer">
-                            Import JSON
-                            <input type="file" accept=".json" onchange="importBackupJson(event)" class="hidden"/>
-                        </label>
-                    </div>
+            <div id="sup-panel-stock" class="space-y-4">
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportAuditCsv()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export CSV</button>
+                    <button onclick="exportBackupJson()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Export JSON</button>
+                    <label class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded font-bold cursor-pointer">
+                        Import JSON
+                        <input type="file" accept=".json" onchange="importBackupJson(event)" class="hidden"/>
+                    </label>
                 </div>
-
                 <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
                     <table class="w-full text-left font-mono text-xs">
                         <thead class="border-b border-slate-800 text-slate-400">
                             <tr>
                                 <th class="p-3">Ingrédient</th>
-                                <th class="p-3">Fournisseur Assigné</th>
-                                <th class="p-3">Stock Départ</th>
+                                <th class="p-3">Fournisseur</th>
+                                <th class="p-3">Départ</th>
                                 <th class="p-3">Consommé</th>
-                                <th class="p-3">Casse / Perte</th>
-                                <th class="p-3">Stock Actuel</th>
+                                <th class="p-3">Casse</th>
+                                <th class="p-3">Actuel</th>
                                 <th class="p-3">Seuil Min</th>
                             </tr>
                         </thead>
@@ -423,140 +423,120 @@
                 </div>
             </div>
 
-            <div id="panel-supply-iotscan" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-amber-300">Capteurs IoT (Froid / Affinage / Énergie) & Scanners Lots</h2>
-                        <p class="text-slate-400">Télémétrie temps réel et scan codes-barres / QR lots lié à l'inventaire</p>
-                    </div>
-                    <button onclick="simulateIoTTelemetry()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Rafraîchir Télémétrie Capteurs</button>
+            <div id="sup-panel-iot" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-amber-300">Capteurs IoT (Chambre Froide, Congélation, Énergie)</h3>
+                    <button onclick="simulateIoTTelemetry()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold">Actualiser Capteurs</button>
                 </div>
-
                 <div id="iot-sensors-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-emerald-300">Scanner Code-Barres / QR Lot (Réception & Contrôle Rapide)</h3>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="scanner-code-input" placeholder="Scanner ou saisir un code lot (ex: LOT-CHED-1126, LOT-BOEUF-1126)" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded text-white flex-1"/>
-                        <input type="number" min="0" id="scanner-add-qty" value="25" class="w-28 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-white text-right"/>
-                        <button onclick="processScannedLot()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">Valider Scan (+Stock)</button>
-                    </div>
-                    <p id="scanner-feedback" class="text-[11px] text-sky-300"></p>
-                </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <h3 class="text-sm font-bold text-sky-300">Plan de Déploiement Professionnel Capteurs & Scanners</h3>
-                    <ul class="space-y-1 text-slate-300 text-[11px]">
-                        <li>• <strong>Capteurs Froid & Affinage</strong> : sondes température + hygrométrie (2°C–6°C affinage, ≤ -18°C congélation) avec alerte seuil sans ressaisie manuelle.</li>
-                        <li>• <strong>Compteur Énergie & Extraction</strong> : suivi kW/kWh pour corréler consommation électrique, pannes compresseurs/fours et provision Entretien & Grosses Réparations.</li>
-                        <li>• <strong>Scanners Réception & Lots</strong> : douchette USB/BLE ou caméra QR liée au numéro de lot et au fournisseur pour alimenter automatiquement le stock et la traçabilité.</li>
-                    </ul>
-                </div>
             </div>
 
-            <div id="panel-supply-suppliers" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 id="supplier-form-title" class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
-                        <button id="cancel-sup-edit-btn" onclick="resetSupplierForm()" class="hidden text-[11px] text-amber-400 underline">Annuler modification</button>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                        <input type="text" id="new-sup-name" placeholder="Nom fournisseur*" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <input type="text" id="new-sup-address" placeholder="Adresse complète" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <input type="text" id="new-sup-contact" placeholder="Contact (tél / email)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <input type="text" id="new-sup-vat-reg" placeholder="N° TVA & N° Entreprise" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                    </div>
-                    <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-2">
-                        <span class="text-[11px] text-sky-300 font-bold block">Produits en portefeuille pour ce fournisseur :</span>
-                        <div id="supplier-portfolio-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-[11px]"></div>
-                    </div>
-                    <button onclick="saveSupplierForm()" id="save-sup-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
-                    <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2"></div>
+            <div id="sup-panel-scanner" class="hidden space-y-4">
+                <h3 class="text-sm font-bold text-emerald-300">Scanner Code-Barres / QR Lot</h3>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="scanner-code-input" placeholder="Code lot (ex: LOT-CHED-1126, LOT-BOEUF-1126)" class="bg-slate-950 border border-slate-700 px-3 py-2 rounded text-white flex-1"/>
+                    <input type="number" min="0" id="scanner-add-qty" value="25" class="w-28 bg-slate-950 border border-slate-700 px-3 py-2 rounded text-white text-right"/>
+                    <button onclick="processScannedLot()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">Valider Scan (+Stock)</button>
                 </div>
+                <p id="scanner-feedback" class="text-[11px] text-sky-300"></p>
+            </div>
+        </section>
 
-                <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-4">
-                    <div>
-                        <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
-                        <p class="text-[11px] text-slate-400">Générées automatiquement lorsque Stock Actuel &lt; Seuil Min</p>
-                    </div>
-                    <div id="suggested-po-container" class="space-y-3"></div>
-                    <div id="validated-po-history" class="space-y-2 pt-3 border-t border-slate-800"></div>
+        <!-- SOUS-PAGE : /POS/fournisseurs-recettes -->
+        <section id="view-suppliers" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
+            <p class="text-[11px] text-sky-400">https://lexwallet.app/POS/fournisseurs-recettes</p>
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 id="supplier-form-title" class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
+                    <button id="cancel-sup-edit-btn" onclick="resetSupplierForm()" class="hidden text-[11px] text-amber-400 underline">Annuler modification</button>
                 </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <input type="text" id="new-sup-name" placeholder="Nom fournisseur*" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                    <input type="text" id="new-sup-address" placeholder="Adresse complète" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                    <input type="text" id="new-sup-contact" placeholder="Contact" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                    <input type="text" id="new-sup-vat-reg" placeholder="N° TVA & N° Entreprise" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                </div>
+                <div id="supplier-portfolio-checkboxes" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-slate-900/80 p-3 rounded-xl border border-slate-800"></div>
+                <button onclick="saveSupplierForm()" id="save-sup-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
+                <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
             </div>
 
-            <div id="panel-supply-recipes" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-emerald-400">Recettes Articles & Traçabilité Matières</h2>
-                        <p class="text-slate-400">Synchronisation temps réel avec l'inventaire, les lots de provenance et les fournisseurs</p>
-                    </div>
-                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold">Export Traçabilité CSV</button>
-                </div>
+            <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-3">
+                <h3 class="text-sm font-bold text-amber-400">Bons de Commande Suggérés & Validés</h3>
+                <div id="suggested-po-container" class="space-y-3"></div>
+                <div id="validated-po-history" class="space-y-1 pt-2 border-t border-slate-800"></div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                <h3 class="text-sm font-bold text-emerald-400">Recettes & Traçabilité Lots</h3>
                 <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-sky-300">Registre des Lots & Provenances Actifs</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="border-b border-slate-800 text-slate-400">
-                                <tr>
-                                    <th class="p-2.5">Ingrédient</th>
-                                    <th class="p-2.5">N° Lot</th>
-                                    <th class="p-2.5">Fournisseur</th>
-                                    <th class="p-2.5">N° TVA / Entreprise</th>
-                                    <th class="p-2.5">Stock Actuel</th>
-                                </tr>
-                            </thead>
-                            <tbody id="traceability-lots-body" class="divide-y divide-slate-900"></tbody>
-                        </table>
-                    </div>
+            </div>
+        </section>
+
+        <!-- SOUS-PAGE : /POS/rh-paie -->
+        <section id="view-hr" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+                <div>
+                    <p class="text-[11px] text-sky-400">https://lexwallet.app/POS/rh-paie</p>
+                    <h2 class="text-base font-bold text-emerald-400">RH — Badgeage Heures, Fiches de Paie & Échéancier</h2>
+                </div>
+                <button onclick="connectBadgeReader()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Connecter / Tester Badgeuse</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <input type="text" id="badge-staff-name" placeholder="Nom équipier" class="bg-slate-950 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                <input type="text" id="badge-uid" placeholder="Badge UID (ex: BDG-01)" class="bg-slate-950 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                <input type="number" step="0.25" min="0.25" max="24" id="badge-hours" value="8" class="bg-slate-950 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                <input type="number" step="0.5" min="5" id="badge-rate" value="14.50" class="bg-slate-950 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+            </div>
+            <button onclick="recordBadgeShift()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">+ Enregistrer Badgeage Signé</button>
+            <div id="hr-payroll-summary" class="bg-slate-950 border border-slate-800 p-3 rounded-lg text-slate-200"></div>
+            <div id="badge-logs-list" class="space-y-1 text-[11px] text-slate-400"></div>
+            <div id="payslips-list" class="space-y-2 text-slate-300"></div>
+            <div id="hr-payment-schedule" class="space-y-2 text-slate-300"></div>
+        </section>
+
+        <!-- SOUS-PAGE : /POS/parametres-fiscaux -->
+        <section id="view-fiscal" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 font-mono text-xs">
+            <p class="text-[11px] text-sky-400">https://lexwallet.app/POS/parametres-fiscaux</p>
+            <h2 class="text-base font-bold text-sky-300">Paramètres Pays, Fiscaux & Sociaux</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">Pays / Juridiction</label>
+                    <select id="jur-country" onchange="applyJurisdictionPreset()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white">
+                        <option value="BE">Belgique (BE)</option>
+                        <option value="FR">France (FR)</option>
+                        <option value="ES">Espagne (ES)</option>
+                        <option value="VE">Venezuela (VE)</option>
+                        <option value="CUSTOM">Personnalisé</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">TVA Sur Place (%)</label>
+                    <input type="number" step="0.5" id="jur-vat-place" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">TVA Emporter (%)</label>
+                    <input type="number" step="0.5" id="jur-vat-takeout" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">Charges Patronales RH (%)</label>
+                    <input type="number" step="0.5" id="jur-employer-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">Retenue Salariale Est. (%)</label>
+                    <input type="number" step="0.5" id="jur-employee-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 block mb-1">Devise</label>
+                    <input type="text" id="jur-currency" value="€" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
                 </div>
             </div>
-        </div>
-
-        <!-- PAGE 5 : RH, BADGEAGE, FICHES DE PAIE & ÉCHÉANCIER (SOUS-ONGLETS) -->
-        <div id="page-hr" class="hidden space-y-6">
-            <div class="flex flex-wrap gap-2 font-mono text-xs">
-                <button onclick="switchSubTab('hr', 'badge')" id="sub-hr-badge" class="px-3 py-1.5 rounded font-bold bg-emerald-600 text-white">Sous-onglet : Badgeage & Fiches de Paie</button>
-                <button onclick="switchSubTab('hr', 'schedule')" id="sub-hr-schedule" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Où & Quand Payer (Charges)</button>
-            </div>
-
-            <div id="panel-hr-badge" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-emerald-400">RH — Badgeage Heures Anti-Manipulation & Calcul Déterministe</h2>
-                        <p class="text-slate-400">Connexion badgeuse UID • Calcul brut/net/charges • Fiches de paie</p>
-                    </div>
-                    <button onclick="connectBadgeReader()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Connecter / Tester Badgeuse</button>
-                </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4">
-                    <h3 class="text-sm font-bold text-sky-300">Enregistrement Badgeage Signé</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                        <input type="text" id="badge-staff-name" placeholder="Nom équipier" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                        <input type="text" id="badge-uid" placeholder="Badge UID (ex: BDG-01)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                        <input type="number" step="0.25" min="0.25" max="24" id="badge-hours" value="8" placeholder="Heures" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                        <input type="number" step="0.5" min="5" id="badge-rate" value="14.50" placeholder="Taux horaire brut" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                    </div>
-                    <button onclick="recordBadgeShift()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">+ Enregistrer Badgeage Signé</button>
-                    <div id="hr-payroll-summary" class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-slate-200 space-y-1"></div>
-                    <div id="badge-logs-list" class="space-y-1 text-[11px] text-slate-400"></div>
-                </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-amber-300">Fiches de Paie Déterministes (Par Équipier)</h3>
-                    <div id="payslips-list" class="space-y-2 text-slate-300"></div>
-                </div>
-            </div>
-
-            <div id="panel-hr-schedule" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 font-mono text-xs">
-                <h2 class="text-base font-bold text-sky-300">Échéancier de Paiement — Rémunérations & Charges Sociales</h2>
-                <div id="hr-payment-schedule" class="space-y-2 text-slate-300"></div>
-            </div>
-        </div>
+            <p id="jur-summary-line" class="text-amber-300"></p>
+        </section>
 
     </div>
 
-    <!-- MODAL DÉTAIL TICKET + QR CODE UNIQUE -->
+    <!-- MODAL DÉTAIL TICKET + QR -->
     <div id="ticket-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-6 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto space-y-4 font-mono text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3 sticky top-0 bg-slate-900 z-10">
@@ -609,7 +589,7 @@
         </div>
     </div>
 
-    <!-- MODAL SÉCURITÉ ADMIN / SUPERVISEUR -->
+    <!-- MODAL PIN ADMIN / SUPERVISEUR -->
     <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-8 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 font-mono text-xs">
             <h3 id="admin-modal-title" class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN / SUPERVISEUR</h3>
@@ -629,7 +609,7 @@
         const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
         const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
         const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
-        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v5';
+        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v6';
         const HR_STORAGE_KEY = 'lexwallet_pos_hr_v1';
         const GOV_STORAGE_KEY = 'lexwallet_pos_gov_v1';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
@@ -642,9 +622,9 @@
         };
 
         const DEFAULT_SUPPLIERS = [
-            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', address: '14 Rue des Artisans, 1000 Bruxelles', contact: '+32 2 555 0140 • compta@boulangerienord.example', vatNumber: 'BE0412345678', companyNumber: '0412.345.678', origin: 'Farine CRC • Traçabilité Nord' },
-            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', address: '88 Avenue du Marché, 4000 Liège', contact: '+32 4 555 0192 • logistique@filiereterroir.example', vatNumber: 'BE0523456789', companyNumber: '0523.456.789', origin: 'Élevage & Fromages Affinés' },
-            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', address: '5 Quai des Chais, 2000 Anvers', contact: '+32 3 555 0175 • commandes@domainecave.example', vatNumber: 'BE0634567890', companyNumber: '0634.567.890', origin: 'Boissons Soft, Vins & Spiritueux' }
+            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', address: '14 Rue des Artisans, 1000 Bruxelles', contact: '+32 2 555 0140', vatNumber: 'BE0412345678', companyNumber: '0412.345.678' },
+            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', address: '88 Avenue du Marché, 4000 Liège', contact: '+32 4 555 0192', vatNumber: 'BE0523456789', companyNumber: '0523.456.789' },
+            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', address: '5 Quai des Chais, 2000 Anvers', contact: '+32 3 555 0175', vatNumber: 'BE0634567890', companyNumber: '0634.567.890' }
         ];
 
         const DEFAULT_INGREDIENTS = [
@@ -666,9 +646,9 @@
                 id: 'CAT-PLATS',
                 title: 'Plats & Burgers',
                 items: [
-                    { sku: 'CHEER-BURGER-01', name: 'Cheer Classic Cheese Burger', desc: 'Pain, viande de bœuf, cheddar, sauce, salade', price_ht: 9.50, unit_cogs: 2.85, baseGroup: 'plats_sur_place', recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1, 'ING-SALADE': 1 } },
-                    { sku: 'CHEER-BURGER-02', name: 'Cheer Truffle Bacon Burger', desc: 'Pain, viande de bœuf, double cheddar, bacon, truffe, sauce', price_ht: 12.50, unit_cogs: 3.75, baseGroup: 'plats_sur_place', recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 2, 'ING-BACON': 2, 'ING-TRUFFE': 1, 'ING-SAUCE': 1 } },
-                    { sku: 'CHEER-BOX-01', name: 'Box Frites & Cheese Emporter', desc: 'Frites, cheddar, sauce emballage thermique', price_ht: 8.50, unit_cogs: 2.30, baseGroup: 'plats_emporter', recipe: { 'ING-FRITES': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1 } },
+                    { sku: 'CHEER-BURGER-01', name: 'Cheer Classic Cheese Burger', desc: 'Pain, bœuf, cheddar, sauce, salade', price_ht: 9.50, unit_cogs: 2.85, baseGroup: 'plats_sur_place', recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1, 'ING-SALADE': 1 } },
+                    { sku: 'CHEER-BURGER-02', name: 'Cheer Truffle Bacon Burger', desc: 'Pain, bœuf, double cheddar, bacon, truffe, sauce', price_ht: 12.50, unit_cogs: 3.75, baseGroup: 'plats_sur_place', recipe: { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 2, 'ING-BACON': 2, 'ING-TRUFFE': 1, 'ING-SAUCE': 1 } },
+                    { sku: 'CHEER-BOX-01', name: 'Box Frites & Cheese Emporter', desc: 'Frites, cheddar, sauce', price_ht: 8.50, unit_cogs: 2.30, baseGroup: 'plats_emporter', recipe: { 'ING-FRITES': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1 } },
                     { sku: 'CHEESE-PLATE-01', name: 'Plateau de Fromages Affinés', desc: 'Sélection du terroir', price_ht: 14.00, unit_cogs: 4.50, baseGroup: 'plats_sur_place', recipe: { 'ING-FROMAGE': 1 } }
                 ]
             },
@@ -706,13 +686,11 @@
         let hrShifts = loadHrShifts();
         let govState = loadGovState();
         let iotSensors = [
-            { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: '3.4 °C • 78% HR', status: 'OK', node: 'DePIN-EU-01' },
-            { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: '-18.6 °C', status: 'OK', node: 'DePIN-EU-01' },
-            { id: 'IOT-PWR-03', label: 'Compteur Énergie & Extraction', metric: '4.8 kW • Nominal', status: 'OK', node: 'DePIN-EU-02' }
+            { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: '3.2 °C • 77% HR', status: 'OK', node: 'DePIN-EU-01' },
+            { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: '-18.8 °C', status: 'OK', node: 'DePIN-EU-01' },
+            { id: 'IOT-PWR-03', label: 'Compteur Énergie', metric: '4.4 kW • Nominal', status: 'OK', node: 'DePIN-EU-02' }
         ];
-        let activePage = 'kyc';
-        let activeSubTabs = { kyc: 'entry', finance: 'pnl', supply: 'stock', hr: 'badge' };
-        let costPeriodMode = 'daily';
+        let costScopeMode = 'day';
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
         let activeVoucher = null;
@@ -727,20 +705,69 @@
         hydrateCostInputs();
         renderCatalog();
         updateCartUI();
-        syncAllTabs();
+        syncAllViews();
+        navigateRoute(parseHashRoute());
+        window.addEventListener('hashchange', () => renderRoute(parseHashRoute()));
 
-        window.addEventListener('storage', () => {
-            transactions = loadTransactions();
-            ingredientsConfig = loadIngredientsConfig();
-            suppliers = loadSuppliers();
-            validatedPOs = loadValidatedPOs();
-            costConfig = loadCostConfig();
-            hrShifts = loadHrShifts();
-            govState = loadGovState();
-            hydrateGovAndJurisdiction();
-            hydrateCostInputs();
-            syncAllTabs();
-        });
+        function parseHashRoute() {
+            const raw = (window.location.hash || '#/').replace(/^#/, '');
+            if (!raw || raw === '/') return '/';
+            return raw.startsWith('/') ? raw : '/' + raw;
+        }
+
+        function navigateRoute(path) {
+            window.location.hash = '#' + path;
+            renderRoute(path);
+        }
+
+        function renderRoute(path) {
+            const clean = path || '/';
+            document.getElementById('route-url-display').innerText = `Route active : https://lexwallet.app${clean === '/' ? '/' : clean}`;
+
+            const views = {
+                home: document.getElementById('view-home'),
+                posHub: document.getElementById('view-pos-hub'),
+                caisse: document.getElementById('view-caisse'),
+                pnl: document.getElementById('view-pnl'),
+                costs: document.getElementById('view-costs'),
+                history: document.getElementById('view-history'),
+                supply: document.getElementById('view-supply'),
+                suppliers: document.getElementById('view-suppliers'),
+                hr: document.getElementById('view-hr'),
+                fiscal: document.getElementById('view-fiscal')
+            };
+            Object.values(views).forEach(el => el.classList.add('hidden'));
+            const subnav = document.getElementById('pos-subnav');
+            subnav.classList.add('hidden');
+
+            const lower = clean.toLowerCase();
+            if (clean === '/' || lower === '/kyc') {
+                views.home.classList.remove('hidden');
+            } else if (lower === '/pos') {
+                views.posHub.classList.remove('hidden');
+            } else {
+                subnav.classList.remove('hidden');
+                if (lower.startsWith('/pos/caisse')) views.caisse.classList.remove('hidden');
+                else if (lower.startsWith('/pos/rapport') || lower.startsWith('/pos/pnl')) views.pnl.classList.remove('hidden');
+                else if (lower.startsWith('/pos/couts') || lower.startsWith('/pos/tresorerie')) views.costs.classList.remove('hidden');
+                else if (lower.startsWith('/pos/historique')) views.history.classList.remove('hidden');
+                else if (lower.startsWith('/pos/stocks') || lower.startsWith('/pos/iot') || lower.startsWith('/pos/scanner')) views.supply.classList.remove('hidden');
+                else if (lower.startsWith('/pos/fournisseurs') || lower.startsWith('/pos/recettes')) views.suppliers.classList.remove('hidden');
+                else if (lower.startsWith('/pos/rh')) views.hr.classList.remove('hidden');
+                else if (lower.startsWith('/pos/parametres') || lower.startsWith('/pos/fiscal')) views.fiscal.classList.remove('hidden');
+                else views.posHub.classList.remove('hidden');
+            }
+            syncAllViews();
+        }
+
+        function switchSupplySubTab(tab) {
+            ['stock', 'iot', 'scanner'].forEach(t => {
+                document.getElementById('sup-panel-' + t).classList.toggle('hidden', t !== tab);
+                document.getElementById('sup-tab-' + t).className = t === tab
+                    ? 'px-3 py-1.5 rounded font-bold bg-emerald-600 text-white'
+                    : 'px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300';
+            });
+        }
 
         function formatNowDateTime() {
             const now = new Date();
@@ -766,7 +793,6 @@
                 email: HOLDING_ADMIN_EMAIL,
                 level: 'holding',
                 kycVerified: true,
-                kycBypassedForHolding: true,
                 clientId: 'CHEER-FLAGSHIP-01',
                 userName: 'Administrateur Holding',
                 country: 'BE',
@@ -789,7 +815,8 @@
         }
 
         function updateHeaderContext() {
-            const accessLabel = govState.email.toLowerCase() === HOLDING_ADMIN_EMAIL
+            const isHolding = govState.email && govState.email.toLowerCase() === HOLDING_ADMIN_EMAIL;
+            const accessLabel = isHolding
                 ? `Holding Direct (${HOLDING_ADMIN_EMAIL} • Sans KYC)`
                 : `${govState.level} (${govState.kycVerified ? 'KYC Validé' : 'KYC En Attente'})`;
             document.getElementById('header-context-label').innerText =
@@ -818,7 +845,6 @@
             govState.email = HOLDING_ADMIN_EMAIL;
             govState.level = 'holding';
             govState.kycVerified = true;
-            govState.kycBypassedForHolding = true;
             govState.userName = 'Holding Admin (cbltec@proton.me)';
             govState.logs.unshift(`[${stamp.full}] Connexion directe Holding sans KYC : ${HOLDING_ADMIN_EMAIL}`);
             persistGovState();
@@ -832,19 +858,18 @@
             const docId = document.getElementById('kyc-doc-id').value.trim();
             const clientId = document.getElementById('kyc-client-id').value.trim() || 'CHEER-FLAGSHIP-01';
             if (!fullName || !docId) {
-                return alert("Renseignez l'identité / raison sociale et l'identifiant KYC.");
+                return alert("Renseignez l'identité / société et la référence KYC.");
             }
             const stamp = formatNowDateTime();
             govState.email = `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, '.')}@client.local`;
             govState.level = role;
             govState.kycVerified = true;
-            govState.kycBypassedForHolding = false;
             govState.clientId = clientId;
             govState.userName = fullName;
-            govState.logs.unshift(`[${stamp.full}] KYC validé pour ${fullName} (${role}, Doc: ${docId}) • Client ${clientId}`);
+            govState.logs.unshift(`[${stamp.full}] KYC validé : ${fullName} (${role}, Réf: ${docId})`);
             persistGovState();
             renderGovernanceView();
-            alert(`KYC validé (${stamp.full}) pour ${fullName}.`);
+            navigateRoute('/POS');
         }
 
         function applyJurisdictionPreset() {
@@ -860,7 +885,7 @@
                 Object.assign(govState, presets[c]);
                 persistGovState();
                 hydrateGovAndJurisdiction();
-                syncAllTabs();
+                syncAllViews();
             } else {
                 govState.country = 'CUSTOM';
                 persistGovState();
@@ -875,10 +900,8 @@
             govState.employerRatePct = Math.max(0, parseFloat(document.getElementById('jur-employer-rate').value) || 0);
             govState.employeeRatePct = Math.max(0, parseFloat(document.getElementById('jur-employee-rate').value) || 0);
             govState.currency = (document.getElementById('jur-currency').value || '€').trim();
-            const stamp = formatNowDateTime();
-            govState.logs.unshift(`[${stamp.full}] Maj paramètres ${govState.clientId} (${govState.country}) : TVA ${govState.vatPlacePct}%/${govState.vatTakeoutPct}%, RH ${govState.employerRatePct}%`);
             persistGovState();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function renderGovernanceView() {
@@ -889,41 +912,6 @@
             document.getElementById('jur-summary-line').innerText =
                 `Client ${govState.clientId} • Pays : ${govState.country} • TVA Sur Place : ${govState.vatPlacePct}% • TVA Emporter : ${govState.vatTakeoutPct}% • Charges patronales RH : ${govState.employerRatePct}% • Devise : ${govState.currency}`;
             document.getElementById('kyc-audit-logs').innerHTML = (govState.logs || []).slice(0, 8).map(l => `<p>• ${l}</p>`).join('');
-        }
-
-        function switchPage(page) {
-            activePage = page;
-            ['kyc', 'pos', 'finance', 'supply', 'hr'].forEach(p => {
-                document.getElementById('page-' + p).classList.add('hidden');
-                document.getElementById('page-btn-' + p).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
-            });
-            document.getElementById('page-' + page).classList.remove('hidden');
-            document.getElementById('page-btn-' + page).className = page === 'kyc'
-                ? "px-3 py-2 rounded text-xs font-bold bg-amber-600 text-white transition"
-                : "px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition";
-            switchSubTab(page, activeSubTabs[page] || null);
-            syncAllTabs();
-        }
-
-        function switchSubTab(page, sub) {
-            if (!sub) return;
-            activeSubTabs[page] = sub;
-            const map = {
-                kyc: ['entry', 'fiscal'],
-                finance: ['pnl', 'costs', 'history'],
-                supply: ['stock', 'iotscan', 'suppliers', 'recipes'],
-                hr: ['badge', 'schedule']
-            };
-            (map[page] || []).forEach(s => {
-                const panel = document.getElementById(`panel-${page}-${s}`);
-                const btn = document.getElementById(`sub-${page}-${s}`);
-                if (panel) panel.classList.add('hidden');
-                if (btn) btn.className = "px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300";
-            });
-            const activePanel = document.getElementById(`panel-${page}-${sub}`);
-            const activeBtn = document.getElementById(`sub-${page}-${sub}`);
-            if (activePanel) activePanel.classList.remove('hidden');
-            if (activeBtn) activeBtn.className = "px-3 py-1.5 rounded font-bold bg-sky-600 text-white";
         }
 
         function loadTransactions() {
@@ -983,10 +971,12 @@
         }
 
         function loadCostConfig() {
-            const defaults = { rentPct: 10, royaltiesPct: 5, staffPct: 25, maintPct: 3, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
+            const defaults = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 };
             try {
                 const raw = localStorage.getItem(COST_CFG_STORAGE_KEY);
-                return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+                const parsed = raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+                parsed.rentPct = Math.min(7, Math.max(0, Number(parsed.rentPct || 0)));
+                return parsed;
             } catch (_) { return defaults; }
         }
 
@@ -1006,7 +996,7 @@
         }
 
         function hydrateCostInputs() {
-            document.getElementById('cfg-rent-pct').value = costConfig.rentPct;
+            document.getElementById('cfg-rent-pct').value = Math.min(7, costConfig.rentPct);
             document.getElementById('cfg-royalties-pct').value = costConfig.royaltiesPct;
             document.getElementById('cfg-staff-pct').value = costConfig.staffPct;
             document.getElementById('cfg-maint-pct').value = costConfig.maintPct;
@@ -1015,27 +1005,27 @@
             document.getElementById('cfg-cap-reserve-pct').value = costConfig.capReservePct;
         }
 
-        function applyCheerCheeseDefaults() {
-            costConfig = { rentPct: 10, royaltiesPct: 5, staffPct: 25, maintPct: 3, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
+        function applyProfitableDefaults() {
+            costConfig = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 };
             persistCostConfig();
             hydrateCostInputs();
-            syncAllTabs();
+            syncAllViews();
         }
 
-        function setCostPeriodMode(mode) {
-            costPeriodMode = mode;
-            document.getElementById('period-btn-daily').className = mode === 'daily'
+        function setCostScopeMode(mode) {
+            costScopeMode = mode;
+            document.getElementById('scope-btn-day').className = mode === 'day'
                 ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white"
                 : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
-            document.getElementById('period-btn-monthly').className = mode === 'monthly'
-                ? "px-3 py-1.5 rounded font-bold bg-amber-600 text-white"
+            document.getElementById('scope-btn-all_real').className = mode === 'all_real'
+                ? "px-3 py-1.5 rounded font-bold bg-emerald-600 text-white"
                 : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
-            syncAllTabs();
+            syncAllViews();
         }
 
         function saveCostConfig() {
             costConfig = {
-                rentPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)),
+                rentPct: Math.min(7, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)),
                 royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)),
                 staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)),
                 maintPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-maint-pct').value) || 0)),
@@ -1044,7 +1034,8 @@
                 capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0))
             };
             persistCostConfig();
-            syncAllTabs();
+            hydrateCostInputs();
+            syncAllViews();
         }
 
         function findCatalogItem(sku) {
@@ -1179,7 +1170,7 @@
             `).join('');
         }
 
-        function syncAllTabs() {
+        function syncAllViews() {
             renderGovernanceView();
             updatePnL();
             updateCostsView();
@@ -1325,12 +1316,12 @@
             setQuickDiscount(0);
             clearCoupon();
             updateCartUI();
-            syncAllTabs();
+            syncAllViews();
             alert(isTest ? `[MODE TEST] ${stamp.full} — Enregistré hors CA et hors stock.` : `Encaissement validé (${stamp.full})\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
         }
 
-        function aggregateDayData(dateStr) {
-            const activeTxs = transactions.filter(t => !t.is_test && !t.cancelled && t.date === dateStr);
+        function aggregateTransactions(txList) {
+            const activeTxs = txList.filter(t => !t.is_test && !t.cancelled);
             const ca = activeTxs.reduce((acc, t) => acc + t.total_ttc, 0);
             const ht = activeTxs.reduce((acc, t) => acc + t.total_ht, 0);
             const vat = activeTxs.reduce((acc, t) => acc + t.vat, 0);
@@ -1362,6 +1353,10 @@
             });
 
             return { activeTxs, ca, ht, vat, salesCogs, wasteCogs, totalCogs, buckets: Object.values(bucketTotals), topProducts: Object.values(productMap).sort((a, b) => b.qty - a.qty) };
+        }
+
+        function aggregateDayData(dateStr) {
+            return aggregateTransactions(transactions.filter(t => t.date === dateStr));
         }
 
         function updatePnL() {
@@ -1427,19 +1422,16 @@
         }
 
         function computeFinancialSnapshot(dateStr) {
-            const dayData = aggregateDayData(dateStr);
-            const mult = costPeriodMode === 'monthly' ? 30 : 1;
-            const simHtInput = parseFloat(document.getElementById('sim-target-ht').value) || 0;
-            const isSimulated = simHtInput > 0;
-            const realPeriodHt = dayData.ht * mult;
-            const periodHt = isSimulated ? simHtInput : realPeriodHt;
+            const realData = costScopeMode === 'all_real'
+                ? aggregateTransactions(transactions)
+                : aggregateDayData(dateStr);
 
-            const cogsRatioObserved = dayData.ht > 0 ? (dayData.totalCogs / dayData.ht) : 0.30;
-            const periodCogs = isSimulated ? (periodHt * cogsRatioObserved) : (dayData.totalCogs * mult);
-            const avgVatRate = dayData.ht > 0 ? (dayData.vat / dayData.ht) : ((Number(govState.vatPlacePct || 20) / 100));
-            const periodVat = isSimulated ? (periodHt * avgVatRate) : (dayData.vat * mult);
+            const periodHt = realData.ht;
+            const periodVat = realData.vat;
+            const periodCogs = realData.totalCogs;
 
-            const rentEur = periodHt * (Number(costConfig.rentPct || 0) / 100);
+            const rentPct = Math.min(7, Math.max(0, Number(costConfig.rentPct || 0)));
+            const rentEur = periodHt * (rentPct / 100);
             const royaltiesEur = periodHt * (Number(costConfig.royaltiesPct || 0) / 100);
             const staffEur = periodHt * (Number(costConfig.staffPct || 0) / 100);
             const maintEur = periodHt * (Number(costConfig.maintPct || 0) / 100);
@@ -1452,24 +1444,20 @@
             const totalSetAside = periodVat + taxReserve + capReserve;
             const netGain = preReserveNet - taxReserve - capReserve;
 
-            const varCostRatio = Math.min(0.95, (periodHt > 0 ? (periodCogs / periodHt) : 0.30) + ((Number(costConfig.royaltiesPct || 0) + Number(costConfig.maintPct || 0) + Number(costConfig.otherPct || 0)) / 100));
-            const contribMargin = Math.max(0.05, 1 - varCostRatio);
-            const breakEvenHt = (rentEur + staffEur) / contribMargin;
-
-            return { dayData, mult, isSimulated, realPeriodHt, periodHt, periodVat, periodCogs, rentEur, royaltiesEur, staffEur, maintEur, otherEur, totalChargesEur, preReserveNet, taxReserve, capReserve, totalSetAside, netGain, breakEvenHt };
+            return { realData, periodHt, periodVat, periodCogs, rentPct, rentEur, royaltiesEur, staffEur, maintEur, otherEur, totalChargesEur, preReserveNet, taxReserve, capReserve, totalSetAside, netGain };
         }
 
         function updateCostsView() {
             const selectedDate = document.getElementById('pos-date-input').value;
-            document.getElementById('costs-date-label').innerText = selectedDate;
+            document.getElementById('costs-date-label').innerText = costScopeMode === 'all_real' ? 'Cumul Réel Tickets' : selectedDate;
             const snap = computeFinancialSnapshot(selectedDate);
-            document.getElementById('costs-real-ht-label').innerText = `${snap.realPeriodHt.toFixed(2)} €${snap.isSimulated ? ` (Simulé : ${snap.periodHt.toFixed(2)} €)` : ''}`;
+            document.getElementById('costs-real-ht-label').innerText = `${snap.periodHt.toFixed(2)} € (Réel Tickets)`;
 
-            document.getElementById('calc-rent-eur').innerText = `${snap.rentEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
-            document.getElementById('calc-royalties-eur').innerText = `${snap.royaltiesEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
-            document.getElementById('calc-staff-eur').innerText = `${snap.staffEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
-            document.getElementById('calc-maint-eur').innerText = `${snap.maintEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
-            document.getElementById('calc-other-eur').innerText = `${snap.otherEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
+            document.getElementById('calc-rent-eur').innerText = `${snap.rentEur.toFixed(2)} € (max 7%)`;
+            document.getElementById('calc-royalties-eur').innerText = `${snap.royaltiesEur.toFixed(2)} €`;
+            document.getElementById('calc-staff-eur').innerText = `${snap.staffEur.toFixed(2)} €`;
+            document.getElementById('calc-maint-eur').innerText = `${snap.maintEur.toFixed(2)} €`;
+            document.getElementById('calc-other-eur').innerText = `${snap.otherEur.toFixed(2)} €`;
 
             document.getElementById('cost-cogs-val').innerText = '-' + snap.periodCogs.toFixed(2) + ' €';
             document.getElementById('cost-opex-val').innerText = '-' + snap.totalChargesEur.toFixed(2) + ' €';
@@ -1478,25 +1466,9 @@
             document.getElementById('cost-net-gain-val').innerText = snap.netGain.toFixed(2) + ' €';
 
             document.getElementById('cost-breakdown-summary').innerHTML = `
-                <p>• Base CA Net HT (${snap.isSimulated ? 'Simulation' : (costPeriodMode === 'monthly' ? 'Mensuel ×30j' : 'Journalier')}) : <strong>${snap.periodHt.toFixed(2)} €</strong> (Casse stock : <strong>${(snap.dayData.wasteCogs * snap.mult).toFixed(2)} €</strong>)</p>
-                <p>• <strong>Net Avant Réserves</strong> : <strong>${snap.preReserveNet.toFixed(2)} €</strong> • <strong>Gain Net Disponible (après réserves)</strong> : <strong>${snap.netGain.toFixed(2)} €</strong></p>
-                <p>• TVA (${snap.periodVat.toFixed(2)} €) + Fiscalité (${snap.taxReserve.toFixed(2)} €) + Réserve R&D/Trésorerie (${snap.capReserve.toFixed(2)} €) = <strong>${snap.totalSetAside.toFixed(2)} € à isoler</strong></p>
-                <p class="text-sky-300">• Point mort estimé (seuil de rentabilité HT) : <strong>${snap.breakEvenHt.toFixed(2)} €</strong></p>
-            `;
-        }
-
-        function generateRndGrantDossier() {
-            const selectedDate = document.getElementById('pos-date-input').value;
-            const snap = computeFinancialSnapshot(selectedDate);
-            const stockState = computeStockState();
-            const totalWasteUnits = stockState.reduce((a, b) => a + b.wasteQty, 0);
-            const dossierHash = computeIntegrityHash(`${selectedDate}|${govState.clientId}|${snap.periodHt.toFixed(2)}|${snap.periodCogs.toFixed(2)}|${totalWasteUnits}|${suppliers.length}`);
-            document.getElementById('rnd-grant-card').classList.remove('hidden');
-            document.getElementById('rnd-grant-content').innerHTML = `
-                <p><strong>Périmètre :</strong> Cheer Cheese / ${govState.clientId} (${govState.country}) • LexCore™ / delegal.dev / lexwallet.app</p>
-                <p><strong>Traçabilité & Qualité :</strong> ${suppliers.length} fournisseur(s) référencé(s), ${stockState.length} lot(s) actifs, perte/casse enregistrée : ${totalWasteUnits} unité(s) (${snap.dayData.wasteCogs.toFixed(2)} €).</p>
-                <p><strong>Moteur Financier & R&D :</strong> Net HT ${snap.periodHt.toFixed(2)} € • COGS ${snap.periodCogs.toFixed(2)} € • Charges ${snap.totalChargesEur.toFixed(2)} € • Net Avant Réserves ${snap.preReserveNet.toFixed(2)} € • Gain Net Disponible ${snap.netGain.toFixed(2)} €.</p>
-                <p class="text-emerald-400 pt-1"><strong>Empreinte Preuve R&D :</strong> ${dossierHash}</p>
+                <p>• Base CA Réel HT (${costScopeMode === 'all_real' ? 'Tous tickets valides' : 'Date ' + selectedDate}) : <strong>${snap.periodHt.toFixed(2)} €</strong></p>
+                <p>• <strong>Net Avant Réserves</strong> : <strong>${snap.preReserveNet.toFixed(2)} €</strong> • <strong>Bénéfice Net Disponible</strong> : <strong class="${snap.netGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${snap.netGain.toFixed(2)} €</strong></p>
+                <p>• TVA (${snap.periodVat.toFixed(2)} €) + Fiscalité (${snap.taxReserve.toFixed(2)} €) + Trésorerie (${snap.capReserve.toFixed(2)} €) = <strong>${snap.totalSetAside.toFixed(2)} €</strong></p>
             `;
         }
 
@@ -1506,7 +1478,7 @@
             document.getElementById('badge-uid').value = uid;
             govState.logs.unshift(`[${stamp.full}] Badgeuse vérifiée / badge détecté : ${uid}`);
             persistGovState();
-            alert(`Badgeuse prête (${stamp.full}) — Badge détecté : ${uid}. Vérifiez le nom et enregistrez le badgeage.`);
+            alert(`Badgeuse prête (${stamp.full}) — Badge détecté : ${uid}.`);
         }
 
         function recordBadgeShift() {
@@ -1543,7 +1515,7 @@
             persistHrShifts();
             document.getElementById('badge-staff-name').value = '';
             document.getElementById('badge-uid').value = '';
-            syncAllTabs();
+            syncAllViews();
         }
 
         function renderHrPayrollAndBadges() {
@@ -1554,11 +1526,11 @@
             const totalEmployerCost = hrShifts.reduce((a, s) => a + Number(s.totalCost || 0), 0);
 
             document.getElementById('hr-payroll-summary').innerHTML = `
-                <p><strong>Calcul Déterministe RH (${govState.country}) :</strong> ${totalHours.toFixed(2)} h badgées • Brut : <strong>${totalGross.toFixed(2)} €</strong> • Net salarié est. : <strong>${totalNetSal.toFixed(2)} €</strong> • Charges sociales totales : <strong>${totalCharges.toFixed(2)} €</strong> • Coût employeur total : <strong class="text-amber-300">${totalEmployerCost.toFixed(2)} €</strong></p>
+                <p><strong>RH (${govState.country}) :</strong> ${totalHours.toFixed(2)} h • Brut : <strong>${totalGross.toFixed(2)} €</strong> • Net salarié : <strong>${totalNetSal.toFixed(2)} €</strong> • Charges : <strong>${totalCharges.toFixed(2)} €</strong> • Coût employeur : <strong class="text-amber-300">${totalEmployerCost.toFixed(2)} €</strong></p>
             `;
             document.getElementById('badge-logs-list').innerHTML = hrShifts.length === 0
                 ? '<p class="text-slate-500">Aucun badgeage enregistré.</p>'
-                : hrShifts.slice(0, 6).map(s => `<p>• [${s.timestamp}] Badge <strong>${s.badgeUid}</strong> (${s.name}) — ${s.hours}h × ${s.rate.toFixed(2)}€ • Brut ${s.grossPay.toFixed(2)}€ • Coût total ${s.totalCost.toFixed(2)}€ • <span class="text-emerald-400">${s.hash}</span></p>`).join('');
+                : hrShifts.slice(0, 6).map(s => `<p>• [${s.timestamp}] Badge <strong>${s.badgeUid}</strong> (${s.name}) — ${s.hours}h × ${s.rate.toFixed(2)}€ • Brut ${s.grossPay.toFixed(2)}€ • <span class="text-emerald-400">${s.hash}</span></p>`).join('');
 
             const byStaff = {};
             hrShifts.forEach(s => {
@@ -1571,22 +1543,22 @@
             });
             const staffRows = Object.values(byStaff);
             document.getElementById('payslips-list').innerHTML = staffRows.length === 0
-                ? '<p class="text-slate-500">Aucune fiche de paie générée : enregistrez un badgeage.</p>'
+                ? '<p class="text-slate-500">Aucune fiche de paie générée.</p>'
                 : staffRows.map(st => `
-                    <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-1">
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
                         <p class="font-bold text-sky-300">${st.name} (Badge ${st.badgeUid}) — ${st.hours.toFixed(2)} h</p>
-                        <p>Brut : <strong>${st.gross.toFixed(2)} €</strong> • Net estimé : <strong class="text-emerald-400">${st.net.toFixed(2)} €</strong> • Charges sociales : <strong>${st.charges.toFixed(2)} €</strong> • Coût employeur : <strong>${st.totalCost.toFixed(2)} €</strong></p>
+                        <p>Brut : <strong>${st.gross.toFixed(2)} €</strong> • Net : <strong class="text-emerald-400">${st.net.toFixed(2)} €</strong> • Charges : <strong>${st.charges.toFixed(2)} €</strong> • Coût total : <strong>${st.totalCost.toFixed(2)} €</strong></p>
                     </div>
                 `).join('');
 
             document.getElementById('hr-payment-schedule').innerHTML = `
-                <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-1">
-                    <p class="font-bold text-emerald-300">1. Rémunérations Nettes Équipiers</p>
-                    <p>À payer : <strong>${totalNetSal.toFixed(2)} €</strong> • Destinataire : Comptes bancaires salariés • Échéance : Fin de mois / cycle paie défini (${govState.clientId}).</p>
+                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
+                    <p class="font-bold text-emerald-300">Rémunérations Nettes : ${totalNetSal.toFixed(2)} €</p>
+                    <p class="text-slate-400">Destinataire : Équipiers • Échéance : Fin de cycle de paie (${govState.clientId}).</p>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-1">
-                    <p class="font-bold text-amber-300">2. Charges Sociales & Cotisations (${govState.country})</p>
-                    <p>À isoler : <strong>${totalCharges.toFixed(2)} €</strong> • Destinataire : Organisme social / sécurité sociale juridiction (${govState.country}) • Échéance : Selon calendrier trimestriel ou mensuel légal.</p>
+                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
+                    <p class="font-bold text-amber-300">Charges Sociales (${govState.country}) : ${totalCharges.toFixed(2)} €</p>
+                    <p class="text-slate-400">Destinataire : Organisme social (${govState.country}) • Échéance : Calendrier légal.</p>
                 </div>
             `;
         }
@@ -1599,7 +1571,7 @@
             iotSensors = [
                 { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: `${tempCold} °C • ${humCold}% HR`, status: Number(tempCold) <= 5.0 ? 'OK' : 'ALERTE', node: 'DePIN-EU-01' },
                 { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: `${tempFreeze} °C`, status: Number(tempFreeze) <= -18.0 ? 'OK' : 'ALERTE', node: 'DePIN-EU-01' },
-                { id: 'IOT-PWR-03', label: 'Compteur Énergie & Extraction', metric: `${powerKw} kW • Nominal`, status: 'OK', node: 'DePIN-EU-02' }
+                { id: 'IOT-PWR-03', label: 'Compteur Énergie', metric: `${powerKw} kW • Nominal`, status: 'OK', node: 'DePIN-EU-02' }
             ];
             renderIoTSensors();
         }
@@ -1632,7 +1604,7 @@
             persistIngredientsConfig();
             document.getElementById('scanner-code-input').value = '';
             document.getElementById('scanner-feedback').innerText = `Scan validé : +${addQty} ${match.unit} ajoutés à ${match.name} (${match.lot}).`;
-            syncAllTabs();
+            syncAllViews();
         }
 
         function updateHistory() {
@@ -1711,7 +1683,7 @@
                 Object.keys(rec).forEach(ingId => {
                     const ing = ingMap[ingId];
                     if (!ing) return;
-                    const sup = supMap[ing.supplierId] || { name: 'Fournisseur Standard', vatNumber: '-', origin: 'Origine contrôlée' };
+                    const sup = supMap[ing.supplierId] || { name: 'Fournisseur Standard', vatNumber: '-' };
                     const used = Number(rec[ingId]) * Number(line.qty);
                     const key = `${ing.id}-${ing.lot}`;
                     if (!traceMap[key]) {
@@ -1736,34 +1708,21 @@
             document.getElementById('modal-tx-meta').innerHTML = `
                 <p>Date & Heure : ${dtLabel} • Statut : ${tx.cancelled ? 'ANNULÉ' : (tx.is_test ? 'TEST' : 'RÉEL')}</p>
                 <p>Régime : ${tx.sale_type === 'emporter' ? 'À Emporter' : 'Sur Place'}</p>
-                ${tx.voucher ? `<p class="text-emerald-400">Bon : ${tx.voucher.label}</p>` : ''}
-                ${tx.edited_at ? `<p class="text-amber-400">Modifié : ${tx.edited_at}</p>` : ''}
-                ${tx.cancelled_at ? `<p class="text-rose-400">Annulé : ${tx.cancelled_at}</p>` : ''}
             `;
-
             document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `
                 <div class="py-1.5 flex justify-between">
                     <span>${l.name} (x${l.qty}) <span class="text-[10px] text-slate-500">[TVA ${(l.vatRate * 100).toFixed(0)}%]</span></span>
                     <span class="text-sky-300">${l.lineNetHt.toFixed(2)} € HT</span>
                 </div>
             `).join('');
-
             document.getElementById('modal-tx-totals').innerHTML = `
                 <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
                 <div class="flex justify-between"><span>TVA :</span><span>${bd.totalVat.toFixed(2)} €</span></div>
                 <div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${bd.totalTtc.toFixed(2)} €</span></div>
             `;
-
-            const qrPayload = JSON.stringify({
-                eco: 'cheer-tec',
-                tx: tx.id,
-                dt: dtLabel,
-                ttc: tx.total_ttc,
-                lots: traceList.map(t => `${t.ingName}:${t.lot}:${t.supName}`)
-            });
+            const qrPayload = JSON.stringify({ tx: tx.id, dt: dtLabel, ttc: tx.total_ttc, lots: traceList.map(t => `${t.ingName}:${t.lot}:${t.supName}`) });
             document.getElementById('modal-qr-container').innerHTML = buildQrSvg(qrPayload);
-            document.getElementById('modal-qr-summary').innerText = `cheer-tec://${tx.id} • ${traceList.length} lot(s) encodé(s) dans le QR`;
-
+            document.getElementById('modal-qr-summary').innerText = `cheer-tec://${tx.id} • ${traceList.length} lot(s)`;
             document.getElementById('ticket-modal').classList.remove('hidden');
         }
 
@@ -1785,19 +1744,6 @@
             adminActionMode = mode;
             pendingSupplierId = extraId;
             document.getElementById('admin-pin-input').value = '';
-            if (mode === 'edit_ticket') {
-                document.getElementById('admin-modal-title').innerText = 'AUTORISATION MANAGER — ÉDITION TICKET';
-                document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Manager pour modifier ce ticket :';
-            } else if (mode === 'cancel_ticket') {
-                document.getElementById('admin-modal-title').innerText = 'AUTORISATION MANAGER — ANNULATION TICKET';
-                document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Manager pour annuler ce ticket et restituer le stock :';
-            } else if (mode === 'validate_po') {
-                document.getElementById('admin-modal-title').innerText = 'VALIDATION SUPERVISEUR — BON DE COMMANDE';
-                document.getElementById('admin-modal-desc').innerText = 'Entrez le PIN Superviseur pour valider et réceptionner ce bon :';
-            } else {
-                document.getElementById('admin-modal-title').innerText = 'SÉCURITÉ ADMIN HOLDING';
-                document.getElementById('admin-modal-desc').innerText = 'Entrez le code PIN maître pour purger les tests :';
-            }
             document.getElementById('admin-modal').classList.remove('hidden');
         }
 
@@ -1817,7 +1763,7 @@
             if (mode === 'purge') {
                 transactions = transactions.filter(t => !t.is_test);
                 persistTransactions();
-                syncAllTabs();
+                syncAllViews();
                 alert("Purge des transactions de test effectuée.");
             } else if (mode === 'edit_ticket' && selectedTicketIndex !== null) {
                 openEditTicketModal(selectedTicketIndex);
@@ -1825,8 +1771,8 @@
                 transactions[selectedTicketIndex].cancelled = true;
                 transactions[selectedTicketIndex].cancelled_at = stamp.full;
                 persistTransactions();
-                syncAllTabs();
-                alert(`Ticket annulé (${stamp.full}) : P&L et stocks synchronisés.`);
+                syncAllViews();
+                alert(`Ticket annulé (${stamp.full}).`);
             } else if (mode === 'validate_po' && supId) {
                 validateSupplierPurchaseOrder(supId);
             }
@@ -1841,10 +1787,7 @@
             document.getElementById('edit-items-list').innerHTML = (tx.items || []).map((item, idx) => `
                 <div class="flex justify-between items-center gap-2 py-1 border-b border-slate-900">
                     <span class="text-slate-200">${item.name}</span>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-slate-400">Qté</span>
-                        <input type="number" min="0" id="edit-qty-${idx}" value="${item.qty}" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
-                    </div>
+                    <input type="number" min="0" id="edit-qty-${idx}" value="${item.qty}" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
                 </div>
             `).join('');
             document.getElementById('edit-ticket-modal').classList.remove('hidden');
@@ -1863,7 +1806,6 @@
             const updatedItems = (tx.items || [])
                 .map((item, idx) => ({ ...item, qty: Math.max(0, parseInt(document.getElementById(`edit-qty-${idx}`).value, 10) || 0) }))
                 .filter(i => i.qty > 0);
-
             const bd = computeCartBreakdown(updatedItems, newSaleType, newDiscPct, tx.voucher || null);
             transactions[selectedTicketIndex] = {
                 ...tx,
@@ -1880,11 +1822,9 @@
                 buckets: bd.buckets,
                 edited_at: stamp.full
             };
-
             persistTransactions();
             closeEditTicketModal();
-            syncAllTabs();
-            alert(`Ticket mis à jour (${stamp.full}) : P&L et stocks synchronisés.`);
+            syncAllViews();
         }
 
         function renderSupplierPortfolioCheckboxes(selectedIngIds = []) {
@@ -1908,17 +1848,14 @@
             document.getElementById('new-sup-contact').value = sup.contact || '';
             document.getElementById('new-sup-vat-reg').value = `${sup.vatNumber || ''} / ${sup.companyNumber || ''}`;
             document.getElementById('save-sup-btn').innerText = 'Enregistrer Modifications';
-            const assignedIds = ingredientsConfig.filter(i => i.supplierId === supId).map(i => i.id);
-            renderSupplierPortfolioCheckboxes(assignedIds);
+            renderSupplierPortfolioCheckboxes(ingredientsConfig.filter(i => i.supplierId === supId).map(i => i.id));
         }
 
         function resetSupplierForm() {
             editingSupplierId = null;
             document.getElementById('supplier-form-title').innerText = 'Répertoire & Portefeuille Fournisseurs';
             document.getElementById('cancel-sup-edit-btn').classList.add('hidden');
-            ['new-sup-name', 'new-sup-address', 'new-sup-contact', 'new-sup-vat-reg'].forEach(id => {
-                document.getElementById(id).value = '';
-            });
+            ['new-sup-name', 'new-sup-address', 'new-sup-contact', 'new-sup-vat-reg'].forEach(id => { document.getElementById(id).value = ''; });
             document.getElementById('save-sup-btn').innerText = '+ Ajouter Fournisseur';
             renderSupplierPortfolioCheckboxes([]);
         }
@@ -1933,7 +1870,7 @@
             }
             persistSuppliers();
             if (editingSupplierId === supId) resetSupplierForm();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function saveSupplierForm() {
@@ -1942,42 +1879,29 @@
             const contact = document.getElementById('new-sup-contact').value.trim();
             const vatReg = document.getElementById('new-sup-vat-reg').value.trim();
             if (!name) return alert("Saisissez le nom du fournisseur.");
-
             const parts = vatReg.split('/').map(s => s.trim());
             const checkedIngIds = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value);
 
             let targetSupId = editingSupplierId;
             if (editingSupplierId) {
                 suppliers = suppliers.map(s => s.id === editingSupplierId ? {
-                    ...s,
-                    name,
-                    address: address || 'Adresse à compléter',
-                    contact: contact || 'Contact à compléter',
-                    vatNumber: parts[0] || s.vatNumber || 'TVA-À-RENSEIGNER',
-                    companyNumber: parts[1] || parts[0] || s.companyNumber || 'ENT-À-RENSEIGNER',
-                    origin: address || s.origin || 'Origine vérifiée'
+                    ...s, name, address: address || '-', contact: contact || '-',
+                    vatNumber: parts[0] || s.vatNumber || '-', companyNumber: parts[1] || parts[0] || s.companyNumber || '-'
                 } : s);
             } else {
                 targetSupId = 'SUP-' + Date.now();
                 suppliers.push({
-                    id: targetSupId,
-                    name,
-                    address: address || 'Adresse à compléter',
-                    contact: contact || 'Contact à compléter',
-                    vatNumber: parts[0] || 'TVA-À-RENSEIGNER',
-                    companyNumber: parts[1] || parts[0] || 'ENT-À-RENSEIGNER',
-                    origin: address || 'Origine vérifiée'
+                    id: targetSupId, name, address: address || '-', contact: contact || '-',
+                    vatNumber: parts[0] || '-', companyNumber: parts[1] || parts[0] || '-'
                 });
             }
-
             if (checkedIngIds.length > 0) {
                 ingredientsConfig = ingredientsConfig.map(ing => checkedIngIds.includes(ing.id) ? { ...ing, supplierId: targetSupId } : ing);
                 persistIngredientsConfig();
             }
-
             persistSuppliers();
             resetSupplierForm();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function updateStockView() {
@@ -1994,22 +1918,12 @@
                 return `
                     <tr>
                         <td class="p-3 text-slate-100 font-bold">${st.name} <span class="text-[10px] text-slate-500">(${st.unit} • ${st.lot})</span></td>
-                        <td class="p-3">
-                            <select onchange="assignIngredientSupplier('${st.id}', this.value)" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-sky-300 text-xs">
-                                ${supOptions}
-                            </select>
-                        </td>
-                        <td class="p-3">
-                            <input type="number" min="0" value="${st.initialQty}" onchange="updateInitialStock('${st.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/>
-                        </td>
+                        <td class="p-3"><select onchange="assignIngredientSupplier('${st.id}', this.value)" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-sky-300 text-xs">${supOptions}</select></td>
+                        <td class="p-3"><input type="number" min="0" value="${st.initialQty}" onchange="updateInitialStock('${st.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/></td>
                         <td class="p-3 text-amber-400">-${st.consumedQty}</td>
-                        <td class="p-3">
-                            <input type="number" min="0" value="${st.wasteQty}" onchange="updateWasteQty('${st.id}', this.value)" class="w-16 bg-slate-900 border border-rose-900/70 px-2 py-1 rounded text-rose-300 text-right"/>
-                        </td>
+                        <td class="p-3"><input type="number" min="0" value="${st.wasteQty}" onchange="updateWasteQty('${st.id}', this.value)" class="w-16 bg-slate-900 border border-rose-900/70 px-2 py-1 rounded text-rose-300 text-right"/></td>
                         <td class="p-3 font-bold ${stockColor}">${st.currentQty}</td>
-                        <td class="p-3">
-                            <input type="number" min="0" value="${st.minThreshold}" onchange="updateMinThreshold('${st.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/>
-                        </td>
+                        <td class="p-3"><input type="number" min="0" value="${st.minThreshold}" onchange="updateMinThreshold('${st.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/></td>
                     </tr>
                 `;
             }).join('');
@@ -2020,12 +1934,10 @@
                     <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between space-y-2">
                         <div class="space-y-1">
                             <p class="font-bold text-sky-300 text-sm">${sup.name}</p>
-                            <p class="text-[11px] text-slate-300">Adresse : ${sup.address || '-'}</p>
-                            <p class="text-[11px] text-slate-300">Contact : ${sup.contact || '-'}</p>
-                            <p class="text-[11px] text-amber-300">TVA : ${sup.vatNumber || '-'} • Ent. : ${sup.companyNumber || '-'}</p>
-                            <p class="text-[10px] text-slate-400 font-bold pt-1 border-t border-slate-800">Portefeuille Produits :</p>
-                            <ul class="text-[11px] text-emerald-300 space-y-0.5">
-                                ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit assigné</li>' : portfolioItems.map(p => `<li>• ${p.name} (Stock: ${p.currentQty} ${p.unit})</li>`).join('')}
+                            <p class="text-[11px] text-slate-300">${sup.address || '-'}</p>
+                            <p class="text-[11px] text-amber-300">TVA : ${sup.vatNumber || '-'}</p>
+                            <ul class="text-[11px] text-emerald-300 space-y-0.5 pt-1 border-t border-slate-800">
+                                ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit</li>' : portfolioItems.map(p => `<li>• ${p.name} (${p.currentQty})</li>`).join('')}
                             </ul>
                         </div>
                         <div class="flex gap-2 pt-2 border-t border-slate-800">
@@ -2036,34 +1948,27 @@
                 `;
             }).join('');
 
-            const poContainer = document.getElementById('suggested-po-container');
             const poCards = suppliers.map(sup => {
                 const neededLines = stockState.filter(i => i.supplierId === sup.id && i.needsOrder);
                 if (neededLines.length === 0) return '';
                 return `
                     <div class="bg-slate-900 border border-amber-700/50 p-4 rounded-xl space-y-2">
-                        <div class="flex flex-wrap justify-between items-center gap-2">
-                            <div>
-                                <p class="font-bold text-amber-300">Bon Suggéré — ${sup.name}</p>
-                                <p class="text-[10px] text-slate-400">TVA: ${sup.vatNumber || '-'} • Contact: ${sup.contact || '-'}</p>
-                            </div>
-                            <button onclick="openAdminModal('validate_po', '${sup.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">Valider Bon (Superviseur)</button>
+                        <div class="flex justify-between items-center gap-2">
+                            <p class="font-bold text-amber-300">Bon Suggéré — ${sup.name}</p>
+                            <button onclick="openAdminModal('validate_po', '${sup.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold text-xs">Valider Bon</button>
                         </div>
-                        ${neededLines.map(nl => `<p class="text-slate-300">• ${nl.name} (Lot ${nl.lot}) : Stock ${nl.currentQty} / Min ${nl.minThreshold} → Commander <strong>+${nl.suggestedQty} ${nl.unit}</strong></p>`).join('')}
+                        ${neededLines.map(nl => `<p class="text-slate-300">• ${nl.name} (${nl.lot}) : Stock ${nl.currentQty} / Min ${nl.minThreshold} → +${nl.suggestedQty}</p>`).join('')}
                     </div>
                 `;
             }).filter(Boolean);
 
-            poContainer.innerHTML = poCards.length === 0
-                ? '<p class="text-emerald-400 text-xs">Tous les stocks sont au-dessus de leur seuil minimum. Aucune commande urgente suggérée.</p>'
+            document.getElementById('suggested-po-container').innerHTML = poCards.length === 0
+                ? '<p class="text-emerald-400">Stocks au-dessus des seuils minimums.</p>'
                 : poCards.join('');
 
-            const poHistEl = document.getElementById('validated-po-history');
-            poHistEl.innerHTML = validatedPOs.length === 0
-                ? '<p class="text-slate-500 text-[11px]">Aucun bon de commande validé récemment.</p>'
-                : `<p class="text-sky-300 font-bold">Bons Validés par Superviseur (Horodatés) :</p>` + validatedPOs.slice(0, 5).map(po => `
-                    <p class="text-[11px] text-slate-300">• ${po.poId} [${po.validated_at}] — ${po.supplierName} : ${po.lines.map(l => `${l.name} +${l.qty}`).join(', ')}</p>
-                `).join('');
+            document.getElementById('validated-po-history').innerHTML = validatedPOs.length === 0
+                ? '<p class="text-slate-500">Aucun bon validé.</p>'
+                : validatedPOs.slice(0, 5).map(po => `<p class="text-[11px] text-slate-300">• ${po.poId} [${po.validated_at}] — ${po.supplierName}</p>`).join('');
         }
 
         function updateRecipesView() {
@@ -2072,7 +1977,6 @@
             stockState.forEach(s => { stateMap[s.id] = s; });
             const supMap = {};
             suppliers.forEach(s => { supMap[s.id] = s; });
-
             const allItems = [];
             CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push({ ...i, catTitle: c.title })));
 
@@ -2080,138 +1984,78 @@
                 const linesHtml = Object.entries(item.recipe || {}).map(([ingId, q]) => {
                     const st = stateMap[ingId];
                     const sup = st ? (supMap[st.supplierId] || {}) : {};
-                    return `<li class="text-slate-300">• <strong>${st ? st.name : ingId}</strong> : ${q} ${st ? st.unit : ''} / unité — <span class="text-amber-300">Lot ${st ? st.lot : '-'}</span> • <span class="text-sky-300">${sup.name || '-'}</span> (Stock: ${st ? st.currentQty : 0})</li>`;
+                    return `<li class="text-slate-300">• <strong>${st ? st.name : ingId}</strong> : ${q} ${st ? st.unit : ''} — <span class="text-amber-300">Lot ${st ? st.lot : '-'}</span> • <span class="text-sky-300">${sup.name || '-'}</span></li>`;
                 }).join('');
-
-                return `
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                            <span class="font-bold text-sky-300 text-sm">${item.name}</span>
-                            <span class="text-[10px] text-slate-400">${item.catTitle}</span>
-                        </div>
-                        <ul class="space-y-1 text-[11px]">${linesHtml}</ul>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('traceability-lots-body').innerHTML = stockState.map(st => {
-                const sup = supMap[st.supplierId] || {};
-                return `
-                    <tr>
-                        <td class="p-2.5 text-slate-100 font-bold">${st.name}</td>
-                        <td class="p-2.5 text-amber-300">${st.lot}</td>
-                        <td class="p-2.5 text-sky-300">${sup.name || '-'}</td>
-                        <td class="p-2.5 text-slate-300">${sup.vatNumber || '-'} / ${sup.companyNumber || '-'}</td>
-                        <td class="p-2.5 text-emerald-400 font-bold">${st.currentQty} ${st.unit}</td>
-                    </tr>
-                `;
+                return `<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2"><p class="font-bold text-sky-300 text-sm">${item.name}</p><ul class="space-y-1 text-[11px]">${linesHtml}</ul></div>`;
             }).join('');
         }
 
         function assignIngredientSupplier(ingId, supId) {
             ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, supplierId: supId } : i);
             persistIngredientsConfig();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function updateInitialStock(ingId, val) {
-            const num = Math.max(0, parseInt(val, 10) || 0);
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, initialQty: num } : i);
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, initialQty: Math.max(0, parseInt(val, 10) || 0) } : i);
             persistIngredientsConfig();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function updateWasteQty(ingId, val) {
-            const num = Math.max(0, parseInt(val, 10) || 0);
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, wasteQty: num } : i);
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, wasteQty: Math.max(0, parseInt(val, 10) || 0) } : i);
             persistIngredientsConfig();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function updateMinThreshold(ingId, val) {
-            const num = Math.max(0, parseInt(val, 10) || 0);
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: num } : i);
+            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: Math.max(0, parseInt(val, 10) || 0) } : i);
             persistIngredientsConfig();
-            syncAllTabs();
+            syncAllViews();
         }
 
         function validateSupplierPurchaseOrder(supId) {
             const sup = suppliers.find(s => s.id === supId);
-            const stockState = computeStockState();
-            const needed = stockState.filter(i => i.supplierId === supId && i.needsOrder);
+            const needed = computeStockState().filter(i => i.supplierId === supId && i.needsOrder);
             if (!sup || needed.length === 0) return;
             const stamp = formatNowDateTime();
-
             ingredientsConfig = ingredientsConfig.map(ing => {
                 const match = needed.find(n => n.id === ing.id);
-                if (!match) return ing;
-                return { ...ing, initialQty: Number(ing.initialQty || 0) + Number(match.suggestedQty || 0) };
+                return match ? { ...ing, initialQty: Number(ing.initialQty || 0) + Number(match.suggestedQty || 0) } : ing;
             });
             persistIngredientsConfig();
-
-            validatedPOs.unshift({
-                poId: 'PO-' + Date.now(),
-                validated_at: stamp.full,
-                supplierName: sup.name,
-                lines: needed.map(n => ({ name: n.name, qty: n.suggestedQty }))
-            });
+            validatedPOs.unshift({ poId: 'PO-' + Date.now(), validated_at: stamp.full, supplierName: sup.name, lines: needed.map(n => ({ name: n.name, qty: n.suggestedQty })) });
             persistValidatedPOs();
-            syncAllTabs();
-            alert(`Bon de commande ${sup.name} validé par superviseur (${stamp.full}) et stock réapprovisionné.`);
+            syncAllViews();
         }
 
         function exportAuditCsv() {
-            const rows = [
-                ['Ticket_ID', 'Horodatage', 'Statut', 'Regime', 'Net_HT', 'TVA', 'Total_TTC', 'COGS', 'Marge_Brute', 'Lots_Fournisseurs']
-            ];
+            const rows = [['Ticket_ID', 'Horodatage', 'Statut', 'Regime', 'Net_HT', 'TVA', 'Total_TTC', 'COGS', 'Marge_Brute']];
             transactions.forEach(tx => {
-                const status = tx.cancelled ? 'ANNULE' : (tx.is_test ? 'TEST' : 'VALIDE');
-                const dtLabel = tx.created_at || `${tx.date} ${tx.time || ''}`;
-                const lots = getTicketTraceabilityList(tx).map(l => `${l.ingName}(${l.lot}/${l.supName})`).join(' | ');
                 rows.push([
-                    tx.id,
-                    dtLabel,
-                    status,
-                    tx.sale_type || '',
-                    Number(tx.total_ht || 0).toFixed(2),
-                    Number(tx.vat || 0).toFixed(2),
-                    Number(tx.total_ttc || 0).toFixed(2),
-                    Number(tx.cogs || 0).toFixed(2),
-                    Number(tx.gross_margin || 0).toFixed(2),
-                    `"${lots.replace(/"/g, '""')}"`
+                    tx.id, tx.created_at || `${tx.date} ${tx.time || ''}`,
+                    tx.cancelled ? 'ANNULE' : (tx.is_test ? 'TEST' : 'VALIDE'),
+                    tx.sale_type || '', Number(tx.total_ht || 0).toFixed(2), Number(tx.vat || 0).toFixed(2),
+                    Number(tx.total_ttc || 0).toFixed(2), Number(tx.cogs || 0).toFixed(2), Number(tx.gross_margin || 0).toFixed(2)
                 ]);
             });
-
             const csvBody = rows.map(r => r.join(';')).join('\n');
-            const integrityHash = computeIntegrityHash(csvBody);
-            const csvContent = `${csvBody}\n# INTEGRITY_HASH;${integrityHash}`;
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([`${csvBody}\n# INTEGRITY_HASH;${computeIntegrityHash(csvBody)}`], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `lexwallet-audit-subvention-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `lexwallet-audit-${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
         function exportBackupJson() {
-            const basePayload = {
-                exported_at: formatNowDateTime().full,
-                govState,
-                transactions,
-                ingredientsConfig,
-                suppliers,
-                validatedPOs,
-                costConfig,
-                hrShifts
-            };
-            const integrityHash = computeIntegrityHash(JSON.stringify(basePayload));
-            const payload = { ...basePayload, integrity_hash: integrityHash };
-            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const payload = { exported_at: formatNowDateTime().full, govState, transactions, ingredientsConfig, suppliers, validatedPOs, costConfig, hrShifts };
+            const blob = new Blob([JSON.stringify({ ...payload, integrity_hash: computeIntegrityHash(JSON.stringify(payload)) }, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `lexwallet-full-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `lexwallet-backup-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -2228,13 +2072,11 @@
                     if (Array.isArray(data.suppliers)) { suppliers = data.suppliers; persistSuppliers(); }
                     if (Array.isArray(data.validatedPOs)) { validatedPOs = data.validatedPOs; persistValidatedPOs(); }
                     if (Array.isArray(data.hrShifts)) { hrShifts = data.hrShifts; persistHrShifts(); }
-                    if (data.govState && typeof data.govState === 'object') { govState = { ...govState, ...data.govState }; persistGovState(); hydrateGovAndJurisdiction(); }
-                    if (data.costConfig && typeof data.costConfig === 'object') { costConfig = { ...costConfig, ...data.costConfig }; persistCostConfig(); hydrateCostInputs(); }
-                    syncAllTabs();
-                    alert("Sauvegarde complète importée et synchronisée.");
-                } catch (_) {
-                    alert("Fichier JSON invalide.");
-                }
+                    if (data.govState) { govState = { ...govState, ...data.govState }; persistGovState(); hydrateGovAndJurisdiction(); }
+                    if (data.costConfig) { costConfig = { ...costConfig, ...data.costConfig }; persistCostConfig(); hydrateCostInputs(); }
+                    syncAllViews();
+                    alert("Sauvegarde importée et synchronisée.");
+                } catch (_) { alert("Fichier JSON invalide."); }
             };
             reader.readAsText(file);
         }
