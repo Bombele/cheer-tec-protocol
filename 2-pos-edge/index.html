@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexwallet.app — Point Zero POS, P&L, Coûts & Traçabilité</title>
+    <title>Lexwallet.app — Point Zero POS, P&L, Coûts, RH & IoT</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8">
@@ -12,14 +12,14 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Fiscal, Coûts & Réserves, Stocks, Recettes & QR</p>
+                <p class="text-xs text-slate-400">Cheer Cheese Flagship • P&L Fiscal, Coûts & Réserves, Stocks, Recettes, RH & IoT</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition">Caisse (POS)</button>
                 <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
                 <button onclick="switchTab('costs')" id="tab-btn-costs" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Analyse Coûts & Réserves</button>
                 <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique & QR</button>
-                <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks & Fournisseurs</button>
+                <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks, RH & IoT</button>
                 <button onclick="switchTab('recipes')" id="tab-btn-recipes" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Recettes & Traçabilité</button>
                 <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
             </div>
@@ -175,7 +175,7 @@
                         <p id="cost-cogs-val" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                        <p class="text-xs text-slate-400">Charges (Loyer, Royalties, Staff, Autres)</p>
+                        <p class="text-xs text-slate-400">Charges (Loyer, Royalties, Staff, Entretien, Autres)</p>
                         <p id="cost-opex-val" class="text-xl font-bold text-rose-400 mt-1">0.00 €</p>
                     </div>
                     <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -211,6 +211,11 @@
                                 <span id="calc-staff-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
                             </div>
                             <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">Entretiens & Grosses Réparations (% Net HT) — Cible 3%</label>
+                                <input type="number" step="0.5" min="0" max="100" id="cfg-maint-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
+                                <span id="calc-maint-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                            </div>
+                            <div class="sm:col-span-2">
                                 <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (% Net HT) — Cible 5%</label>
                                 <input type="number" step="0.5" min="0" max="100" id="cfg-other-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
                                 <span id="calc-other-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
@@ -254,13 +259,13 @@
             </div>
         </div>
 
-        <!-- VUE 5 : GESTION DES STOCKS, CASSE, FOURNISSEURS & BONS DE COMMANDE -->
+        <!-- VUE 5 : STOCKS, FOURNISSEURS, GOUVERNANCE, RH BADGE & CAPTEURS IoT -->
         <div id="view-stock" class="hidden space-y-6">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
-                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé, Casse/Pertes, Fournisseurs & Bons</h2>
-                        <p class="text-xs text-slate-400 font-mono">Stock théorique vs casse réelle • Sélecteur fournisseur • Validation superviseur</p>
+                        <h2 class="text-base font-bold text-emerald-400">Inventaire, Gouvernance Réseau, RH Badge & Capteurs IoT</h2>
+                        <p class="text-xs text-slate-400 font-mono">Stock vs casse • Habilitations Holding/Restaurant • Badgeage & RH déterministe • Télémétrie IoT</p>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs font-mono">
                         <button onclick="exportAuditCsv()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export CSV</button>
@@ -270,6 +275,42 @@
                             <input type="file" accept=".json" onchange="importBackupJson(event)" class="hidden"/>
                         </label>
                     </div>
+                </div>
+
+                <!-- GOUVERNANCE & HABILITATIONS -->
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 font-mono text-xs">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <h3 class="text-sm font-bold text-sky-300">Gouvernance Globale & Habilitations Réseau</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="setRoleProfile('holding_admin')" id="role-btn-holding_admin" class="px-3 py-1 rounded font-bold bg-amber-600 text-white">Profil Admin Holding</button>
+                            <button onclick="setRoleProfile('restaurant_pos')" id="role-btn-restaurant_pos" class="px-3 py-1 rounded font-bold bg-slate-800 text-slate-300">Accès Restaurant / POS</button>
+                            <button onclick="setRoleProfile('staff_badge')" id="role-btn-staff_badge" class="px-3 py-1 rounded font-bold bg-slate-800 text-slate-300">Accès Personnel (Badge)</button>
+                        </div>
+                    </div>
+                    <p id="role-permissions-summary" class="text-slate-300"></p>
+                </div>
+
+                <!-- RH : BADGEAGE ANTI-MANIPULATION & CALCUL DÉTERMINISTE -->
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
+                    <h3 class="text-sm font-bold text-emerald-300">RH — Badgeage Heures Anti-Manipulation & Calcul Déterministe</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                        <input type="text" id="badge-staff-name" placeholder="Nom équipier" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="badge-uid" placeholder="Badge UID (ex: BDG-01)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="number" step="0.25" min="0.25" max="24" id="badge-hours" value="8" placeholder="Heures" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="number" step="0.5" min="5" id="badge-rate" value="14.50" placeholder="Taux horaire brut (€)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                    </div>
+                    <button onclick="recordBadgeShift()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold text-xs">+ Enregistrer Badgeage Signé</button>
+                    <div id="hr-payroll-summary" class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-slate-200 space-y-1"></div>
+                    <div id="badge-logs-list" class="space-y-1 text-[11px] text-slate-400"></div>
+                </div>
+
+                <!-- SUPPLY CHAIN DEPIN & CAPTEURS IoT -->
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 font-mono text-xs">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-amber-300">Supply Chain DePIN & Capteurs IoT (Chaîne du Froid & Énergie)</h3>
+                        <button onclick="simulateIoTTelemetry()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1 rounded text-[11px] font-bold">Rafraîchir Télémétrie Capteurs</button>
+                    </div>
+                    <div id="iot-sensors-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
                 </div>
 
                 <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800">
@@ -427,7 +468,8 @@
         const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
         const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
         const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
-        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v3';
+        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v4';
+        const HR_STORAGE_KEY = 'lexwallet_pos_hr_v1';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
 
         const RUBRICS = {
@@ -438,33 +480,9 @@
         };
 
         const DEFAULT_SUPPLIERS = [
-            {
-                id: 'SUP-BOULANGERIE',
-                name: 'Boulangerie Artisanale Nord',
-                address: '14 Rue des Artisans, 1000 Bruxelles',
-                contact: '+32 2 555 0140 • compta@boulangerienord.example',
-                vatNumber: 'BE0412345678',
-                companyNumber: '0412.345.678',
-                origin: 'Farine CRC • Traçabilité Nord'
-            },
-            {
-                id: 'SUP-ELEVAGE',
-                name: 'Filière Bœuf & Terroir',
-                address: '88 Avenue du Marché, 4000 Liège',
-                contact: '+32 4 555 0192 • logistique@filiereterroir.example',
-                vatNumber: 'BE0523456789',
-                companyNumber: '0523.456.789',
-                origin: 'Élevage & Fromages Affinés'
-            },
-            {
-                id: 'SUP-CAVE',
-                name: 'Domaine & Boissons Pro',
-                address: '5 Quai des Chais, 2000 Anvers',
-                contact: '+32 3 555 0175 • commandes@domainecave.example',
-                vatNumber: 'BE0634567890',
-                companyNumber: '0634.567.890',
-                origin: 'Boissons Soft, Vins & Spiritueux'
-            }
+            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', address: '14 Rue des Artisans, 1000 Bruxelles', contact: '+32 2 555 0140 • compta@boulangerienord.example', vatNumber: 'BE0412345678', companyNumber: '0412.345.678', origin: 'Farine CRC • Traçabilité Nord' },
+            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', address: '88 Avenue du Marché, 4000 Liège', contact: '+32 4 555 0192 • logistique@filiereterroir.example', vatNumber: 'BE0523456789', companyNumber: '0523.456.789', origin: 'Élevage & Fromages Affinés' },
+            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', address: '5 Quai des Chais, 2000 Anvers', contact: '+32 3 555 0175 • commandes@domainecave.example', vatNumber: 'BE0634567890', companyNumber: '0634.567.890', origin: 'Boissons Soft, Vins & Spiritueux' }
         ];
 
         const DEFAULT_INGREDIENTS = [
@@ -523,6 +541,13 @@
         let suppliers = loadSuppliers();
         let validatedPOs = loadValidatedPOs();
         let costConfig = loadCostConfig();
+        let hrShifts = loadHrShifts();
+        let activeRole = 'holding_admin';
+        let iotSensors = [
+            { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: '3.4 °C • 78% HR', status: 'OK', node: 'DePIN-EU-01' },
+            { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: '-18.6 °C', status: 'OK', node: 'DePIN-EU-01' },
+            { id: 'IOT-PWR-03', label: 'Compteur Énergie & Extraction', metric: '4.8 kW • Nominal', status: 'OK', node: 'DePIN-EU-02' }
+        ];
         let costPeriodMode = 'daily';
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
@@ -545,6 +570,7 @@
             suppliers = loadSuppliers();
             validatedPOs = loadValidatedPOs();
             costConfig = loadCostConfig();
+            hrShifts = loadHrShifts();
             hydrateCostInputs();
             syncAllTabs();
         });
@@ -625,7 +651,7 @@
         }
 
         function loadCostConfig() {
-            const defaults = { rentPct: 10, royaltiesPct: 5, staffPct: 25, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
+            const defaults = { rentPct: 10, royaltiesPct: 5, staffPct: 25, maintPct: 3, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
             try {
                 const raw = localStorage.getItem(COST_CFG_STORAGE_KEY);
                 return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
@@ -636,17 +662,29 @@
             try { localStorage.setItem(COST_CFG_STORAGE_KEY, JSON.stringify(costConfig)); } catch (_) {}
         }
 
+        function loadHrShifts() {
+            try {
+                const raw = localStorage.getItem(HR_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (_) { return []; }
+        }
+
+        function persistHrShifts() {
+            try { localStorage.setItem(HR_STORAGE_KEY, JSON.stringify(hrShifts)); } catch (_) {}
+        }
+
         function hydrateCostInputs() {
             document.getElementById('cfg-rent-pct').value = costConfig.rentPct;
             document.getElementById('cfg-royalties-pct').value = costConfig.royaltiesPct;
             document.getElementById('cfg-staff-pct').value = costConfig.staffPct;
+            document.getElementById('cfg-maint-pct').value = costConfig.maintPct;
             document.getElementById('cfg-other-pct').value = costConfig.otherPct;
             document.getElementById('cfg-tax-reserve-pct').value = costConfig.taxReservePct;
             document.getElementById('cfg-cap-reserve-pct').value = costConfig.capReservePct;
         }
 
         function applyCheerCheeseDefaults() {
-            costConfig = { rentPct: 10, royaltiesPct: 5, staffPct: 25, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
+            costConfig = { rentPct: 10, royaltiesPct: 5, staffPct: 25, maintPct: 3, otherPct: 5, taxReservePct: 15, capReservePct: 10 };
             persistCostConfig();
             hydrateCostInputs();
             syncAllTabs();
@@ -668,6 +706,7 @@
                 rentPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)),
                 royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)),
                 staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)),
+                maintPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-maint-pct').value) || 0)),
                 otherPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-other-pct').value) || 0)),
                 taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)),
                 capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0))
@@ -1070,17 +1109,18 @@
             const rentEur = periodHt * (Number(costConfig.rentPct || 0) / 100);
             const royaltiesEur = periodHt * (Number(costConfig.royaltiesPct || 0) / 100);
             const staffEur = periodHt * (Number(costConfig.staffPct || 0) / 100);
+            const maintEur = periodHt * (Number(costConfig.maintPct || 0) / 100);
             const otherEur = periodHt * (Number(costConfig.otherPct || 0) / 100);
-            const totalChargesEur = rentEur + royaltiesEur + staffEur + otherEur;
+            const totalChargesEur = rentEur + royaltiesEur + staffEur + maintEur + otherEur;
             const taxReserve = periodHt * (Number(costConfig.taxReservePct || 0) / 100);
             const capReserve = periodHt * (Number(costConfig.capReservePct || 0) / 100);
             const totalSetAside = periodVat + taxReserve + capReserve;
             const netGain = periodHt - periodCogs - totalChargesEur - taxReserve - capReserve;
             const cogsRatio = periodHt > 0 ? (periodCogs / periodHt) : 0.30;
-            const varCostRatio = Math.min(0.95, cogsRatio + ((Number(costConfig.royaltiesPct || 0) + Number(costConfig.otherPct || 0)) / 100));
+            const varCostRatio = Math.min(0.95, cogsRatio + ((Number(costConfig.royaltiesPct || 0) + Number(costConfig.maintPct || 0) + Number(costConfig.otherPct || 0)) / 100));
             const contribMargin = Math.max(0.05, 1 - varCostRatio);
             const breakEvenHt = (rentEur + staffEur) / contribMargin;
-            return { dayData, mult, periodHt, periodVat, periodCogs, rentEur, royaltiesEur, staffEur, otherEur, totalChargesEur, taxReserve, capReserve, totalSetAside, netGain, breakEvenHt };
+            return { dayData, mult, periodHt, periodVat, periodCogs, rentEur, royaltiesEur, staffEur, maintEur, otherEur, totalChargesEur, taxReserve, capReserve, totalSetAside, netGain, breakEvenHt };
         }
 
         function updateCostsView() {
@@ -1091,6 +1131,7 @@
             document.getElementById('calc-rent-eur').innerText = `${snap.rentEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
             document.getElementById('calc-royalties-eur').innerText = `${snap.royaltiesEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
             document.getElementById('calc-staff-eur').innerText = `${snap.staffEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
+            document.getElementById('calc-maint-eur').innerText = `${snap.maintEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
             document.getElementById('calc-other-eur').innerText = `${snap.otherEur.toFixed(2)} € (${costPeriodMode === 'monthly' ? '30j' : 'jour'})`;
 
             document.getElementById('cost-cogs-val').innerText = '-' + snap.periodCogs.toFixed(2) + ' €';
@@ -1118,6 +1159,92 @@
                 <p><strong>Moteur Financier & R&D :</strong> Net HT ${snap.periodHt.toFixed(2)} € • COGS ${snap.periodCogs.toFixed(2)} € • Charges ${snap.totalChargesEur.toFixed(2)} € • Réserves/TVA ${snap.totalSetAside.toFixed(2)} € • Gain Net ${snap.netGain.toFixed(2)} €.</p>
                 <p class="text-emerald-400 pt-1"><strong>Empreinte Preuve R&D :</strong> ${dossierHash}</p>
             `;
+        }
+
+        function setRoleProfile(role) {
+            activeRole = role;
+            ['holding_admin', 'restaurant_pos', 'staff_badge'].forEach(r => {
+                document.getElementById('role-btn-' + r).className = r === role
+                    ? "px-3 py-1 rounded font-bold bg-sky-600 text-white"
+                    : "px-3 py-1 rounded font-bold bg-slate-800 text-slate-300";
+            });
+            const map = {
+                holding_admin: 'Profil Admin Holding : accès global multi-restaurants, royalties/réserves, purge/corrections PIN, audit et export intégrité.',
+                restaurant_pos: 'Accès Restaurant / POS : encaissement, clôture Z du point de vente, gestion stocks/casse/fournisseurs et traçabilité lots.',
+                staff_badge: 'Accès Personnel (Badge) : pointage horodaté signé par badge UID sans édition rétroactive libre.'
+            };
+            document.getElementById('role-permissions-summary').innerText = map[role] || '';
+        }
+
+        function recordBadgeShift() {
+            const name = document.getElementById('badge-staff-name').value.trim();
+            const badgeUid = document.getElementById('badge-uid').value.trim().toUpperCase();
+            const hours = Math.max(0.25, parseFloat(document.getElementById('badge-hours').value) || 0);
+            const rate = Math.max(1, parseFloat(document.getElementById('badge-rate').value) || 0);
+            if (!name || !badgeUid) return alert("Saisissez le nom de l'équipier et l'UID du badge.");
+
+            const stamp = formatNowDateTime();
+            const grossPay = Number((hours * rate).toFixed(2));
+            const employerCharges = Number((grossPay * 0.28).toFixed(2));
+            const totalCost = Number((grossPay + employerCharges).toFixed(2));
+            const shiftHash = computeIntegrityHash(`${badgeUid}|${name}|${stamp.full}|${hours}|${grossPay}`);
+
+            hrShifts.unshift({
+                id: 'SHF-' + Date.now(),
+                name,
+                badgeUid,
+                timestamp: stamp.full,
+                hours,
+                rate,
+                grossPay,
+                employerCharges,
+                totalCost,
+                hash: shiftHash
+            });
+            persistHrShifts();
+            document.getElementById('badge-staff-name').value = '';
+            document.getElementById('badge-uid').value = '';
+            syncAllTabs();
+        }
+
+        function renderHrPayrollAndBadges() {
+            const totalHours = hrShifts.reduce((a, s) => a + Number(s.hours || 0), 0);
+            const totalGross = hrShifts.reduce((a, s) => a + Number(s.grossPay || 0), 0);
+            const totalCharges = hrShifts.reduce((a, s) => a + Number(s.employerCharges || 0), 0);
+            const totalEmployerCost = hrShifts.reduce((a, s) => a + Number(s.totalCost || 0), 0);
+
+            document.getElementById('hr-payroll-summary').innerHTML = `
+                <p><strong>Calcul Déterministe RH :</strong> ${totalHours.toFixed(2)} h badgées • Rémunération brute : <strong>${totalGross.toFixed(2)} €</strong> • Charges patronales (28%) : <strong>${totalCharges.toFixed(2)} €</strong> • Coût employeur total : <strong class="text-amber-300">${totalEmployerCost.toFixed(2)} €</strong></p>
+            `;
+            document.getElementById('badge-logs-list').innerHTML = hrShifts.length === 0
+                ? '<p class="text-slate-500">Aucun badgeage enregistré.</p>'
+                : hrShifts.slice(0, 6).map(s => `<p>• [${s.timestamp}] Badge <strong>${s.badgeUid}</strong> (${s.name}) — ${s.hours}h × ${s.rate.toFixed(2)}€ = ${s.totalCost.toFixed(2)}€ (Coût total) • <span class="text-emerald-400">${s.hash}</span></p>`).join('');
+        }
+
+        function simulateIoTTelemetry() {
+            const tempCold = (2.8 + Math.random() * 1.4).toFixed(1);
+            const humCold = Math.round(75 + Math.random() * 6);
+            const tempFreeze = (-19.2 + Math.random() * 1.2).toFixed(1);
+            const powerKw = (4.2 + Math.random() * 1.6).toFixed(1);
+            iotSensors = [
+                { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: `${tempCold} °C • ${humCold}% HR`, status: 'OK', node: 'DePIN-EU-01' },
+                { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: `${tempFreeze} °C`, status: 'OK', node: 'DePIN-EU-01' },
+                { id: 'IOT-PWR-03', label: 'Compteur Énergie & Extraction', metric: `${powerKw} kW • Nominal`, status: 'OK', node: 'DePIN-EU-02' }
+            ];
+            renderIoTSensors();
+        }
+
+        function renderIoTSensors() {
+            document.getElementById('iot-sensors-grid').innerHTML = iotSensors.map(s => `
+                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sky-300">${s.id}</span>
+                        <span class="text-[10px] text-emerald-400 font-bold">${s.status} • ${s.node}</span>
+                    </div>
+                    <p class="text-slate-200">${s.label}</p>
+                    <p class="text-amber-300 font-bold">${s.metric}</p>
+                </div>
+            `).join('');
         }
 
         function updateHistory() {
@@ -1466,6 +1593,10 @@
         }
 
         function updateStockView() {
+            setRoleProfile(activeRole);
+            renderHrPayrollAndBadges();
+            renderIoTSensors();
+
             const stockState = computeStockState();
             const currentChecked = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value);
             renderSupplierPortfolioCheckboxes(editingSupplierId
@@ -1686,7 +1817,8 @@
                 ingredientsConfig,
                 suppliers,
                 validatedPOs,
-                costConfig
+                costConfig,
+                hrShifts
             };
             const integrityHash = computeIntegrityHash(JSON.stringify(basePayload));
             const payload = { ...basePayload, integrity_hash: integrityHash };
@@ -1710,6 +1842,7 @@
                     if (Array.isArray(data.ingredientsConfig)) { ingredientsConfig = data.ingredientsConfig; persistIngredientsConfig(); }
                     if (Array.isArray(data.suppliers)) { suppliers = data.suppliers; persistSuppliers(); }
                     if (Array.isArray(data.validatedPOs)) { validatedPOs = data.validatedPOs; persistValidatedPOs(); }
+                    if (Array.isArray(data.hrShifts)) { hrShifts = data.hrShifts; persistHrShifts(); }
                     if (data.costConfig && typeof data.costConfig === 'object') { costConfig = { ...costConfig, ...data.costConfig }; persistCostConfig(); hydrateCostInputs(); }
                     syncAllTabs();
                     alert("Sauvegarde complète importée et synchronisée.");
