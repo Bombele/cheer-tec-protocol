@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>lexwallet.app — Accueil KYC, POS & Modules</title>
+    <title>lexwallet.app — Connexion & Espace Établissement</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8 pb-24">
@@ -13,153 +13,157 @@
             <div>
                 <h1 class="text-lg md:text-2xl font-bold text-sky-400">lexwallet.app</h1>
                 <p id="route-url-display" class="text-amber-300 font-bold">Route active : https://lexwallet.app/#/ (Chemin : /)</p>
-                <p id="header-context-label" class="text-[11px] text-slate-400">Client : CHEER-FLAGSHIP-01 • Session : Non authentifiée • Juridiction : BE</p>
+                <p id="header-context-label" class="text-[11px] text-slate-400">Verrouillé • Connexion requise sur /</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="navigateRoute('/')" class="px-3 py-2 rounded font-bold bg-slate-900 border border-slate-700 hover:border-amber-400 text-amber-300">Accueil & KYC (/)</button>
-                <button onclick="navigateRoute('/POS')" class="px-3 py-2 rounded font-bold bg-sky-700 hover:bg-sky-600 text-white">Menu POS (/POS)</button>
-                <button onclick="navigateRoute('/POS/caisse')" class="px-3 py-2 rounded font-bold bg-emerald-700 hover:bg-emerald-600 text-white">Caisse (/POS/caisse)</button>
-                <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded font-bold">Admin</button>
+                <button onclick="navigateRoute('/')" class="px-3 py-2 rounded font-bold bg-slate-900 border border-slate-700 hover:border-amber-400 text-amber-300">Connexion (/)</button>
+                <button onclick="navigateRoute('/POS')" id="nav-btn-pos" class="px-3 py-2 rounded font-bold bg-slate-800 text-slate-500 border border-slate-800">Menu POS (/POS)</button>
+                <button onclick="navigateRoute('/POS/caisse')" id="nav-btn-caisse" class="px-3 py-2 rounded font-bold bg-slate-800 text-slate-500 border border-slate-800">Caisse (/POS/caisse)</button>
+                <button onclick="logoutSession()" id="nav-btn-logout" class="hidden bg-amber-950 border border-amber-700 text-amber-300 px-3 py-2 rounded font-bold">Déconnexion</button>
+                <button onclick="openAdminModal('purge')" id="nav-btn-admin" class="hidden bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded font-bold">Admin</button>
             </div>
         </header>
 
-        <!-- ROUTE 1 : / (ACCUEIL, AUTHENTIFICATION RÉELLE, KYC, VALEUR CLIENT, R&D & ARCHITECTURE) -->
+        <div id="access-gate-banner" class="hidden bg-rose-950/50 border border-rose-700 text-rose-200 px-4 py-3 rounded-xl font-mono text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <span id="access-gate-msg">Accès restreint : connectez-vous sur la page d'accueil (/) pour charger l'espace d'un établissement ou de la Holding.</span>
+            <button onclick="navigateRoute('/')" class="bg-rose-700 hover:bg-rose-600 text-white px-3 py-1 rounded font-bold shrink-0">Aller à la Connexion</button>
+        </div>
+
+        <!-- ROUTE 1 : / (PAGE DE CONNEXION & SÉLECTION D'ÉTABLISSEMENT / FRANCHISE) -->
         <section id="view-home" class="space-y-6 font-mono text-xs">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-3 gap-2">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-2">
                     <div>
                         <p class="text-[11px] text-sky-400">Chemin : / • URL : https://lexwallet.app/#/</p>
-                        <h2 class="text-base font-bold text-amber-400">Accueil — Authentification, KYC & Dossier Produit / R&D</h2>
-                        <p class="text-slate-400">Connexion Holding (<span class="text-emerald-300">cbltec@proton.me</span>) sans étape KYC • Validation KYC pour les autres profils.</p>
+                        <h2 class="text-base font-bold text-amber-400">Connexion & Isolation par Établissement / Franchise</h2>
+                        <p class="text-slate-400">Chaque établissement possède son propre pays, régime fiscal/social, historique CA, heures prestées et stocks.</p>
                     </div>
-                    <span id="kyc-status-badge" class="px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-slate-300 font-bold">Session : Non connectée</span>
+                    <span id="session-status-badge" class="px-3 py-1.5 rounded bg-slate-950 border border-rose-800 text-rose-300 font-bold">Session : Verrouillée</span>
                 </div>
 
-                <div class="bg-slate-950 border border-emerald-800/60 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-emerald-400">Authentification Administrateur Holding (Sans KYC — cbltec@proton.me)</h3>
+                <!-- CONNEXION ÉTABLISSEMENT / FRANCHISE / RESTAURANT -->
+                <div class="bg-slate-950 border border-sky-800/70 p-4 rounded-xl space-y-4">
+                    <h3 class="text-sm font-bold text-sky-300">Connexion Établissement / Franchise / Restaurant</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Établissement / Franchise</label>
+                            <select id="login-tenant-select" onchange="syncLoginFormWithTenant()" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Identifiant / Email Opérateur</label>
+                            <input type="text" id="login-user-input" placeholder="ex: gerant.be@cheer.local" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Mot de passe / Code d'accès</label>
+                            <input type="password" id="login-pass-input" placeholder="Saisir le mot de passe" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                    </div>
+                    <div id="selected-tenant-preview" class="bg-slate-900/80 border border-slate-800 p-3 rounded-lg text-[11px] text-slate-300"></div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loginTenantSession()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold">Se Connecter à l'Établissement</button>
+                    </div>
+                </div>
+
+                <!-- CONNEXION HOLDING (cbltec@proton.me) -->
+                <div class="bg-slate-950 border border-emerald-800/60 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-emerald-400">Connexion Administrateur Holding (cbltec@proton.me)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
                         <div>
                             <label class="text-[11px] text-slate-400 block mb-1">Email Holding</label>
                             <input type="email" id="holding-email-input" value="cbltec@proton.me" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
                         <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Mot de passe (vérifié côté Worker / session)</label>
+                            <label class="text-[11px] text-slate-400 block mb-1">Établissement ciblé</label>
+                            <select id="holding-tenant-select" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Mot de passe</label>
                             <input type="password" id="holding-pass-input" placeholder="Saisir le mot de passe" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
                         </div>
-                        <div class="flex items-end gap-2">
-                            <button onclick="loginHoldingReal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded font-bold flex-1">Connexion Holding</button>
-                            <button onclick="navigateRoute('/POS')" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-2 rounded font-bold">Ouvrir /POS</button>
+                        <div class="flex items-end">
+                            <button onclick="loginHoldingSession()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold w-full">Connexion Holding</button>
                         </div>
                     </div>
-                    <p id="holding-login-msg" class="text-[11px] text-emerald-300"></p>
                 </div>
 
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                    <h3 class="text-sm font-bold text-sky-300">Entrée KYC — Partenaire / Franchisé / Gestion / Opérateur</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Rôle</label>
-                            <select id="kyc-role-select" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white">
-                                <option value="master_franchise">Master Franchisé</option>
-                                <option value="franchise">Franchisé</option>
-                                <option value="own_managed">Gestion Propre</option>
-                                <option value="staff_pos">Opérateur Caisse</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Identité / Société</label>
-                            <input type="text" id="kyc-full-name" placeholder="Nom ou entité" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Référence KYC / Registre</label>
-                            <input type="text" id="kyc-doc-id" placeholder="Référence document" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
-                        </div>
-                        <div>
-                            <label class="text-[11px] text-slate-400 block mb-1">Identifiant Client</label>
-                            <input type="text" id="kyc-client-id" value="CHEER-FLAGSHIP-01" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
-                        </div>
+                <!-- CRÉATION D'UN NOUVEL ÉTABLISSEMENT / FRANCHISE ISOLÉ -->
+                <div class="bg-slate-950 border border-amber-800/50 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-amber-300">Créer un Nouvel Établissement / Franchise (Données Isolées)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                        <input type="text" id="new-tenant-id" placeholder="ID (ex: CHEER-BRU-02)" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded text-white"/>
+                        <input type="text" id="new-tenant-name" placeholder="Nom (ex: Cheer Bruxelles Louise)" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded text-white"/>
+                        <select id="new-tenant-country" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded text-white">
+                            <option value="BE">Belgique (BE)</option>
+                            <option value="FR">France (FR)</option>
+                            <option value="ES">Espagne (ES)</option>
+                            <option value="VE">Venezuela (VE)</option>
+                        </select>
+                        <input type="number" step="10" min="0" id="new-tenant-stock" value="200" placeholder="Stock départ" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded text-white"/>
+                        <button onclick="createIsolatedTenant()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded font-bold">+ Créer & Ouvrir</button>
                     </div>
-                    <button onclick="submitKycVerification()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold">Valider KYC & Accéder à /POS</button>
                 </div>
 
-                <!-- FICHE VALEUR CLIENT, DIFFÉRENCIATION PRODUIT VS HOLDING, R&D & PREUVES -->
+                <!-- RÉCAPITULATIF SYNTHÉTIQUE PRODUIT / R&D -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
                     <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
                         <h3 class="text-sm font-bold text-amber-300">Fiche Valeur Client & Modèle Économique</h3>
-                        <p>• <strong>Gain de marge & maîtrise des charges</strong> : suivi du COGS, de la casse/perte, du loyer plafonné (max 7 % sur le modèle) et du bénéfice net disponible.</p>
-                        <p>• <strong>Réduction de casse & traçabilité</strong> : décrémentation par recette, suivi des lots/fournisseurs et alertes de seuil minimum.</p>
-                        <p>• <strong>Gain de temps de clôture</strong> : ventilation TVA automatique par rubrique/service et génération de clôture Z avec empreinte d'intégrité.</p>
-                        <p>• <strong>Monétisation</strong> : abonnement SaaS / licence par point de vente, redevances réseau et modules avancés.</p>
+                        <p>• <strong>Gain de marge & loyer maîtrisé</strong> : suivi COGS, casse, charges (loyer plafonné à 7 % max sur le profil rentable) et bénéfice net disponible.</p>
+                        <p>• <strong>Réduction de casse & traçabilité</strong> : décrémentation par recette, lots/fournisseurs, capteurs IoT et alertes de seuil.</p>
+                        <p>• <strong>Clôture rapide</strong> : ventilation TVA par régime/rubrique, clôture Z et export d'audit vérifiable.</p>
+                        <p>• <strong>Modèle commercial</strong> : licence/abonnement par point de vente, redevances réseau et modules avancés.</p>
                     </div>
-
                     <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                        <h3 class="text-sm font-bold text-emerald-300">Cœur Logiciel vs Modules Avancés & Périmètre R&D</h3>
-                        <p>• <strong>Cœur logiciel (POS & Gestion)</strong> : caisse, ventilation fiscale, stocks/casse, recettes/fournisseurs, badgeage/RH, clôture Z et export d'audit.</p>
-                        <p>• <strong>Modules avancés & Holding</strong> : gouvernance multi-entités, paramètres juridictionnels, télémétrie capteurs (froid/énergie), scan lots et synchronisation cloud.</p>
-                        <p>• <strong>Périmètre R&D borné</strong> : (1) traçabilité automatisée lot-à-ticket, (2) corrélation froid/énergie & maintenance, (3) conformité fiscale & intégrité d'audit.</p>
-                        <p>• <strong>Preuves sans point de vente ouvert</strong> : protocole de benchmark/simulation de flux d'exploitation (comparatif manuel vs automatisé) distinct des ventes réelles.</p>
+                        <h3 class="text-sm font-bold text-emerald-300">Cœur Logiciel vs Modules Avancés & R&D</h3>
+                        <p>• <strong>Cœur POS & Gestion</strong> : encaissement, fiscalité/social, stocks/casse, recettes/fournisseurs, badgeage/paie, clôture Z.</p>
+                        <p>• <strong>Modules avancés & Holding</strong> : gouvernance multi-franchises, capteurs IoT, scan lots et synchronisation cloud.</p>
+                        <p>• <strong>Périmètre R&D</strong> : traçabilité lot-à-ticket, corrélation froid/énergie et intégrité d'audit.</p>
+                        <p>• <strong>Preuves sans point de vente physique</strong> : benchmarks/simulations de scénarios de service distincts des ventes réelles.</p>
                     </div>
-                </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                    <h3 class="text-sm font-bold text-sky-300">Piste d'Audit Vérifiable & Export Structuré (Stocks, Casse, IoT & Clôture Z)</h3>
-                    <div class="flex flex-wrap gap-2 py-1">
-                        <button onclick="exportFullAuditBundle()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded font-bold">Export Audit Complet JSON + Hash</button>
-                        <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold">Export Tickets CSV + Hash</button>
-                    </div>
-                    <div id="audit-trail-log" class="space-y-1 text-[11px] text-slate-400 max-h-36 overflow-y-auto pt-1 border-t border-slate-800"></div>
                 </div>
             </div>
         </section>
 
-        <!-- ROUTE 2 : /POS (MENU GÉNÉRAL / PRÉSENTATION POS) -->
+        <!-- ROUTE 2 : /POS (MENU GÉNÉRAL DE L'ÉTABLISSEMENT CONNECTÉ) -->
         <section id="view-pos-hub" class="hidden space-y-6 font-mono text-xs">
             <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
                 <div class="border-b border-slate-800 pb-4">
                     <p class="text-[11px] text-sky-400">Chemin : /POS • URL : https://lexwallet.app/#/POS</p>
-                    <h2 class="text-lg font-bold text-white">Présentation & Menu Général du POS</h2>
-                    <p class="text-slate-400 mt-1">Sélectionnez une sous-page dédiée sous <span class="text-sky-300">/POS</span>.</p>
+                    <h2 id="pos-hub-title" class="text-lg font-bold text-white">Menu Général du POS</h2>
+                    <p id="pos-hub-subtitle" class="text-slate-400 mt-1"></p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <button onclick="navigateRoute('/POS/caisse')" class="text-left bg-slate-950 hover:border-emerald-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-emerald-400 font-bold text-sm">/POS/caisse</p>
-                        <p class="text-slate-400">Caisse seule : Sur Place / À Emporter, remises, bons, panier accessible et validation ticket.</p>
+                        <p class="text-slate-400">Encaissement Sur Place / À Emporter, remises, bons, panier rapide et validation ticket.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/rapport-pnl-z')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-amber-400 font-bold text-sm">/POS/rapport-pnl-z</p>
-                        <p class="text-slate-400">Rapport P&L Fiscal & Clôture Z : CA TTC/HT, TVA par rubrique, classement produits et Z.</p>
+                        <p class="text-slate-400">Historique CA propre à l'établissement, ventilation TVA, classement produits et Clôture Z.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/couts-tresorerie')" class="text-left bg-slate-950 hover:border-sky-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-sky-400 font-bold text-sm">/POS/couts-tresorerie</p>
-                        <p class="text-slate-400">Coûts & Trésorerie réels sur tickets (Loyer ≤ 7%, Trésorerie 5%) & Bénéfice Net.</p>
+                        <p class="text-slate-400">COGS + casse, loyer (≤ 7%), charges, réserves trésorerie (5%) & bénéfice net.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/historique-qr')" class="text-left bg-slate-950 hover:border-sky-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-sky-300 font-bold text-sm">/POS/historique-qr</p>
-                        <p class="text-slate-400">Historique horodaté, QR traçabilité, modification PIN et annulation ticket.</p>
+                        <p class="text-slate-400">Tickets horodatés de l'établissement, QR traçabilité, modification PIN et annulation.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/stocks-iot-scanners')" class="text-left bg-slate-950 hover:border-emerald-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-emerald-300 font-bold text-sm">/POS/stocks-iot-scanners</p>
-                        <p class="text-slate-400">Stocks & Casse, Capteurs IoT et Scanners de lots séparés par onglets.</p>
+                        <p class="text-slate-400">Stocks & casse propres au point de vente, capteurs IoT et scanner lots.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/fournisseurs-recettes')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-amber-300 font-bold text-sm">/POS/fournisseurs-recettes</p>
-                        <p class="text-slate-400">Portefeuille fournisseurs, bons de commande et recettes/lots.</p>
+                        <p class="text-slate-400">Fournisseurs de l'établissement, bons de commande et recettes/lots.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/rh-paie')" class="text-left bg-slate-950 hover:border-sky-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-sky-300 font-bold text-sm">/POS/rh-paie</p>
-                        <p class="text-slate-400">Badgeage UID, fiches de paie déterministes et échéancier.</p>
+                        <p class="text-slate-400">Heures prestées, badgeage UID, charges sociales locales et fiches de paie.</p>
                     </button>
-
                     <button onclick="navigateRoute('/POS/parametres-fiscaux')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-amber-300 font-bold text-sm">/POS/parametres-fiscaux</p>
-                        <p class="text-slate-400">Paramètres pays, taux TVA sur place/emporter, charges sociales et devise.</p>
+                        <p class="text-slate-400">Pays, régime TVA sur place/emporter, charges sociales et devise de l'établissement.</p>
                     </button>
                 </div>
             </div>
@@ -168,14 +172,14 @@
         <!-- BARRE DE SOUS-NAVIGATION /POS/... -->
         <nav id="pos-subnav" class="hidden flex flex-wrap gap-2 font-mono text-xs bg-slate-900/80 border border-slate-800 p-3 rounded-xl">
             <button onclick="navigateRoute('/POS')" class="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold">← /POS</button>
-            <button onclick="navigateRoute('/POS/caisse')" id="subnav-caisse" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/caisse</button>
-            <button onclick="navigateRoute('/POS/rapport-pnl-z')" id="subnav-pnl" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/rapport-pnl-z</button>
-            <button onclick="navigateRoute('/POS/couts-tresorerie')" id="subnav-costs" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/couts-tresorerie</button>
-            <button onclick="navigateRoute('/POS/historique-qr')" id="subnav-history" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/historique-qr</button>
-            <button onclick="navigateRoute('/POS/stocks-iot-scanners')" id="subnav-supply" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/stocks-iot-scanners</button>
-            <button onclick="navigateRoute('/POS/fournisseurs-recettes')" id="subnav-suppliers" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/fournisseurs-recettes</button>
-            <button onclick="navigateRoute('/POS/rh-paie')" id="subnav-hr" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/rh-paie</button>
-            <button onclick="navigateRoute('/POS/parametres-fiscaux')" id="subnav-fiscal" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/parametres-fiscaux</button>
+            <button onclick="navigateRoute('/POS/caisse')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/caisse</button>
+            <button onclick="navigateRoute('/POS/rapport-pnl-z')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/rapport-pnl-z</button>
+            <button onclick="navigateRoute('/POS/couts-tresorerie')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/couts-tresorerie</button>
+            <button onclick="navigateRoute('/POS/historique-qr')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/historique-qr</button>
+            <button onclick="navigateRoute('/POS/stocks-iot-scanners')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/stocks-iot-scanners</button>
+            <button onclick="navigateRoute('/POS/fournisseurs-recettes')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/fournisseurs-recettes</button>
+            <button onclick="navigateRoute('/POS/rh-paie')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/rh-paie</button>
+            <button onclick="navigateRoute('/POS/parametres-fiscaux')" class="px-2.5 py-1.5 rounded bg-slate-950 text-slate-300">/POS/parametres-fiscaux</button>
         </nav>
 
         <!-- SOUS-PAGE : /POS/caisse -->
@@ -188,9 +192,9 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="scrollToCart()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-mono font-bold">
-                        Panier (<span id="top-cart-count">0</span> • <span id="top-cart-total">0.00 €</span>)
+                        Panier (<span id="top-cart-count">0</span> • <span id="top-cart-total">0.00</span>)
                     </button>
-                    <input type="date" id="pos-date-input" onchange="syncAllViews()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
+                    <input type="date" id="pos-date-input" onchange="syncActiveView()" class="bg-slate-950 border border-slate-800 text-xs px-3 py-1.5 rounded text-white font-mono">
                 </div>
             </div>
 
@@ -224,25 +228,24 @@
                         </div>
 
                         <div class="font-mono space-y-1.5 pt-2 border-t border-slate-800 text-xs">
-                            <div class="flex justify-between text-slate-400"><span>Sous-total HT :</span><span id="cart-ht">0.00 €</span></div>
-                            <div class="flex justify-between text-emerald-400" id="discount-row" style="display:none;"><span>Remise totale :</span><span id="cart-discount">0.00 €</span></div>
-                            <div class="flex justify-between text-slate-400"><span>TVA ventilée :</span><span id="cart-vat">0.00 €</span></div>
-                            <div class="flex justify-between text-sm font-bold text-white pt-1 border-t border-slate-800"><span>Total TTC :</span><span id="cart-total" class="text-sky-400">0.00 €</span></div>
+                            <div class="flex justify-between text-slate-400"><span>Sous-total HT :</span><span id="cart-ht">0.00</span></div>
+                            <div class="flex justify-between text-emerald-400" id="discount-row" style="display:none;"><span>Remise totale :</span><span id="cart-discount">0.00</span></div>
+                            <div class="flex justify-between text-slate-400"><span>TVA ventilée :</span><span id="cart-vat">0.00</span></div>
+                            <div class="flex justify-between text-sm font-bold text-white pt-1 border-t border-slate-800"><span>Total TTC :</span><span id="cart-total" class="text-sky-400">0.00</span></div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2 pt-2">
-                            <button onclick="checkout(false)" id="btn-checkout-real" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold text-xs shadow transition">Valider Vente</button>
-                            <button onclick="checkout(true)" id="btn-checkout-test" class="bg-amber-700 hover:bg-amber-600 text-white py-2.5 rounded font-bold text-xs shadow transition">Mode Test</button>
+                            <button onclick="checkout(false)" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded font-bold text-xs shadow transition">Valider Vente</button>
+                            <button onclick="checkout(true)" class="bg-amber-700 hover:bg-amber-600 text-white py-2.5 rounded font-bold text-xs shadow transition">Mode Test</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- BARRE FLOTTANTE PANIER MOBILE -->
-            <div id="mobile-cart-sticky" class="fixed bottom-0 inset-x-0 bg-slate-900/95 border-t border-sky-700/60 px-4 py-3 flex items-center justify-between font-mono text-xs z-40">
+            <div id="mobile-cart-sticky" class="hidden fixed bottom-0 inset-x-0 bg-slate-900/95 border-t border-sky-700/60 px-4 py-3 flex items-center justify-between font-mono text-xs z-40">
                 <div>
                     <span class="text-slate-300">Articles : <strong id="sticky-cart-count" class="text-white">0</strong></span>
-                    <span class="ml-3 text-sky-400 font-bold" id="sticky-cart-total">0.00 € TTC</span>
+                    <span class="ml-3 text-sky-400 font-bold" id="sticky-cart-total">0.00 TTC</span>
                 </div>
                 <button onclick="scrollToCart()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded font-bold">Voir Panier / Valider</button>
             </div>
@@ -254,7 +257,7 @@
                 <div>
                     <p class="text-[11px] text-sky-400 font-mono">Chemin : /POS/rapport-pnl-z • URL : https://lexwallet.app/#/POS/rapport-pnl-z</p>
                     <h2 class="text-base font-bold text-amber-400">Rapport P&L Fiscal & Clôture Z</h2>
-                    <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span> • Données réelles des tickets</p>
+                    <p class="text-xs text-slate-400 font-mono">Date : <span id="pnl-date-label"></span> • Historique CA propre à l'établissement</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold transition">Export CSV Audit</button>
@@ -265,15 +268,15 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-xs text-slate-400">CA Réel TTC (Date)</p>
-                    <p id="pnl-ca" class="text-xl font-bold text-sky-400 mt-1">0.00 €</p>
+                    <p id="pnl-ca" class="text-xl font-bold text-sky-400 mt-1">0.00</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-xs text-slate-400">CA Réel Net HT (Date)</p>
-                    <p id="pnl-ht" class="text-xl font-bold text-slate-200 mt-1">0.00 €</p>
+                    <p id="pnl-ht" class="text-xl font-bold text-slate-200 mt-1">0.00</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-xs text-slate-400">TVA Réelle Collectée</p>
-                    <p id="pnl-vat" class="text-xl font-bold text-amber-400 mt-1">0.00 €</p>
+                    <p id="pnl-vat" class="text-xl font-bold text-amber-400 mt-1">0.00</p>
                 </div>
             </div>
 
@@ -325,7 +328,7 @@
                 <div>
                     <p class="text-[11px] text-sky-400 font-mono">Chemin : /POS/couts-tresorerie • URL : https://lexwallet.app/#/POS/couts-tresorerie</p>
                     <h2 class="text-base font-bold text-emerald-400">Analyse Réelle des Coûts, Charges & Ventilation Trésorerie</h2>
-                    <p class="text-xs text-slate-400 font-mono">100% Réel sur tickets • Date : <span id="costs-date-label"></span> • CA Réel HT : <span id="costs-real-ht-label" class="text-sky-300">0.00 €</span></p>
+                    <p class="text-xs text-slate-400 font-mono">Périmètre : <span id="costs-date-label"></span> • CA Réel HT : <span id="costs-real-ht-label" class="text-sky-300">0.00</span></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
                     <button onclick="setCostScopeMode('day')" id="scope-btn-day" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Tickets Date Active</button>
@@ -337,23 +340,23 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 font-mono">
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-[11px] text-slate-400">COGS Réel + Casse</p>
-                    <p id="cost-cogs-val" class="text-lg font-bold text-amber-400 mt-1">0.00 €</p>
+                    <p id="cost-cogs-val" class="text-lg font-bold text-amber-400 mt-1">0.00</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-[11px] text-slate-400">Charges Exploitation</p>
-                    <p id="cost-opex-val" class="text-lg font-bold text-rose-400 mt-1">0.00 €</p>
+                    <p id="cost-opex-val" class="text-lg font-bold text-rose-400 mt-1">0.00</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-[11px] text-slate-400">Net Avant Réserves</p>
-                    <p id="cost-pre-reserve-val" class="text-lg font-bold text-sky-300 mt-1">0.00 €</p>
+                    <p id="cost-pre-reserve-val" class="text-lg font-bold text-sky-300 mt-1">0.00</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-[11px] text-slate-400">À Isoler (TVA + Réserves)</p>
-                    <p id="cost-reserve-val" class="text-lg font-bold text-amber-300 mt-1">0.00 €</p>
+                    <p id="cost-reserve-val" class="text-lg font-bold text-amber-300 mt-1">0.00</p>
                 </div>
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <p class="text-[11px] text-slate-400">Bénéfice Net Disponible</p>
-                    <p id="cost-net-gain-val" class="text-lg font-bold text-emerald-400 mt-1">0.00 €</p>
+                    <p id="cost-net-gain-val" class="text-lg font-bold text-emerald-400 mt-1">0.00</p>
                 </div>
             </div>
 
@@ -367,27 +370,27 @@
                         <div>
                             <label class="text-[11px] text-slate-400 block mb-1">Loyer (% Net HT) — Max 7%</label>
                             <input type="number" step="0.5" min="0" max="7" id="cfg-rent-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            <span id="calc-rent-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                            <span id="calc-rent-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00</span>
                         </div>
                         <div>
                             <label class="text-[11px] text-slate-400 block mb-1">Royalties Holding (% Net HT)</label>
                             <input type="number" step="0.5" min="0" max="100" id="cfg-royalties-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            <span id="calc-royalties-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                            <span id="calc-royalties-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00</span>
                         </div>
                         <div>
                             <label class="text-[11px] text-slate-400 block mb-1">Frais de Personnel (% Net HT)</label>
                             <input type="number" step="0.5" min="0" max="100" id="cfg-staff-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            <span id="calc-staff-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                            <span id="calc-staff-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00</span>
                         </div>
                         <div>
                             <label class="text-[11px] text-slate-400 block mb-1">Entretiens & Réparations (% Net HT)</label>
                             <input type="number" step="0.5" min="0" max="100" id="cfg-maint-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            <span id="calc-maint-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                            <span id="calc-maint-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00</span>
                         </div>
                         <div class="sm:col-span-2">
                             <label class="text-[11px] text-slate-400 block mb-1">Autres Charges (% Net HT)</label>
                             <input type="number" step="0.5" min="0" max="100" id="cfg-other-pct" onchange="saveCostConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            <span id="calc-other-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00 €</span>
+                            <span id="calc-other-eur" class="text-[10px] text-slate-400 block mt-0.5">0.00</span>
                         </div>
                     </div>
                 </div>
@@ -419,7 +422,7 @@
                 <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR, modification ou annulation</span>
             </div>
             <div id="history-container" class="space-y-2 font-mono text-xs">
-                <p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>
+                <p class="text-slate-500 text-center py-8">Aucune commande enregistrée pour cet établissement.</p>
             </div>
         </section>
 
@@ -519,7 +522,7 @@
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                 <div>
                     <p class="text-[11px] text-sky-400">Chemin : /POS/rh-paie • URL : https://lexwallet.app/#/POS/rh-paie</p>
-                    <h2 class="text-base font-bold text-emerald-400">RH — Badgeage Heures, Fiches de Paie & Échéancier</h2>
+                    <h2 class="text-base font-bold text-emerald-400">RH — Heures Prestées, Badgeage UID, Fiches de Paie & Échéancier</h2>
                 </div>
                 <button onclick="connectBadgeReader()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Connecter / Tester Badgeuse</button>
             </div>
@@ -539,7 +542,7 @@
         <!-- SOUS-PAGE : /POS/parametres-fiscaux -->
         <section id="view-fiscal" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 font-mono text-xs">
             <p class="text-[11px] text-sky-400">Chemin : /POS/parametres-fiscaux • URL : https://lexwallet.app/#/POS/parametres-fiscaux</p>
-            <h2 class="text-base font-bold text-sky-300">Paramètres Pays, Fiscaux & Sociaux</h2>
+            <h2 class="text-base font-bold text-sky-300">Paramètres Pays, Régime Fiscal & Social de l'Établissement</h2>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <div>
                     <label class="text-[11px] text-slate-400 block mb-1">Pays / Juridiction</label>
@@ -624,7 +627,7 @@
             </div>
             <div id="edit-items-list" class="space-y-2 bg-slate-950 p-3 rounded-lg border border-slate-800 max-h-56 overflow-y-auto"></div>
             <div class="flex gap-2 pt-2">
-                <button onclick="saveEditedTicket()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded w-full font-bold">Enregistrer & Synchroniser</button>
+                <button onclick="saveEditedTicket()" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded w-full font-bold">Enregistrer</button>
                 <button onclick="closeEditTicketModal()" class="bg-slate-800 py-2 rounded w-full text-slate-300">Annuler</button>
             </div>
         </div>
@@ -633,8 +636,8 @@
     <!-- MODAL PIN ADMIN / SUPERVISEUR -->
     <div id="admin-modal" class="hidden fixed inset-0 bg-black/80 flex items-start justify-center p-4 py-8 z-50 overflow-y-auto">
         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full space-y-4 font-mono text-xs">
-            <h3 id="admin-modal-title" class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN / SUPERVISEUR</h3>
-            <p id="admin-modal-desc" class="text-slate-400">Entrez le code PIN :</p>
+            <h3 class="font-bold text-rose-400 text-sm">SÉCURITÉ ADMIN / SUPERVISEUR</h3>
+            <p class="text-slate-400">Entrez le code PIN :</p>
             <input type="password" id="admin-pin-input" placeholder="Code PIN" class="bg-slate-950 border border-slate-800 px-3 py-2 rounded w-full text-white"/>
             <div class="flex gap-2">
                 <button onclick="submitAdminAction()" class="bg-rose-600 hover:bg-rose-500 text-white py-2 rounded w-full font-bold">Valider PIN</button>
@@ -645,33 +648,24 @@
 
     <script>
         const HOLDING_ADMIN_EMAIL = 'cbltec@proton.me';
-        const WORKER_AUTH_ENDPOINT = 'https://delegal.dev/auth/login';
-        const WORKER_AUDIT_ENDPOINT = 'https://delegal.dev/audit/sync';
-        const TX_STORAGE_KEY_V2 = 'lexwallet_pos_tx_v2';
-        const TX_STORAGE_KEY_V1 = 'lexwallet_pos_tx_v1';
-        const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
-        const SUP_STORAGE_KEY = 'lexwallet_pos_sup_v2';
-        const PO_STORAGE_KEY = 'lexwallet_pos_po_v2';
-        const COST_CFG_STORAGE_KEY = 'lexwallet_pos_cost_cfg_v7';
-        const HR_STORAGE_KEY = 'lexwallet_pos_hr_v1';
-        const GOV_STORAGE_KEY = 'lexwallet_pos_gov_v2';
-        const AUDIT_STORAGE_KEY = 'lexwallet_pos_audit_v1';
+        const TENANT_STORE_KEY = 'lexwallet_tenant_store_v1';
+        const SESSION_STATE_KEY = 'lexwallet_session_v1';
         const MANAGER_PIN = 'CHEEZ-ADMIN-2026';
 
-        const RUBRICS = {
-            plats_emporter: { label: 'Plats à Emporter', vatPlace: 0.10, vatTakeout: 0.10 },
-            plats_sur_place: { label: 'Plats Sur Place', vatPlace: 0.20, vatTakeout: 0.10 },
-            boissons_soft: { label: 'Boissons Normal / Soft', vatPlace: 0.20, vatTakeout: 0.10 },
-            vins_alcools: { label: 'Vins, Alcools & Spiritueux', vatPlace: 0.20, vatTakeout: 0.20 }
+        const JURISDICTION_PRESETS = {
+            BE: { country: 'BE', vatPlacePct: 21, vatTakeoutPct: 6, employerRatePct: 28, employeeRatePct: 13.07, currency: '€' },
+            FR: { country: 'FR', vatPlacePct: 20, vatTakeoutPct: 10, employerRatePct: 42, employeeRatePct: 21.5, currency: '€' },
+            ES: { country: 'ES', vatPlacePct: 10, vatTakeoutPct: 10, employerRatePct: 30, employeeRatePct: 6.4, currency: '€' },
+            VE: { country: 'VE', vatPlacePct: 16, vatTakeoutPct: 16, employerRatePct: 18, employeeRatePct: 5, currency: 'USD / VEF' }
         };
 
         const DEFAULT_SUPPLIERS = [
-            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', address: '14 Rue des Artisans, 1000 Bruxelles', contact: '+32 2 555 0140', vatNumber: 'BE0412345678', companyNumber: '0412.345.678' },
-            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', address: '88 Avenue du Marché, 4000 Liège', contact: '+32 4 555 0192', vatNumber: 'BE0523456789', companyNumber: '0523.456.789' },
-            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', address: '5 Quai des Chais, 2000 Anvers', contact: '+32 3 555 0175', vatNumber: 'BE0634567890', companyNumber: '0634.567.890' }
+            { id: 'SUP-BOULANGERIE', name: 'Boulangerie Artisanale Nord', address: '14 Rue des Artisans', contact: '+32 2 555 0140', vatNumber: 'BE0412345678', companyNumber: '0412.345.678' },
+            { id: 'SUP-ELEVAGE', name: 'Filière Bœuf & Terroir', address: '88 Avenue du Marché', contact: '+32 4 555 0192', vatNumber: 'BE0523456789', companyNumber: '0523.456.789' },
+            { id: 'SUP-CAVE', name: 'Domaine & Boissons Pro', address: '5 Quai des Chais', contact: '+32 3 555 0175', vatNumber: 'BE0634567890', companyNumber: '0634.567.890' }
         ];
 
-        const DEFAULT_INGREDIENTS = [
+        const DEFAULT_INGREDIENTS_BASE = [
             { id: 'ING-PAIN', name: 'Pain Burger', unit: 'unité', unitCost: 0.55, initialQty: 250, wasteQty: 0, minThreshold: 60, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-PAIN-1126', orderQty: 200 },
             { id: 'ING-BOEUF', name: 'Viande de Bœuf', unit: 'portion', unitCost: 1.40, initialQty: 250, wasteQty: 0, minThreshold: 60, supplierId: 'SUP-ELEVAGE', lot: 'LOT-BOEUF-1126', orderQty: 200 },
             { id: 'ING-CHEDDAR', name: 'Cheddar Affiné', unit: 'tranche', unitCost: 0.45, initialQty: 300, wasteQty: 0, minThreshold: 80, supplierId: 'SUP-ELEVAGE', lot: 'LOT-CHED-1126', orderQty: 250 },
@@ -717,24 +711,53 @@
         const VOUCHER_CODES = {
             'CHEEZVIP': { type: 'percent', value: 10, label: 'Bon VIP (-10%)' },
             'STAFF': { type: 'percent', value: 20, label: 'Bon Staff (-20%)' },
-            'BONUS5': { type: 'fixed_ht', value: 5.00, label: 'Bon -5.00 € HT' },
-            'BONUS10': { type: 'fixed_ht', value: 10.00, label: 'Bon -10.00 € HT' }
+            'BONUS5': { type: 'fixed_ht', value: 5.00, label: 'Bon -5.00 HT' },
+            'BONUS10': { type: 'fixed_ht', value: 10.00, label: 'Bon -10.00 HT' }
         };
 
+        function buildDefaultTenantRecord(tenantId, name, countryCode, stockQty = 200) {
+            const preset = JURISDICTION_PRESETS[countryCode] || JURISDICTION_PRESETS.BE;
+            return {
+                id: tenantId,
+                name,
+                operatorEmail: `manager.${tenantId.toLowerCase()}@cheer.local`,
+                fiscal: { ...preset },
+                costConfig: { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 },
+                transactions: [],
+                ingredients: DEFAULT_INGREDIENTS_BASE.map(ing => ({ ...ing, initialQty: stockQty, wasteQty: 0, lot: `${ing.lot}-${tenantId.slice(-2)}` })),
+                suppliers: DEFAULT_SUPPLIERS.map(s => ({ ...s })),
+                validatedPOs: [],
+                hrShifts: [],
+                auditEntries: []
+            };
+        }
+
+        function loadTenantStore() {
+            const defaults = {
+                'CHEER-FLAGSHIP-01': buildDefaultTenantRecord('CHEER-FLAGSHIP-01', 'Cheer Flagship Bruxelles', 'BE', 250),
+                'CHEER-FR-LYON-02': buildDefaultTenantRecord('CHEER-FR-LYON-02', 'Franchise Cheer Lyon Part-Dieu', 'FR', 180),
+                'CHEER-ES-BCN-03': buildDefaultTenantRecord('CHEER-ES-BCN-03', 'Franchise Cheer Barcelona Gràcia', 'ES', 220),
+                'CHEER-VE-CCS-04': buildDefaultTenantRecord('CHEER-VE-CCS-04', 'Restaurant Cheer Caracas / Litoral', 'VE', 160)
+            };
+            try {
+                const raw = localStorage.getItem(TENANT_STORE_KEY);
+                if (!raw) return defaults;
+                const parsed = JSON.parse(raw);
+                return Object.keys(parsed).length > 0 ? parsed : defaults;
+            } catch (_) { return defaults; }
+        }
+
+        function loadSessionState() {
+            const def = { authenticated: false, role: 'none', userLabel: '', activeTenantId: 'CHEER-FLAGSHIP-01' };
+            try {
+                const raw = localStorage.getItem(SESSION_STATE_KEY);
+                return raw ? { ...def, ...JSON.parse(raw) } : def;
+            } catch (_) { return def; }
+        }
+
+        let tenantStore = loadTenantStore();
+        let sessionState = loadSessionState();
         let cart = [];
-        let transactions = loadTransactions();
-        let ingredientsConfig = loadIngredientsConfig();
-        let suppliers = loadSuppliers();
-        let validatedPOs = loadValidatedPOs();
-        let costConfig = loadCostConfig();
-        let hrShifts = loadHrShifts();
-        let govState = loadGovState();
-        let auditEntries = loadAuditEntries();
-        let iotSensors = [
-            { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: '3.2 °C • 77% HR', status: 'OK', node: 'DePIN-EU-01' },
-            { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: '-18.8 °C', status: 'OK', node: 'DePIN-EU-01' },
-            { id: 'IOT-PWR-03', label: 'Compteur Énergie', metric: '4.4 kW • Nominal', status: 'OK', node: 'DePIN-EU-02' }
-        ];
         let costScopeMode = 'day';
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
@@ -744,15 +767,230 @@
         let editingSupplierId = null;
         let selectedTicketIndex = null;
         let zSequenceCounter = 1050;
+        let iotSensors = [
+            { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: '3.2 °C • 77% HR', status: 'OK', node: 'NODE-01' },
+            { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: '-18.8 °C', status: 'OK', node: 'NODE-01' },
+            { id: 'IOT-PWR-03', label: 'Compteur Énergie', metric: '4.4 kW • Nominal', status: 'OK', node: 'NODE-02' }
+        ];
+
+        function persistStore() {
+            try { localStorage.setItem(TENANT_STORE_KEY, JSON.stringify(tenantStore)); } catch (_) {}
+        }
+
+        function persistSession() {
+            try { localStorage.setItem(SESSION_STATE_KEY, JSON.stringify(sessionState)); } catch (_) {}
+        }
+
+        function getActiveTenant() {
+            if (!tenantStore[sessionState.activeTenantId]) {
+                const firstKey = Object.keys(tenantStore)[0];
+                sessionState.activeTenantId = firstKey;
+            }
+            return tenantStore[sessionState.activeTenantId];
+        }
+
+        function currencySuffix() {
+            const t = getActiveTenant();
+            return t.fiscal.currency || '€';
+        }
+
+        function fmtMoney(val) {
+            return `${Number(val || 0).toFixed(2)} ${currencySuffix()}`;
+        }
+
+        function formatNowDateTime() {
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const time = now.toLocaleTimeString('fr-FR', { hour12: false });
+            return { date, time, full: `${date} ${time}` };
+        }
+
+        function computeIntegrityHash(inputStr) {
+            let h1 = 0x811c9dc5;
+            for (let i = 0; i < inputStr.length; i++) {
+                h1 ^= inputStr.charCodeAt(i);
+                h1 = Math.imul(h1, 0x01000193) >>> 0;
+            }
+            return `LXT-${h1.toString(16).padStart(8, '0')}`.toUpperCase();
+        }
+
+        function appendAuditEvent(category, detail) {
+            const tenant = getActiveTenant();
+            const stamp = formatNowDateTime();
+            const prev = tenant.auditEntries.length > 0 ? tenant.auditEntries[0].hash : 'GENESIS';
+            tenant.auditEntries.unshift({
+                id: 'AUD-' + Date.now(),
+                at: stamp.full,
+                category,
+                detail,
+                hash: computeIntegrityHash(`${prev}|${stamp.full}|${category}|${detail}`)
+            });
+            tenant.auditEntries = tenant.auditEntries.slice(0, 150);
+            persistStore();
+        }
 
         document.getElementById('pos-date-input').value = new Date().toISOString().split('T')[0];
-        hydrateGovAndJurisdiction();
-        hydrateCostInputs();
+        populateTenantSelectors();
+        syncLoginFormWithTenant();
         renderCatalog();
-        updateCartUI();
-        syncAllViews();
-        navigateRoute(parseHashRoute());
-        window.addEventListener('hashchange', () => renderRoute(parseHashRoute()));
+        updateHeaderAndLockState();
+        navigateRoute(sessionState.authenticated ? parseHashRoute() : '/');
+        window.addEventListener('hashchange', () => {
+            const target = parseHashRoute();
+            if (!sessionState.authenticated && target !== '/') {
+                showGateNotice("Connexion obligatoire avant d'accéder aux modules de l'établissement.");
+                window.location.hash = '#/';
+                renderRoute('/');
+                return;
+            }
+            renderRoute(target);
+        });
+
+        function showGateNotice(msg) {
+            const banner = document.getElementById('access-gate-banner');
+            document.getElementById('access-gate-msg').innerText = msg;
+            banner.classList.remove('hidden');
+        }
+
+        function hideGateNotice() {
+            document.getElementById('access-gate-banner').classList.add('hidden');
+        }
+
+        function populateTenantSelectors() {
+            const ids = Object.keys(tenantStore);
+            const optionsHtml = ids.map(id => {
+                const t = tenantStore[id];
+                return `<option value="${id}">${t.name} (${id} • ${t.fiscal.country})</option>`;
+            }).join('');
+            document.getElementById('login-tenant-select').innerHTML = optionsHtml;
+            document.getElementById('holding-tenant-select').innerHTML = optionsHtml;
+            document.getElementById('login-tenant-select').value = sessionState.activeTenantId;
+            document.getElementById('holding-tenant-select').value = sessionState.activeTenantId;
+        }
+
+        function syncLoginFormWithTenant() {
+            const selId = document.getElementById('login-tenant-select').value;
+            const t = tenantStore[selId];
+            if (!t) return;
+            document.getElementById('login-user-input').value = t.operatorEmail || '';
+            document.getElementById('selected-tenant-preview').innerHTML =
+                `Établissement : <strong>${t.name}</strong> (${t.id}) • Pays : <strong>${t.fiscal.country}</strong> • TVA Place/Emporter : <strong>${t.fiscal.vatPlacePct}% / ${t.fiscal.vatTakeoutPct}%</strong> • Charges patronales : <strong>${t.fiscal.employerRatePct}%</strong> • Devise : <strong>${t.fiscal.currency}</strong> • Tickets : <strong>${t.transactions.length}</strong> • Badgeages : <strong>${t.hrShifts.length}</strong>`;
+        }
+
+        function createIsolatedTenant() {
+            const rawId = (document.getElementById('new-tenant-id').value || '').trim().toUpperCase().replace(/[^A-Z0-9_-]+/g, '-');
+            const name = (document.getElementById('new-tenant-name').value || '').trim();
+            const country = document.getElementById('new-tenant-country').value;
+            const stockQty = Math.max(0, parseInt(document.getElementById('new-tenant-stock').value, 10) || 200);
+            if (!rawId || !name) return alert("Renseignez l'ID et le nom du nouvel établissement.");
+            if (tenantStore[rawId]) return alert("Cet identifiant d'établissement existe déjà.");
+
+            tenantStore[rawId] = buildDefaultTenantRecord(rawId, name, country, stockQty);
+            persistStore();
+            sessionState = { authenticated: true, role: 'franchise', userLabel: name, activeTenantId: rawId };
+            persistSession();
+            appendAuditEvent('TENANT_CREATED', `Création espace isolé ${rawId} (${name}, ${country})`);
+            populateTenantSelectors();
+            syncLoginFormWithTenant();
+            hydrateActiveTenantInputs();
+            updateHeaderAndLockState();
+            hideGateNotice();
+            navigateRoute('/POS');
+        }
+
+        function loginTenantSession() {
+            const tenantId = document.getElementById('login-tenant-select').value;
+            const user = (document.getElementById('login-user-input').value || '').trim();
+            const pass = document.getElementById('login-pass-input').value || '';
+            if (!tenantId || !user || !pass) return alert("Renseignez l'établissement, l'identifiant et le mot de passe.");
+
+            sessionState = { authenticated: true, role: 'tenant', userLabel: user, activeTenantId: tenantId };
+            persistSession();
+            appendAuditEvent('LOGIN_TENANT', `Connexion ${user} sur ${tenantId}`);
+            document.getElementById('login-pass-input').value = '';
+            hydrateActiveTenantInputs();
+            updateHeaderAndLockState();
+            hideGateNotice();
+            navigateRoute('/POS');
+        }
+
+        function loginHoldingSession() {
+            const email = (document.getElementById('holding-email-input').value || '').trim().toLowerCase();
+            const tenantId = document.getElementById('holding-tenant-select').value;
+            const pass = document.getElementById('holding-pass-input').value || '';
+            if (email !== HOLDING_ADMIN_EMAIL) return alert(`Compte Holding requis : ${HOLDING_ADMIN_EMAIL}`);
+            if (!pass) return alert("Saisissez le mot de passe Holding.");
+
+            sessionState = { authenticated: true, role: 'holding', userLabel: HOLDING_ADMIN_EMAIL, activeTenantId: tenantId };
+            persistSession();
+            appendAuditEvent('LOGIN_HOLDING', `Connexion Holding sur ${tenantId}`);
+            document.getElementById('holding-pass-input').value = '';
+            hydrateActiveTenantInputs();
+            updateHeaderAndLockState();
+            hideGateNotice();
+            navigateRoute('/POS');
+        }
+
+        function logoutSession() {
+            cart = [];
+            activeVoucher = null;
+            quickDiscountPercent = 0;
+            sessionState = { authenticated: false, role: 'none', userLabel: '', activeTenantId: sessionState.activeTenantId };
+            persistSession();
+            updateHeaderAndLockState();
+            navigateRoute('/');
+        }
+
+        function updateHeaderAndLockState() {
+            const badge = document.getElementById('session-status-badge');
+            const navPos = document.getElementById('nav-btn-pos');
+            const navCaisse = document.getElementById('nav-btn-caisse');
+            const btnLogout = document.getElementById('nav-btn-logout');
+            const btnAdmin = document.getElementById('nav-btn-admin');
+
+            if (!sessionState.authenticated) {
+                document.getElementById('header-context-label').innerText = 'Verrouillé • Connexion requise sur /';
+                badge.innerText = 'Session : Verrouillée';
+                badge.className = 'px-3 py-1.5 rounded bg-slate-950 border border-rose-800 text-rose-300 font-bold';
+                navPos.className = 'px-3 py-2 rounded font-bold bg-slate-900 text-slate-500 border border-slate-800';
+                navCaisse.className = 'px-3 py-2 rounded font-bold bg-slate-900 text-slate-500 border border-slate-800';
+                btnLogout.classList.add('hidden');
+                btnAdmin.classList.add('hidden');
+                return;
+            }
+
+            const t = getActiveTenant();
+            document.getElementById('header-context-label').innerText =
+                `Établissement : ${t.name} (${t.id}) • Pays : ${t.fiscal.country} • TVA ${t.fiscal.vatPlacePct}%/${t.fiscal.vatTakeoutPct}% • Charges RH ${t.fiscal.employerRatePct}% • ${sessionState.userLabel}`;
+            badge.innerText = `Connecté : ${t.id} (${t.fiscal.country})`;
+            badge.className = 'px-3 py-1.5 rounded bg-slate-950 border border-emerald-700 text-emerald-300 font-bold';
+            navPos.className = 'px-3 py-2 rounded font-bold bg-sky-700 hover:bg-sky-600 text-white';
+            navCaisse.className = 'px-3 py-2 rounded font-bold bg-emerald-700 hover:bg-emerald-600 text-white';
+            btnLogout.classList.remove('hidden');
+            btnAdmin.classList.remove('hidden');
+
+            document.getElementById('pos-hub-title').innerText = `${t.name} (${t.id}) — Menu Général du POS`;
+            document.getElementById('pos-hub-subtitle').innerText =
+                `Pays : ${t.fiscal.country} • TVA Sur Place / Emporter : ${t.fiscal.vatPlacePct}% / ${t.fiscal.vatTakeoutPct}% • Charges Patronales : ${t.fiscal.employerRatePct}% • Devise : ${t.fiscal.currency}`;
+        }
+
+        function hydrateActiveTenantInputs() {
+            const t = getActiveTenant();
+            document.getElementById('jur-country').value = t.fiscal.country;
+            document.getElementById('jur-vat-place').value = t.fiscal.vatPlacePct;
+            document.getElementById('jur-vat-takeout').value = t.fiscal.vatTakeoutPct;
+            document.getElementById('jur-employer-rate').value = t.fiscal.employerRatePct;
+            document.getElementById('jur-employee-rate').value = t.fiscal.employeeRatePct;
+            document.getElementById('jur-currency').value = t.fiscal.currency;
+
+            document.getElementById('cfg-rent-pct').value = Math.min(7, t.costConfig.rentPct);
+            document.getElementById('cfg-royalties-pct').value = t.costConfig.royaltiesPct;
+            document.getElementById('cfg-staff-pct').value = t.costConfig.staffPct;
+            document.getElementById('cfg-maint-pct').value = t.costConfig.maintPct;
+            document.getElementById('cfg-other-pct').value = t.costConfig.otherPct;
+            document.getElementById('cfg-tax-reserve-pct').value = t.costConfig.taxReservePct;
+            document.getElementById('cfg-cap-reserve-pct').value = t.costConfig.capReservePct;
+        }
 
         function parseHashRoute() {
             const raw = (window.location.hash || '#/').replace(/^#/, '');
@@ -762,12 +1000,18 @@
 
         function navigateRoute(path) {
             const clean = path || '/';
+            if (!sessionState.authenticated && clean !== '/') {
+                showGateNotice("Accès bloqué : connectez-vous d'abord sur la page d'accueil (/).");
+                window.location.hash = '#/';
+                renderRoute('/');
+                return;
+            }
             window.location.hash = '#' + clean;
             renderRoute(clean);
         }
 
         function renderRoute(path) {
-            const clean = path || '/';
+            const clean = (!sessionState.authenticated && path !== '/') ? '/' : (path || '/');
             document.getElementById('route-url-display').innerText = `Route active : https://lexwallet.app#${clean} (Chemin : ${clean})`;
 
             const views = {
@@ -783,21 +1027,22 @@
                 fiscal: document.getElementById('view-fiscal')
             };
             Object.values(views).forEach(el => el.classList.add('hidden'));
-            const subnav = document.getElementById('pos-subnav');
-            subnav.classList.add('hidden');
-            const stickyCart = document.getElementById('mobile-cart-sticky');
-            stickyCart.classList.add('hidden');
+            document.getElementById('pos-subnav').classList.add('hidden');
+            document.getElementById('mobile-cart-sticky').classList.add('hidden');
 
             const lower = clean.toLowerCase();
-            if (clean === '/' || lower === '/kyc') {
+            if (clean === '/') {
                 views.home.classList.remove('hidden');
+                populateTenantSelectors();
+                syncLoginFormWithTenant();
             } else if (lower === '/pos') {
                 views.posHub.classList.remove('hidden');
+                updateHeaderAndLockState();
             } else {
-                subnav.classList.remove('hidden');
+                document.getElementById('pos-subnav').classList.remove('hidden');
                 if (lower.startsWith('/pos/caisse')) {
                     views.caisse.classList.remove('hidden');
-                    stickyCart.classList.remove('hidden');
+                    document.getElementById('mobile-cart-sticky').classList.remove('hidden');
                 } else if (lower.startsWith('/pos/rapport') || lower.startsWith('/pos/pnl')) views.pnl.classList.remove('hidden');
                 else if (lower.startsWith('/pos/couts') || lower.startsWith('/pos/tresorerie')) views.costs.classList.remove('hidden');
                 else if (lower.startsWith('/pos/historique')) views.history.classList.remove('hidden');
@@ -807,7 +1052,27 @@
                 else if (lower.startsWith('/pos/parametres') || lower.startsWith('/pos/fiscal')) views.fiscal.classList.remove('hidden');
                 else views.posHub.classList.remove('hidden');
             }
-            syncAllViews();
+            syncActiveView(clean);
+        }
+
+        function syncActiveView(routePath = parseHashRoute()) {
+            if (!sessionState.authenticated) return;
+            hydrateActiveTenantInputs();
+            updateHeaderAndLockState();
+            updateCartUI();
+
+            const lower = (routePath || '').toLowerCase();
+            if (lower.startsWith('/pos/rapport') || lower.startsWith('/pos/pnl')) updatePnL();
+            else if (lower.startsWith('/pos/couts') || lower.startsWith('/pos/tresorerie')) updateCostsView();
+            else if (lower.startsWith('/pos/historique')) updateHistory();
+            else if (lower.startsWith('/pos/stocks') || lower.startsWith('/pos/iot') || lower.startsWith('/pos/scanner')) {
+                updateStockView();
+                renderIoTSensors();
+            } else if (lower.startsWith('/pos/fournisseurs') || lower.startsWith('/pos/recettes')) {
+                updateStockView();
+                updateRecipesView();
+            } else if (lower.startsWith('/pos/rh')) renderHrPayrollAndBadges();
+            else if (lower.startsWith('/pos/parametres') || lower.startsWith('/pos/fiscal')) renderFiscalSummary();
         }
 
         function scrollToCart() {
@@ -824,335 +1089,59 @@
             });
         }
 
-        function formatNowDateTime() {
-            const now = new Date();
-            const date = now.toISOString().split('T')[0];
-            const time = now.toLocaleTimeString('fr-FR', { hour12: false });
-            return { date, time, full: `${date} ${time}` };
-        }
-
-        function computeIntegrityHash(inputStr) {
-            let h1 = 0x811c9dc5;
-            let h2 = 0x01000193;
-            for (let i = 0; i < inputStr.length; i++) {
-                const ch = inputStr.charCodeAt(i);
-                h1 ^= ch;
-                h1 = Math.imul(h1, 0x01000193) >>> 0;
-                h2 = ((h2 << 5) - h2 + ch) >>> 0;
-            }
-            return `LXT-${h1.toString(16).padStart(8, '0')}-${h2.toString(16).padStart(8, '0')}`.toUpperCase();
-        }
-
-        function loadAuditEntries() {
-            try {
-                const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
-                return raw ? JSON.parse(raw) : [];
-            } catch (_) { return []; }
-        }
-
-        function appendAuditEvent(category, detail, payloadObj = {}) {
-            const stamp = formatNowDateTime();
-            const prevHash = auditEntries.length > 0 ? auditEntries[0].hash : 'GENESIS';
-            const raw = `${prevHash}|${stamp.full}|${category}|${detail}|${JSON.stringify(payloadObj)}`;
-            const entry = {
-                id: 'AUD-' + Date.now() + '-' + Math.floor(Math.random() * 999),
-                at: stamp.full,
-                category,
-                detail,
-                prevHash,
-                hash: computeIntegrityHash(raw)
-            };
-            auditEntries.unshift(entry);
-            auditEntries = auditEntries.slice(0, 200);
-            try { localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(auditEntries)); } catch (_) {}
-            renderAuditTrail();
-            return entry;
-        }
-
-        function renderAuditTrail() {
-            const el = document.getElementById('audit-trail-log');
-            if (!el) return;
-            el.innerHTML = auditEntries.length === 0
-                ? '<p class="text-slate-500">Aucun événement d\'audit enregistré.</p>'
-                : auditEntries.slice(0, 8).map(a => `<p>• [${a.at}] <strong>${a.category}</strong> — ${a.detail} • <span class="text-emerald-400">${a.hash}</span></p>`).join('');
-        }
-
-        function loadGovState() {
-            const defaults = {
-                email: HOLDING_ADMIN_EMAIL,
-                level: 'holding',
-                kycVerified: false,
-                sessionAuthenticated: false,
-                authMode: 'pending',
-                clientId: 'CHEER-FLAGSHIP-01',
-                userName: 'Administrateur Holding',
-                country: 'BE',
-                vatPlacePct: 21,
-                vatTakeoutPct: 6,
-                employerRatePct: 28,
-                employeeRatePct: 13.07,
-                currency: '€'
-            };
-            try {
-                const raw = localStorage.getItem(GOV_STORAGE_KEY);
-                return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
-            } catch (_) { return defaults; }
-        }
-
-        function persistGovState() {
-            try { localStorage.setItem(GOV_STORAGE_KEY, JSON.stringify(govState)); } catch (_) {}
-            updateHeaderContext();
-        }
-
-        function updateHeaderContext() {
-            const authLabel = govState.sessionAuthenticated
-                ? `${govState.email} (${govState.authMode})`
-                : 'Session non authentifiée';
-            document.getElementById('header-context-label').innerText =
-                `Client : ${govState.clientId} • ${authLabel} • Juridiction : ${govState.country} (TVA ${govState.vatPlacePct}% / ${govState.vatTakeoutPct}%)`;
-        }
-
-        function hydrateGovAndJurisdiction() {
-            document.getElementById('holding-email-input').value = govState.email || HOLDING_ADMIN_EMAIL;
-            document.getElementById('kyc-client-id').value = govState.clientId || 'CHEER-FLAGSHIP-01';
-            document.getElementById('jur-country').value = govState.country || 'BE';
-            document.getElementById('jur-vat-place').value = govState.vatPlacePct;
-            document.getElementById('jur-vat-takeout').value = govState.vatTakeoutPct;
-            document.getElementById('jur-employer-rate').value = govState.employerRatePct;
-            document.getElementById('jur-employee-rate').value = govState.employeeRatePct;
-            document.getElementById('jur-currency').value = govState.currency || '€';
-            updateHeaderContext();
-            renderGovernanceView();
-        }
-
-        async function loginHoldingReal() {
-            const email = (document.getElementById('holding-email-input').value || '').trim().toLowerCase();
-            const password = document.getElementById('holding-pass-input').value || '';
-            if (email !== HOLDING_ADMIN_EMAIL) {
-                return alert(`Seul le compte ${HOLDING_ADMIN_EMAIL} a l'accès direct Holding sans KYC.`);
-            }
-            if (!password) {
-                return alert("Saisissez le mot de passe pour l'authentification.");
-            }
-            const stamp = formatNowDateTime();
-            const credentialDigest = computeIntegrityHash(`${email}:${password}`);
-
-            try {
-                const resp = await fetch(WORKER_AUTH_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, digest: credentialDigest, role: 'holding' })
-                });
-                if (resp.ok) {
-                    const data = await resp.json();
-                    govState.email = HOLDING_ADMIN_EMAIL;
-                    govState.level = 'holding';
-                    govState.kycVerified = true;
-                    govState.sessionAuthenticated = true;
-                    govState.authMode = data.mode || 'worker-verified';
-                    govState.userName = 'Holding Admin';
-                    persistGovState();
-                    appendAuditEvent('AUTH_HOLDING', `Connexion vérifiée par Worker (${stamp.full})`, { email, digest: credentialDigest });
-                    document.getElementById('holding-login-msg').innerText = `Authentifié via Worker (${stamp.full}) — ${HOLDING_ADMIN_EMAIL}`;
-                    renderGovernanceView();
-                    return;
-                }
-            } catch (_) {}
-
-            govState.email = HOLDING_ADMIN_EMAIL;
-            govState.level = 'holding';
-            govState.kycVerified = true;
-            govState.sessionAuthenticated = true;
-            govState.authMode = 'local-test-fallback';
-            govState.userName = 'Holding Admin (Mode Test)';
-            persistGovState();
-            appendAuditEvent('AUTH_HOLDING_TEST', `Worker non joint : session test enregistrée (${stamp.full})`, { email, digest: credentialDigest });
-            document.getElementById('holding-login-msg').innerText = `Mode test local actif (${stamp.full}) — Branchez le Worker /auth/login pour validation serveur stricte.`;
-            renderGovernanceView();
-        }
-
-        function submitKycVerification() {
-            const role = document.getElementById('kyc-role-select').value;
-            const fullName = document.getElementById('kyc-full-name').value.trim();
-            const docId = document.getElementById('kyc-doc-id').value.trim();
-            const clientId = document.getElementById('kyc-client-id').value.trim() || 'CHEER-FLAGSHIP-01';
-            if (!fullName || !docId) {
-                return alert("Renseignez l'identité / société et la référence KYC.");
-            }
-            const stamp = formatNowDateTime();
-            govState.email = `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, '.')}@client.local`;
-            govState.level = role;
-            govState.kycVerified = true;
-            govState.sessionAuthenticated = true;
-            govState.authMode = 'kyc-verified';
-            govState.clientId = clientId;
-            govState.userName = fullName;
-            persistGovState();
-            appendAuditEvent('KYC_VERIFIED', `${fullName} (${role}, Réf: ${docId}) • Client ${clientId}`, { stamp: stamp.full });
-            renderGovernanceView();
-            navigateRoute('/POS');
-        }
-
         function applyJurisdictionPreset() {
-            const c = document.getElementById('jur-country').value;
-            const presets = {
-                BE: { vatPlacePct: 21, vatTakeoutPct: 6, employerRatePct: 28, employeeRatePct: 13.07, currency: '€' },
-                FR: { vatPlacePct: 20, vatTakeoutPct: 10, employerRatePct: 42, employeeRatePct: 21.5, currency: '€' },
-                ES: { vatPlacePct: 10, vatTakeoutPct: 10, employerRatePct: 30, employeeRatePct: 6.4, currency: '€' },
-                VE: { vatPlacePct: 16, vatTakeoutPct: 16, employerRatePct: 18, employeeRatePct: 5, currency: 'USD / VEF' }
-            };
-            if (presets[c]) {
-                govState.country = c;
-                Object.assign(govState, presets[c]);
-                persistGovState();
-                hydrateGovAndJurisdiction();
-                appendAuditEvent('JURISDICTION_PRESET', `Juridiction ${c} appliquée`);
-                syncAllViews();
+            const t = getActiveTenant();
+            const code = document.getElementById('jur-country').value;
+            if (JURISDICTION_PRESETS[code]) {
+                t.fiscal = { ...JURISDICTION_PRESETS[code] };
             } else {
-                govState.country = 'CUSTOM';
-                persistGovState();
-                renderGovernanceView();
+                t.fiscal.country = 'CUSTOM';
             }
+            persistStore();
+            appendAuditEvent('FISCAL_PRESET', `Juridiction ${t.fiscal.country} appliquée sur ${t.id}`);
+            hydrateActiveTenantInputs();
+            syncActiveView();
         }
 
         function saveJurisdictionConfig() {
-            govState.country = document.getElementById('jur-country').value;
-            govState.vatPlacePct = Math.max(0, parseFloat(document.getElementById('jur-vat-place').value) || 0);
-            govState.vatTakeoutPct = Math.max(0, parseFloat(document.getElementById('jur-vat-takeout').value) || 0);
-            govState.employerRatePct = Math.max(0, parseFloat(document.getElementById('jur-employer-rate').value) || 0);
-            govState.employeeRatePct = Math.max(0, parseFloat(document.getElementById('jur-employee-rate').value) || 0);
-            govState.currency = (document.getElementById('jur-currency').value || '€').trim();
-            persistGovState();
-            appendAuditEvent('JURISDICTION_UPDATE', `${govState.clientId} (${govState.country}) TVA ${govState.vatPlacePct}%/${govState.vatTakeoutPct}%`);
-            syncAllViews();
+            const t = getActiveTenant();
+            t.fiscal = {
+                country: document.getElementById('jur-country').value,
+                vatPlacePct: Math.max(0, parseFloat(document.getElementById('jur-vat-place').value) || 0),
+                vatTakeoutPct: Math.max(0, parseFloat(document.getElementById('jur-vat-takeout').value) || 0),
+                employerRatePct: Math.max(0, parseFloat(document.getElementById('jur-employer-rate').value) || 0),
+                employeeRatePct: Math.max(0, parseFloat(document.getElementById('jur-employee-rate').value) || 0),
+                currency: (document.getElementById('jur-currency').value || '€').trim()
+            };
+            persistStore();
+            appendAuditEvent('FISCAL_SAVE', `Paramètres fiscaux/sociaux mis à jour sur ${t.id}`);
+            syncActiveView();
         }
 
-        function renderGovernanceView() {
-            const badge = document.getElementById('kyc-status-badge');
-            if (!govState.sessionAuthenticated) {
-                badge.innerText = 'Session : Non connectée';
-            } else if (govState.email && govState.email.toLowerCase() === HOLDING_ADMIN_EMAIL) {
-                badge.innerText = `Holding (${HOLDING_ADMIN_EMAIL} • Sans KYC)`;
-            } else {
-                badge.innerText = `KYC Validé (${govState.level})`;
-            }
+        function renderFiscalSummary() {
+            const t = getActiveTenant();
             document.getElementById('jur-summary-line').innerText =
-                `Client ${govState.clientId} • Pays : ${govState.country} • TVA Sur Place : ${govState.vatPlacePct}% • TVA Emporter : ${govState.vatTakeoutPct}% • Charges patronales RH : ${govState.employerRatePct}% • Devise : ${govState.currency}`;
-            renderAuditTrail();
-        }
-
-        function loadTransactions() {
-            try {
-                const v2Raw = localStorage.getItem(TX_STORAGE_KEY_V2);
-                const v1Raw = localStorage.getItem(TX_STORAGE_KEY_V1);
-                const v2List = v2Raw ? JSON.parse(v2Raw) : [];
-                const v1List = v1Raw ? JSON.parse(v1Raw) : [];
-                if (Array.isArray(v2List) && v2List.length > 0) return v2List;
-                if (Array.isArray(v1List) && v1List.length > 0) {
-                    localStorage.setItem(TX_STORAGE_KEY_V2, JSON.stringify(v1List));
-                    return v1List;
-                }
-                return [];
-            } catch (_) { return []; }
-        }
-
-        function persistTransactions() {
-            try {
-                localStorage.setItem(TX_STORAGE_KEY_V2, JSON.stringify(transactions));
-                localStorage.setItem(TX_STORAGE_KEY_V1, JSON.stringify(transactions));
-            } catch (_) {}
-        }
-
-        function loadIngredientsConfig() {
-            try {
-                const raw = localStorage.getItem(STOCK_STORAGE_KEY);
-                if (!raw) return DEFAULT_INGREDIENTS.map(x => ({ ...x }));
-                const parsed = JSON.parse(raw);
-                return DEFAULT_INGREDIENTS.map(def => ({ ...def, ...(parsed[def.id] || {}) }));
-            } catch (_) { return DEFAULT_INGREDIENTS.map(x => ({ ...x })); }
-        }
-
-        function persistIngredientsConfig() {
-            const map = {};
-            ingredientsConfig.forEach(i => { map[i.id] = i; });
-            try { localStorage.setItem(STOCK_STORAGE_KEY, JSON.stringify(map)); } catch (_) {}
-        }
-
-        function loadSuppliers() {
-            try {
-                const raw = localStorage.getItem(SUP_STORAGE_KEY);
-                return raw ? JSON.parse(raw) : DEFAULT_SUPPLIERS.map(s => ({ ...s }));
-            } catch (_) { return DEFAULT_SUPPLIERS.map(s => ({ ...s })); }
-        }
-
-        function persistSuppliers() {
-            try { localStorage.setItem(SUP_STORAGE_KEY, JSON.stringify(suppliers)); } catch (_) {}
-        }
-
-        function loadValidatedPOs() {
-            try { return JSON.parse(localStorage.getItem(PO_STORAGE_KEY) || '[]'); } catch (_) { return []; }
-        }
-
-        function persistValidatedPOs() {
-            try { localStorage.setItem(PO_STORAGE_KEY, JSON.stringify(validatedPOs)); } catch (_) {}
-        }
-
-        function loadCostConfig() {
-            const defaults = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 };
-            try {
-                const raw = localStorage.getItem(COST_CFG_STORAGE_KEY);
-                const parsed = raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
-                parsed.rentPct = Math.min(7, Math.max(0, Number(parsed.rentPct || 0)));
-                return parsed;
-            } catch (_) { return defaults; }
-        }
-
-        function persistCostConfig() {
-            try { localStorage.setItem(COST_CFG_STORAGE_KEY, JSON.stringify(costConfig)); } catch (_) {}
-        }
-
-        function loadHrShifts() {
-            try {
-                const raw = localStorage.getItem(HR_STORAGE_KEY);
-                return raw ? JSON.parse(raw) : [];
-            } catch (_) { return []; }
-        }
-
-        function persistHrShifts() {
-            try { localStorage.setItem(HR_STORAGE_KEY, JSON.stringify(hrShifts)); } catch (_) {}
-        }
-
-        function hydrateCostInputs() {
-            document.getElementById('cfg-rent-pct').value = Math.min(7, costConfig.rentPct);
-            document.getElementById('cfg-royalties-pct').value = costConfig.royaltiesPct;
-            document.getElementById('cfg-staff-pct').value = costConfig.staffPct;
-            document.getElementById('cfg-maint-pct').value = costConfig.maintPct;
-            document.getElementById('cfg-other-pct').value = costConfig.otherPct;
-            document.getElementById('cfg-tax-reserve-pct').value = costConfig.taxReservePct;
-            document.getElementById('cfg-cap-reserve-pct').value = costConfig.capReservePct;
+                `${t.name} (${t.id}) • Pays : ${t.fiscal.country} • TVA Sur Place : ${t.fiscal.vatPlacePct}% • TVA Emporter : ${t.fiscal.vatTakeoutPct}% • Charges Patronales : ${t.fiscal.employerRatePct}% • Devise : ${t.fiscal.currency}`;
         }
 
         function applyProfitableDefaults() {
-            costConfig = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 };
-            persistCostConfig();
-            hydrateCostInputs();
-            appendAuditEvent('COST_PROFILE', 'Profil rentable appliqué (Loyer 7%, Trésorerie 5%)');
-            syncAllViews();
+            const t = getActiveTenant();
+            t.costConfig = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 };
+            persistStore();
+            hydrateActiveTenantInputs();
+            syncActiveView();
         }
 
         function setCostScopeMode(mode) {
             costScopeMode = mode;
-            document.getElementById('scope-btn-day').className = mode === 'day'
-                ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white"
-                : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
-            document.getElementById('scope-btn-all_real').className = mode === 'all_real'
-                ? "px-3 py-1.5 rounded font-bold bg-emerald-600 text-white"
-                : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
-            syncAllViews();
+            document.getElementById('scope-btn-day').className = mode === 'day' ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
+            document.getElementById('scope-btn-all_real').className = mode === 'all_real' ? "px-3 py-1.5 rounded font-bold bg-emerald-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300";
+            updateCostsView();
         }
 
         function saveCostConfig() {
-            costConfig = {
+            const t = getActiveTenant();
+            t.costConfig = {
                 rentPct: Math.min(7, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)),
                 royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)),
                 staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)),
@@ -1161,9 +1150,9 @@
                 taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)),
                 capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0))
             };
-            persistCostConfig();
-            hydrateCostInputs();
-            syncAllViews();
+            persistStore();
+            hydrateActiveTenantInputs();
+            updateCostsView();
         }
 
         function findCatalogItem(sku) {
@@ -1181,10 +1170,11 @@
         }
 
         function computeStockState() {
+            const t = getActiveTenant();
             const consumedMap = {};
-            ingredientsConfig.forEach(ing => { consumedMap[ing.id] = 0; });
+            t.ingredients.forEach(ing => { consumedMap[ing.id] = 0; });
 
-            transactions.filter(t => !t.is_test && !t.cancelled).forEach(tx => {
+            (t.transactions || []).filter(tx => !tx.is_test && !tx.cancelled).forEach(tx => {
                 (tx.items || []).forEach(line => {
                     const rec = getRecipeForItem(line);
                     Object.keys(rec).forEach(ingId => {
@@ -1193,7 +1183,7 @@
                 });
             });
 
-            return ingredientsConfig.map(ing => {
+            return t.ingredients.map(ing => {
                 const initialQty = Number(ing.initialQty || 0);
                 const consumedQty = Number(consumedMap[ing.id] || 0);
                 const wasteQty = Math.max(0, Number(ing.wasteQty || 0));
@@ -1206,17 +1196,11 @@
             });
         }
 
-        function getItemRubricKey(baseGroup, currentSaleType) {
-            if (currentSaleType === 'emporter' && (baseGroup === 'plats_sur_place' || baseGroup === 'plats_emporter')) return 'plats_emporter';
-            if (currentSaleType === 'sur_place' && baseGroup === 'plats_emporter') return 'plats_sur_place';
-            return baseGroup;
-        }
-
         function getVatRateForItem(item, currentSaleType) {
-            const rubricKey = getItemRubricKey(item.baseGroup, currentSaleType);
-            const rubric = RUBRICS[rubricKey] || RUBRICS.plats_sur_place;
-            const rate = currentSaleType === 'emporter' ? rubric.vatTakeout : rubric.vatPlace;
-            return { rubricKey, rubricLabel: rubric.label, rate };
+            const t = getActiveTenant();
+            const ratePct = currentSaleType === 'emporter' ? Number(t.fiscal.vatTakeoutPct || 0) : Number(t.fiscal.vatPlacePct || 0);
+            const label = currentSaleType === 'emporter' ? `Emporter (${t.fiscal.country})` : `Sur Place (${t.fiscal.country})`;
+            return { rubricKey: item.baseGroup, rubricLabel: label, rate: ratePct / 100 };
         }
 
         function computeCartBreakdown(items, currentSaleType, discPct, voucher) {
@@ -1234,10 +1218,6 @@
             const discountRatio = rawSubtotalHt > 0 ? (netHt / rawSubtotalHt) : 1;
 
             const bucketMap = {};
-            Object.keys(RUBRICS).forEach(k => {
-                bucketMap[k] = { key: k, label: RUBRICS[k].label, rate: 0, ht: 0, vat: 0, ttc: 0, cogs: 0, margin: 0 };
-            });
-
             let totalVat = 0;
             const enrichedLines = items.map(item => {
                 const lineNetHt = (item.price_ht * item.qty) * discountRatio;
@@ -1248,13 +1228,13 @@
                 const lineMargin = lineNetHt - lineCogs;
                 totalVat += lineVat;
 
-                const b = bucketMap[rubricKey];
-                b.rate = rate;
-                b.ht += lineNetHt;
-                b.vat += lineVat;
-                b.ttc += lineTtc;
-                b.cogs += lineCogs;
-                b.margin += lineMargin;
+                const bKey = `${rubricKey}_${(rate * 100).toFixed(1)}`;
+                if (!bucketMap[bKey]) {
+                    bucketMap[bKey] = { key: bKey, label: `${item.name} (${rubricLabel})`, rate, ht: 0, vat: 0, ttc: 0 };
+                }
+                bucketMap[bKey].ht += lineNetHt;
+                bucketMap[bKey].vat += lineVat;
+                bucketMap[bKey].ttc += lineTtc;
 
                 return { ...item, rubricKey, rubricLabel, vatRate: rate, lineNetHt, lineVat, lineTtc, lineCogs, lineMargin };
             });
@@ -1273,8 +1253,7 @@
         }
 
         function renderCatalog() {
-            const container = document.getElementById('catalog-container');
-            container.innerHTML = CATALOG_CATEGORIES.map(cat => `
+            document.getElementById('catalog-container').innerHTML = CATALOG_CATEGORIES.map(cat => `
                 <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
                     <h2 class="text-sm font-semibold text-sky-300 mb-3">${cat.title}</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1286,8 +1265,8 @@
                                 </div>
                                 <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-900 text-xs">
                                     <div>
-                                        <span class="text-sky-400 font-mono font-bold">${item.price_ht.toFixed(2)} € HT</span>
-                                        <span class="text-[10px] text-slate-500 block">COGS : ${item.unit_cogs.toFixed(2)} €</span>
+                                        <span class="text-sky-400 font-mono font-bold">${item.price_ht.toFixed(2)} HT</span>
+                                        <span class="text-[10px] text-slate-500 block">COGS : ${item.unit_cogs.toFixed(2)}</span>
                                     </div>
                                     <button onclick="addToCart('${item.sku}')" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded font-semibold">Ajouter</button>
                                 </div>
@@ -1296,17 +1275,6 @@
                     </div>
                 </div>
             `).join('');
-        }
-
-        function syncAllViews() {
-            renderGovernanceView();
-            updatePnL();
-            updateCostsView();
-            updateHistory();
-            updateStockView();
-            updateRecipesView();
-            renderHrPayrollAndBadges();
-            renderIoTSensors();
         }
 
         function setSaleType(type) {
@@ -1330,16 +1298,11 @@
         function applyCoupon() {
             const rawCode = document.getElementById('coupon-input').value.trim().toUpperCase();
             if (!rawCode) return alert("Saisissez un code ou bon de réduction.");
-            if (VOUCHER_CODES[rawCode]) {
-                activeVoucher = { code: rawCode, ...VOUCHER_CODES[rawCode] };
-            } else {
+            if (VOUCHER_CODES[rawCode]) activeVoucher = { code: rawCode, ...VOUCHER_CODES[rawCode] };
+            else {
                 const matchPct = rawCode.match(/^BON(\d{1,2})$/);
-                if (matchPct) {
-                    const val = Math.min(80, Math.max(1, parseInt(matchPct[1], 10)));
-                    activeVoucher = { code: rawCode, type: 'percent', value: val, label: `Bon ${rawCode} (-${val}%)` };
-                } else {
-                    return alert("Code inconnu. Utilisez CHEEZVIP, STAFF, BONUS5, BONUS10 ou BON15.");
-                }
+                if (matchPct) activeVoucher = { code: rawCode, type: 'percent', value: Math.min(80, Math.max(1, parseInt(matchPct[1], 10))), label: `Bon ${rawCode} (-${matchPct[1]}%)` };
+                else return alert("Code inconnu.");
             }
             const statusEl = document.getElementById('coupon-status');
             statusEl.innerText = `Actif : ${activeVoucher.label}`;
@@ -1374,15 +1337,15 @@
             const totalItemsCount = cart.reduce((acc, i) => acc + i.qty, 0);
 
             document.getElementById('top-cart-count').innerText = String(totalItemsCount);
-            document.getElementById('top-cart-total').innerText = bd.totalTtc.toFixed(2) + ' €';
+            document.getElementById('top-cart-total').innerText = fmtMoney(bd.totalTtc);
             document.getElementById('sticky-cart-count').innerText = String(totalItemsCount);
-            document.getElementById('sticky-cart-total').innerText = bd.totalTtc.toFixed(2) + ' € TTC';
+            document.getElementById('sticky-cart-total').innerText = `${fmtMoney(bd.totalTtc)} TTC`;
 
             if (cart.length === 0) {
                 container.innerHTML = '<p class="text-slate-500 text-center py-6">Panier vide.</p>';
-                document.getElementById('cart-ht').innerText = '0.00 €';
-                document.getElementById('cart-vat').innerText = '0.00 €';
-                document.getElementById('cart-total').innerText = '0.00 €';
+                document.getElementById('cart-ht').innerText = fmtMoney(0);
+                document.getElementById('cart-vat').innerText = fmtMoney(0);
+                document.getElementById('cart-total').innerText = fmtMoney(0);
                 document.getElementById('discount-row').style.display = 'none';
                 return;
             }
@@ -1390,36 +1353,36 @@
                 <div class="py-2 flex justify-between items-center gap-2">
                     <div>
                         <p class="font-medium text-slate-200">${line.name}</p>
-                        <p class="text-[10px] text-slate-400">Qté : ${line.qty} × ${line.price_ht.toFixed(2)} € • TVA ${(line.vatRate * 100).toFixed(0)}%</p>
+                        <p class="text-[10px] text-slate-400">Qté : ${line.qty} × ${line.price_ht.toFixed(2)} • TVA ${(line.vatRate * 100).toFixed(0)}%</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <span class="font-mono text-sky-300">${line.lineNetHt.toFixed(2)} €</span>
+                        <span class="font-mono text-sky-300">${line.lineNetHt.toFixed(2)}</span>
                         <button onclick="removeFromCart(${idx})" class="text-rose-400 font-bold px-1">✕</button>
                     </div>
                 </div>
             `).join('');
-            document.getElementById('cart-ht').innerText = bd.netHt.toFixed(2) + ' €';
+            document.getElementById('cart-ht').innerText = fmtMoney(bd.netHt);
             document.getElementById('discount-row').style.display = bd.totalDiscountHt > 0 ? 'flex' : 'none';
-            if (bd.totalDiscountHt > 0) document.getElementById('cart-discount').innerText = '-' + bd.totalDiscountHt.toFixed(2) + ' €';
-            document.getElementById('cart-vat').innerText = bd.totalVat.toFixed(2) + ' €';
-            document.getElementById('cart-total').innerText = bd.totalTtc.toFixed(2) + ' €';
+            if (bd.totalDiscountHt > 0) document.getElementById('cart-discount').innerText = '-' + fmtMoney(bd.totalDiscountHt);
+            document.getElementById('cart-vat').innerText = fmtMoney(bd.totalVat);
+            document.getElementById('cart-total').innerText = fmtMoney(bd.totalTtc);
         }
 
-        async function checkout(isTest) {
+        function checkout(isTest) {
+            if (!sessionState.authenticated) return navigateRoute('/');
             if (cart.length === 0) return;
+            const t = getActiveTenant();
             const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher);
             const selectedDate = document.getElementById('pos-date-input').value;
             const stamp = formatNowDateTime();
-            const rawTx = `${selectedDate}|${stamp.full}|${bd.netHt.toFixed(2)}|${bd.totalVat.toFixed(2)}|${bd.totalTtc.toFixed(2)}|${isTest}`;
 
             const tx = {
-                id: 'TX-' + Date.now(),
-                clientId: govState.clientId,
-                terminalId: 'LEX-POS-TERM-01',
+                id: `${t.id}-TX-${Date.now()}`,
+                tenantId: t.id,
+                country: t.fiscal.country,
                 date: selectedDate,
                 time: stamp.time,
                 created_at: stamp.full,
-                timestamp: new Date().toISOString(),
                 is_test: isTest,
                 cancelled: false,
                 sale_type: saleType,
@@ -1431,22 +1394,12 @@
                 total_ttc: Number(bd.totalTtc.toFixed(2)),
                 cogs: Number(bd.cogsTotal.toFixed(2)),
                 gross_margin: Number(bd.grossMargin.toFixed(2)),
-                integrity_hash: computeIntegrityHash(rawTx),
-                buckets: bd.buckets,
                 items: cart.map(i => ({ ...i }))
             };
 
-            transactions.unshift(tx);
-            persistTransactions();
-            appendAuditEvent(isTest ? 'TX_TEST' : 'TX_REAL', `${tx.id} • ${tx.total_ttc.toFixed(2)} € TTC`, { id: tx.id, hash: tx.integrity_hash });
-
-            try {
-                await fetch('https://delegal.dev/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(tx)
-                });
-            } catch (_) {}
+            t.transactions.unshift(tx);
+            persistStore();
+            appendAuditEvent(isTest ? 'TX_TEST' : 'TX_REAL', `${tx.id} • ${fmtMoney(tx.total_ttc)} TTC`);
 
             cart = [];
             quickDiscountPercent = 0;
@@ -1454,8 +1407,7 @@
             setQuickDiscount(0);
             clearCoupon();
             updateCartUI();
-            syncAllViews();
-            alert(isTest ? `[MODE TEST] ${stamp.full} — Enregistré hors CA et hors stock.` : `Encaissement validé (${stamp.full})\nID : ${tx.id}\nTotal TTC : ${tx.total_ttc.toFixed(2)} €`);
+            alert(isTest ? `[MODE TEST — ${t.name}] Enregistré hors CA et hors stock.` : `Encaissement validé (${t.name}) — ${fmtMoney(tx.total_ttc)}`);
         }
 
         function aggregateTransactions(txList) {
@@ -1468,17 +1420,16 @@
             const totalCogs = salesCogs + wasteCogs;
 
             const bucketTotals = {};
-            Object.keys(RUBRICS).forEach(k => {
-                const r = RUBRICS[k];
-                bucketTotals[k] = { key: k, label: r.label, rateLabel: `${(r.vatPlace * 100).toFixed(0)}% / ${(r.vatTakeout * 100).toFixed(0)}%`, ht: 0, vat: 0, ttc: 0 };
-            });
-
             const productMap = {};
             activeTxs.forEach(tx => {
                 const recomputed = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
                 recomputed.buckets.forEach(b => {
-                    const target = bucketTotals[b.key];
-                    if (target) { target.ht += b.ht; target.vat += b.vat; target.ttc += b.ttc; }
+                    if (!bucketTotals[b.key]) {
+                        bucketTotals[b.key] = { label: b.label, rateLabel: `${(b.rate * 100).toFixed(1)}%`, ht: 0, vat: 0, ttc: 0 };
+                    }
+                    bucketTotals[b.key].ht += b.ht;
+                    bucketTotals[b.key].vat += b.vat;
+                    bucketTotals[b.key].ttc += b.ttc;
                 });
                 recomputed.lines.forEach(line => {
                     if (!productMap[line.sku]) {
@@ -1490,136 +1441,123 @@
                 });
             });
 
-            return { activeTxs, ca, ht, vat, salesCogs, wasteCogs, totalCogs, buckets: Object.values(bucketTotals), topProducts: Object.values(productMap).sort((a, b) => b.qty - a.qty) };
-        }
-
-        function aggregateDayData(dateStr) {
-            return aggregateTransactions(transactions.filter(t => t.date === dateStr));
+            return { activeTxs, ca, ht, vat, totalCogs, buckets: Object.values(bucketTotals), topProducts: Object.values(productMap).sort((a, b) => b.qty - a.qty) };
         }
 
         function updatePnL() {
+            const t = getActiveTenant();
             const selectedDate = document.getElementById('pos-date-input').value;
-            document.getElementById('pnl-date-label').innerText = selectedDate;
-            const data = aggregateDayData(selectedDate);
+            document.getElementById('pnl-date-label').innerText = `${selectedDate} • ${t.name} (${t.id})`;
+            const data = aggregateTransactions((t.transactions || []).filter(tx => tx.date === selectedDate));
 
-            document.getElementById('pnl-ca').innerText = data.ca.toFixed(2) + ' €';
-            document.getElementById('pnl-ht').innerText = data.ht.toFixed(2) + ' €';
-            document.getElementById('pnl-vat').innerText = data.vat.toFixed(2) + ' €';
+            document.getElementById('pnl-ca').innerText = fmtMoney(data.ca);
+            document.getElementById('pnl-ht').innerText = fmtMoney(data.ht);
+            document.getElementById('pnl-vat').innerText = fmtMoney(data.vat);
 
-            document.getElementById('pnl-buckets-body').innerHTML = data.buckets.map(b => `
-                <tr>
-                    <td class="p-3 text-slate-200 font-semibold">${b.label}</td>
-                    <td class="p-3 text-amber-300">${b.rateLabel}</td>
-                    <td class="p-3 text-slate-200">${b.ht.toFixed(2)} €</td>
-                    <td class="p-3 text-slate-300">${b.vat.toFixed(2)} €</td>
-                    <td class="p-3 text-sky-400 font-bold">${b.ttc.toFixed(2)} €</td>
-                </tr>
-            `).join('');
+            document.getElementById('pnl-buckets-body').innerHTML = data.buckets.length === 0
+                ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date pour cet établissement.</td></tr>'
+                : data.buckets.map(b => `
+                    <tr>
+                        <td class="p-3 text-slate-200 font-semibold">${b.label}</td>
+                        <td class="p-3 text-amber-300">${b.rateLabel}</td>
+                        <td class="p-3 text-slate-200">${fmtMoney(b.ht)}</td>
+                        <td class="p-3 text-slate-300">${fmtMoney(b.vat)}</td>
+                        <td class="p-3 text-sky-400 font-bold">${fmtMoney(b.ttc)}</td>
+                    </tr>
+                `).join('');
 
-            const prodBody = document.getElementById('pnl-products-body');
-            prodBody.innerHTML = data.topProducts.length === 0
-                ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">Aucune vente enregistrée sur cette date.</td></tr>'
+            document.getElementById('pnl-products-body').innerHTML = data.topProducts.length === 0
+                ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">Aucun produit vendu sur cette date.</td></tr>'
                 : data.topProducts.map(p => `
                     <tr>
                         <td class="p-3 text-slate-100 font-bold">${p.name}</td>
                         <td class="p-3 text-slate-400">${p.rubricLabel}</td>
                         <td class="p-3 text-sky-300 font-bold">${p.qty}</td>
-                        <td class="p-3 text-slate-200">${p.ht.toFixed(2)} €</td>
-                        <td class="p-3 text-emerald-400 font-bold">${p.ttc.toFixed(2)} €</td>
+                        <td class="p-3 text-slate-200">${fmtMoney(p.ht)}</td>
+                        <td class="p-3 text-emerald-400 font-bold">${fmtMoney(p.ttc)}</td>
                     </tr>
                 `).join('');
         }
 
         function generateZReport() {
+            const t = getActiveTenant();
             const selectedDate = document.getElementById('pos-date-input').value;
-            const data = aggregateDayData(selectedDate);
+            const data = aggregateTransactions((t.transactions || []).filter(tx => tx.date === selectedDate));
             const stamp = formatNowDateTime();
             zSequenceCounter += 1;
-            const bucketLines = data.buckets.map(b => `<p class="pl-2">• ${b.label} (TVA ${b.rateLabel}) : HT ${b.ht.toFixed(2)} € | TVA ${b.vat.toFixed(2)} € | TTC ${b.ttc.toFixed(2)} €</p>`).join('');
-            const topProductLines = data.topProducts.slice(0, 5).map(p => `<p class="pl-2">• ${p.name} : ${p.qty} vendu(s) — HT ${p.ht.toFixed(2)} € (TTC ${p.ttc.toFixed(2)} €)</p>`).join('');
-            const rawSummary = `Z#${zSequenceCounter}|${selectedDate}|${data.ht.toFixed(2)}|${data.vat.toFixed(2)}|${data.ca.toFixed(2)}`;
-            const zHash = computeIntegrityHash(rawSummary);
-            appendAuditEvent('Z_CLOSURE', `Clôture Z#${zSequenceCounter} (${selectedDate}) • TTC ${data.ca.toFixed(2)} €`, { zHash });
+            appendAuditEvent('Z_CLOSURE', `Clôture Z#${zSequenceCounter} (${t.id}, ${selectedDate}) • ${fmtMoney(data.ca)}`);
 
             document.getElementById('z-report-card').classList.remove('hidden');
             document.getElementById('z-report-content').innerHTML = `
-                <p><strong>Terminal ID :</strong> LEX-POS-TERM-01 • <strong>Client :</strong> ${govState.clientId}</p>
-                <p><strong>Séquence Z # :</strong> ${zSequenceCounter}</p>
-                <p><strong>Date ciblée :</strong> ${selectedDate} • <strong>Émis le :</strong> ${stamp.full}</p>
+                <p><strong>Établissement :</strong> ${t.name} (${t.id}) • <strong>Pays :</strong> ${t.fiscal.country}</p>
+                <p><strong>Séquence Z # :</strong> ${zSequenceCounter} • <strong>Émis le :</strong> ${stamp.full}</p>
                 <p><strong>Tickets valides :</strong> ${data.activeTxs.length}</p>
-                <p class="pt-2 text-amber-300 font-bold">Ventilation par Rubrique & TVA :</p>
-                ${bucketLines}
-                <p class="pt-2 text-emerald-300 font-bold">Top Produits Vendus :</p>
-                ${topProductLines || '<p class="pl-2 text-slate-500">Aucun produit vendu</p>'}
-                <div class="pt-2 mt-2 border-t border-slate-800 text-white space-y-1">
-                    <p><strong>Total Net HT :</strong> ${data.ht.toFixed(2)} €</p>
-                    <p><strong>TVA Totale Collectée :</strong> ${data.vat.toFixed(2)} €</p>
-                    <p class="text-sky-400"><strong>Grand Total TTC :</strong> ${data.ca.toFixed(2)} €</p>
-                    <p class="text-emerald-400 text-[11px] pt-1"><strong>Empreinte Intégrité :</strong> ${zHash}</p>
-                </div>
+                <p><strong>Total Net HT :</strong> ${fmtMoney(data.ht)}</p>
+                <p><strong>TVA Collectée :</strong> ${fmtMoney(data.vat)}</p>
+                <p class="text-sky-400 font-bold"><strong>Grand Total TTC :</strong> ${fmtMoney(data.ca)}</p>
             `;
         }
 
         function computeFinancialSnapshot(dateStr) {
+            const t = getActiveTenant();
             const realData = costScopeMode === 'all_real'
-                ? aggregateTransactions(transactions)
-                : aggregateDayData(dateStr);
+                ? aggregateTransactions(t.transactions || [])
+                : aggregateTransactions((t.transactions || []).filter(tx => tx.date === dateStr));
 
+            const cfg = t.costConfig;
             const periodHt = realData.ht;
             const periodVat = realData.vat;
             const periodCogs = realData.totalCogs;
 
-            const rentPct = Math.min(7, Math.max(0, Number(costConfig.rentPct || 0)));
-            const rentEur = periodHt * (rentPct / 100);
-            const royaltiesEur = periodHt * (Number(costConfig.royaltiesPct || 0) / 100);
-            const staffEur = periodHt * (Number(costConfig.staffPct || 0) / 100);
-            const maintEur = periodHt * (Number(costConfig.maintPct || 0) / 100);
-            const otherEur = periodHt * (Number(costConfig.otherPct || 0) / 100);
+            const rentEur = periodHt * (Math.min(7, Number(cfg.rentPct || 0)) / 100);
+            const royaltiesEur = periodHt * (Number(cfg.royaltiesPct || 0) / 100);
+            const staffEur = periodHt * (Number(cfg.staffPct || 0) / 100);
+            const maintEur = periodHt * (Number(cfg.maintPct || 0) / 100);
+            const otherEur = periodHt * (Number(cfg.otherPct || 0) / 100);
             const totalChargesEur = rentEur + royaltiesEur + staffEur + maintEur + otherEur;
 
             const preReserveNet = periodHt - periodCogs - totalChargesEur;
-            const taxReserve = periodHt * (Number(costConfig.taxReservePct || 0) / 100);
-            const capReserve = periodHt * (Number(costConfig.capReservePct || 0) / 100);
+            const taxReserve = periodHt * (Number(cfg.taxReservePct || 0) / 100);
+            const capReserve = periodHt * (Number(cfg.capReservePct || 0) / 100);
             const totalSetAside = periodVat + taxReserve + capReserve;
             const netGain = preReserveNet - taxReserve - capReserve;
 
-            return { realData, periodHt, periodVat, periodCogs, rentPct, rentEur, royaltiesEur, staffEur, maintEur, otherEur, totalChargesEur, preReserveNet, taxReserve, capReserve, totalSetAside, netGain };
+            return { periodHt, periodVat, periodCogs, rentEur, royaltiesEur, staffEur, maintEur, otherEur, totalChargesEur, preReserveNet, totalSetAside, netGain };
         }
 
         function updateCostsView() {
+            const t = getActiveTenant();
             const selectedDate = document.getElementById('pos-date-input').value;
-            document.getElementById('costs-date-label').innerText = costScopeMode === 'all_real' ? 'Cumul Réel Tickets' : selectedDate;
+            document.getElementById('costs-date-label').innerText = `${t.name} (${costScopeMode === 'all_real' ? 'Cumul' : selectedDate})`;
             const snap = computeFinancialSnapshot(selectedDate);
-            document.getElementById('costs-real-ht-label').innerText = `${snap.periodHt.toFixed(2)} € (Réel Tickets)`;
+            document.getElementById('costs-real-ht-label').innerText = fmtMoney(snap.periodHt);
 
-            document.getElementById('calc-rent-eur').innerText = `${snap.rentEur.toFixed(2)} € (max 7%)`;
-            document.getElementById('calc-royalties-eur').innerText = `${snap.royaltiesEur.toFixed(2)} €`;
-            document.getElementById('calc-staff-eur').innerText = `${snap.staffEur.toFixed(2)} €`;
-            document.getElementById('calc-maint-eur').innerText = `${snap.maintEur.toFixed(2)} €`;
-            document.getElementById('calc-other-eur').innerText = `${snap.otherEur.toFixed(2)} €`;
+            document.getElementById('calc-rent-eur').innerText = `${fmtMoney(snap.rentEur)} (max 7%)`;
+            document.getElementById('calc-royalties-eur').innerText = fmtMoney(snap.royaltiesEur);
+            document.getElementById('calc-staff-eur').innerText = fmtMoney(snap.staffEur);
+            document.getElementById('calc-maint-eur').innerText = fmtMoney(snap.maintEur);
+            document.getElementById('calc-other-eur').innerText = fmtMoney(snap.otherEur);
 
-            document.getElementById('cost-cogs-val').innerText = '-' + snap.periodCogs.toFixed(2) + ' €';
-            document.getElementById('cost-opex-val').innerText = '-' + snap.totalChargesEur.toFixed(2) + ' €';
-            document.getElementById('cost-pre-reserve-val').innerText = snap.preReserveNet.toFixed(2) + ' €';
-            document.getElementById('cost-reserve-val').innerText = snap.totalSetAside.toFixed(2) + ' €';
-            document.getElementById('cost-net-gain-val').innerText = snap.netGain.toFixed(2) + ' €';
+            document.getElementById('cost-cogs-val').innerText = '-' + fmtMoney(snap.periodCogs);
+            document.getElementById('cost-opex-val').innerText = '-' + fmtMoney(snap.totalChargesEur);
+            document.getElementById('cost-pre-reserve-val').innerText = fmtMoney(snap.preReserveNet);
+            document.getElementById('cost-reserve-val').innerText = fmtMoney(snap.totalSetAside);
+            document.getElementById('cost-net-gain-val').innerText = fmtMoney(snap.netGain);
 
             document.getElementById('cost-breakdown-summary').innerHTML = `
-                <p>• Base CA Réel HT (${costScopeMode === 'all_real' ? 'Tous tickets valides' : 'Date ' + selectedDate}) : <strong>${snap.periodHt.toFixed(2)} €</strong></p>
-                <p>• <strong>Net Avant Réserves</strong> : <strong>${snap.preReserveNet.toFixed(2)} €</strong> • <strong>Bénéfice Net Disponible</strong> : <strong class="${snap.netGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${snap.netGain.toFixed(2)} €</strong></p>
-                <p>• TVA (${snap.periodVat.toFixed(2)} €) + Fiscalité (${snap.taxReserve.toFixed(2)} €) + Trésorerie (${snap.capReserve.toFixed(2)} €) = <strong>${snap.totalSetAside.toFixed(2)} €</strong></p>
+                <p>• Établissement : <strong>${t.name} (${t.fiscal.country})</strong></p>
+                <p>• Net Avant Réserves : <strong>${fmtMoney(snap.preReserveNet)}</strong> • Bénéfice Net : <strong class="${snap.netGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtMoney(snap.netGain)}</strong></p>
             `;
         }
 
         function connectBadgeReader() {
-            const stamp = formatNowDateTime();
             const uid = 'BDG-' + String(Math.floor(10 + Math.random() * 89));
             document.getElementById('badge-uid').value = uid;
-            appendAuditEvent('BADGE_READER', `Badge détecté ${uid} (${stamp.full})`);
-            alert(`Badgeuse prête (${stamp.full}) — Badge détecté : ${uid}.`);
+            alert(`Badgeuse prête — Badge détecté : ${uid}`);
         }
 
         function recordBadgeShift() {
+            const t = getActiveTenant();
             const name = document.getElementById('badge-staff-name').value.trim();
             const badgeUid = document.getElementById('badge-uid').value.trim().toUpperCase();
             const hours = Math.max(0.25, parseFloat(document.getElementById('badge-hours').value) || 0);
@@ -1627,39 +1565,40 @@
             if (!name || !badgeUid) return alert("Saisissez le nom de l'équipier et l'UID du badge.");
 
             const stamp = formatNowDateTime();
-            const empRate = Number(govState.employerRatePct || 28) / 100;
-            const salRate = Number(govState.employeeRatePct || 13.07) / 100;
+            const empRate = Number(t.fiscal.employerRatePct || 0) / 100;
+            const salRate = Number(t.fiscal.employeeRatePct || 0) / 100;
             const grossPay = Number((hours * rate).toFixed(2));
             const employeeDeduction = Number((grossPay * salRate).toFixed(2));
             const netPay = Number(Math.max(0, grossPay - employeeDeduction).toFixed(2));
             const employerCharges = Number((grossPay * empRate).toFixed(2));
             const totalCost = Number((grossPay + employerCharges).toFixed(2));
-            const shiftHash = computeIntegrityHash(`${badgeUid}|${name}|${stamp.full}|${hours}|${grossPay}`);
 
-            hrShifts.unshift({ id: 'SHF-' + Date.now(), name, badgeUid, timestamp: stamp.full, hours, rate, grossPay, employeeDeduction, netPay, employerCharges, totalCost, hash: shiftHash });
-            persistHrShifts();
-            appendAuditEvent('HR_SHIFT', `${name} (${badgeUid}) • ${hours}h • Brut ${grossPay.toFixed(2)} €`, { shiftHash });
+            t.hrShifts.unshift({ id: 'SHF-' + Date.now(), name, badgeUid, timestamp: stamp.full, hours, rate, grossPay, employeeDeduction, netPay, employerCharges, totalCost });
+            persistStore();
+            appendAuditEvent('HR_SHIFT', `${t.id} • ${name} (${badgeUid}) • ${hours}h`);
             document.getElementById('badge-staff-name').value = '';
             document.getElementById('badge-uid').value = '';
-            syncAllViews();
+            renderHrPayrollAndBadges();
         }
 
         function renderHrPayrollAndBadges() {
-            const totalHours = hrShifts.reduce((a, s) => a + Number(s.hours || 0), 0);
-            const totalGross = hrShifts.reduce((a, s) => a + Number(s.grossPay || 0), 0);
-            const totalNetSal = hrShifts.reduce((a, s) => a + Number(s.netPay || 0), 0);
-            const totalCharges = hrShifts.reduce((a, s) => a + Number(s.employerCharges || 0) + Number(s.employeeDeduction || 0), 0);
-            const totalEmployerCost = hrShifts.reduce((a, s) => a + Number(s.totalCost || 0), 0);
+            const t = getActiveTenant();
+            const shifts = t.hrShifts || [];
+            const totalHours = shifts.reduce((a, s) => a + Number(s.hours || 0), 0);
+            const totalGross = shifts.reduce((a, s) => a + Number(s.grossPay || 0), 0);
+            const totalNetSal = shifts.reduce((a, s) => a + Number(s.netPay || 0), 0);
+            const totalCharges = shifts.reduce((a, s) => a + Number(s.employerCharges || 0) + Number(s.employeeDeduction || 0), 0);
+            const totalEmployerCost = shifts.reduce((a, s) => a + Number(s.totalCost || 0), 0);
 
             document.getElementById('hr-payroll-summary').innerHTML = `
-                <p><strong>RH (${govState.country}) :</strong> ${totalHours.toFixed(2)} h • Brut : <strong>${totalGross.toFixed(2)} €</strong> • Net salarié : <strong>${totalNetSal.toFixed(2)} €</strong> • Charges : <strong>${totalCharges.toFixed(2)} €</strong> • Coût employeur : <strong class="text-amber-300">${totalEmployerCost.toFixed(2)} €</strong></p>
+                <p><strong>${t.name} (${t.fiscal.country}) :</strong> ${totalHours.toFixed(2)} h prestées • Brut : <strong>${fmtMoney(totalGross)}</strong> • Net salarié : <strong>${fmtMoney(totalNetSal)}</strong> • Charges : <strong>${fmtMoney(totalCharges)}</strong> • Coût employeur : <strong class="text-amber-300">${fmtMoney(totalEmployerCost)}</strong></p>
             `;
-            document.getElementById('badge-logs-list').innerHTML = hrShifts.length === 0
-                ? '<p class="text-slate-500">Aucun badgeage enregistré.</p>'
-                : hrShifts.slice(0, 6).map(s => `<p>• [${s.timestamp}] Badge <strong>${s.badgeUid}</strong> (${s.name}) — ${s.hours}h × ${s.rate.toFixed(2)}€ • Brut ${s.grossPay.toFixed(2)}€ • <span class="text-emerald-400">${s.hash}</span></p>`).join('');
+            document.getElementById('badge-logs-list').innerHTML = shifts.length === 0
+                ? '<p class="text-slate-500">Aucun badgeage enregistré pour cet établissement.</p>'
+                : shifts.slice(0, 8).map(s => `<p>• [${s.timestamp}] Badge <strong>${s.badgeUid}</strong> (${s.name}) — ${s.hours}h × ${Number(s.rate).toFixed(2)} • Brut ${fmtMoney(s.grossPay)}</p>`).join('');
 
             const byStaff = {};
-            hrShifts.forEach(s => {
+            shifts.forEach(s => {
                 if (!byStaff[s.name]) byStaff[s.name] = { name: s.name, badgeUid: s.badgeUid, hours: 0, gross: 0, net: 0, charges: 0, totalCost: 0 };
                 byStaff[s.name].hours += Number(s.hours || 0);
                 byStaff[s.name].gross += Number(s.grossPay || 0);
@@ -1669,22 +1608,18 @@
             });
             const staffRows = Object.values(byStaff);
             document.getElementById('payslips-list').innerHTML = staffRows.length === 0
-                ? '<p class="text-slate-500">Aucune fiche de paie générée.</p>'
+                ? ''
                 : staffRows.map(st => `
-                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
+                    <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
                         <p class="font-bold text-sky-300">${st.name} (Badge ${st.badgeUid}) — ${st.hours.toFixed(2)} h</p>
-                        <p>Brut : <strong>${st.gross.toFixed(2)} €</strong> • Net : <strong class="text-emerald-400">${st.net.toFixed(2)} €</strong> • Charges : <strong>${st.charges.toFixed(2)} €</strong> • Coût total : <strong>${st.totalCost.toFixed(2)} €</strong></p>
+                        <p>Brut : <strong>${fmtMoney(st.gross)}</strong> • Net : <strong class="text-emerald-400">${fmtMoney(st.net)}</strong> • Charges : <strong>${fmtMoney(st.charges)}</strong> • Coût employeur : <strong>${fmtMoney(st.totalCost)}</strong></p>
                     </div>
                 `).join('');
 
             document.getElementById('hr-payment-schedule').innerHTML = `
-                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
-                    <p class="font-bold text-emerald-300">Rémunérations Nettes : ${totalNetSal.toFixed(2)} €</p>
-                    <p class="text-slate-400">Destinataire : Équipiers • Échéance : Fin de cycle de paie (${govState.clientId}).</p>
-                </div>
-                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-1">
-                    <p class="font-bold text-amber-300">Charges Sociales (${govState.country}) : ${totalCharges.toFixed(2)} €</p>
-                    <p class="text-slate-400">Destinataire : Organisme social (${govState.country}) • Échéance : Calendrier légal.</p>
+                <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+                    <p class="font-bold text-emerald-300">Salaires Nets : ${fmtMoney(totalNetSal)}</p>
+                    <p class="font-bold text-amber-300 mt-1">Charges Sociales (${t.fiscal.country}) : ${fmtMoney(totalCharges)}</p>
                 </div>
             `;
         }
@@ -1695,11 +1630,10 @@
             const tempFreeze = (-19.2 + Math.random() * 1.2).toFixed(1);
             const powerKw = (4.2 + Math.random() * 1.6).toFixed(1);
             iotSensors = [
-                { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: `${tempCold} °C • ${humCold}% HR`, status: Number(tempCold) <= 5.0 ? 'OK' : 'ALERTE', node: 'DePIN-EU-01' },
-                { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: `${tempFreeze} °C`, status: Number(tempFreeze) <= -18.0 ? 'OK' : 'ALERTE', node: 'DePIN-EU-01' },
-                { id: 'IOT-PWR-03', label: 'Compteur Énergie', metric: `${powerKw} kW • Nominal`, status: 'OK', node: 'DePIN-EU-02' }
+                { id: 'IOT-COLD-01', label: 'Chambre Froide Affinage', metric: `${tempCold} °C • ${humCold}% HR`, status: Number(tempCold) <= 5.0 ? 'OK' : 'ALERTE', node: getActiveTenant().id },
+                { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: `${tempFreeze} °C`, status: Number(tempFreeze) <= -18.0 ? 'OK' : 'ALERTE', node: getActiveTenant().id },
+                { id: 'IOT-PWR-03', label: 'Compteur Énergie', metric: `${powerKw} kW • Nominal`, status: 'OK', node: getActiveTenant().id }
             ];
-            appendAuditEvent('IOT_TELEMETRY', `Froid ${tempCold}°C • Congél ${tempFreeze}°C • Énergie ${powerKw}kW`);
             renderIoTSensors();
         }
 
@@ -1717,41 +1651,42 @@
         }
 
         function processScannedLot() {
+            const t = getActiveTenant();
             const code = document.getElementById('scanner-code-input').value.trim().toUpperCase();
             const addQty = Math.max(0, parseInt(document.getElementById('scanner-add-qty').value, 10) || 0);
             if (!code || addQty <= 0) return alert("Saisissez un code lot valide et une quantité supérieure à 0.");
 
-            const match = ingredientsConfig.find(i => (i.lot || '').toUpperCase() === code || (i.id || '').toUpperCase() === code);
+            const match = t.ingredients.find(i => (i.lot || '').toUpperCase() === code || (i.id || '').toUpperCase() === code);
             if (!match) {
-                document.getElementById('scanner-feedback').innerText = `Code "${code}" non reconnu dans les lots actifs.`;
+                document.getElementById('scanner-feedback').innerText = `Code "${code}" non reconnu sur ${t.id}.`;
                 return;
             }
-
-            ingredientsConfig = ingredientsConfig.map(i => i.id === match.id ? { ...i, initialQty: Number(i.initialQty || 0) + addQty } : i);
-            persistIngredientsConfig();
-            appendAuditEvent('SCAN_LOT', `Lot ${match.lot} (${match.name}) +${addQty} ${match.unit}`);
+            t.ingredients = t.ingredients.map(i => i.id === match.id ? { ...i, initialQty: Number(i.initialQty || 0) + addQty } : i);
+            persistStore();
+            appendAuditEvent('SCAN_LOT', `${t.id} • Lot ${match.lot} +${addQty}`);
             document.getElementById('scanner-code-input').value = '';
-            document.getElementById('scanner-feedback').innerText = `Scan validé : +${addQty} ${match.unit} ajoutés à ${match.name} (${match.lot}).`;
-            syncAllViews();
+            document.getElementById('scanner-feedback').innerText = `Scan validé : +${addQty} ${match.unit} ajoutés à ${match.name}.`;
+            updateStockView();
         }
 
         function updateHistory() {
+            const t = getActiveTenant();
+            const txList = t.transactions || [];
             const container = document.getElementById('history-container');
-            if (transactions.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-center py-8">Aucune commande enregistrée.</p>';
+            if (txList.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-center py-8">Aucune commande enregistrée pour ${t.name} (${t.id}).</p>`;
                 return;
             }
-            container.innerHTML = transactions.map((t, idx) => {
-                const qtySum = (t.items || []).reduce((a, b) => a + b.qty, 0);
-                const statusBadge = t.cancelled ? '(ANNULÉ)' : (t.is_test ? '(TEST)' : (t.edited_at ? '(MODIFIÉ)' : ''));
-                const dtLabel = t.created_at || `${t.date} ${t.time || ''}`;
+            container.innerHTML = txList.map((tx, idx) => {
+                const qtySum = (tx.items || []).reduce((a, b) => a + b.qty, 0);
+                const statusBadge = tx.cancelled ? '(ANNULÉ)' : (tx.is_test ? '(TEST)' : (tx.edited_at ? '(MODIFIÉ)' : ''));
                 return `
-                    <div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border transition hover:border-sky-500 ${t.cancelled ? 'border-rose-900/70 bg-rose-950/20 text-rose-300 line-through opacity-80' : (t.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300')}">
+                    <div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border transition hover:border-sky-500 ${tx.cancelled ? 'border-rose-900/70 bg-rose-950/20 text-rose-300 line-through opacity-80' : (tx.is_test ? 'border-amber-900 bg-amber-950/20 text-amber-400' : 'border-slate-800 bg-slate-950 text-slate-300')}">
                         <div class="flex justify-between font-bold text-sm mb-1">
-                            <span>${t.id} ${statusBadge}</span>
-                            <span class="text-sky-400">${Number(t.total_ttc).toFixed(2)} € TTC</span>
+                            <span>${tx.id} ${statusBadge}</span>
+                            <span class="text-sky-400">${fmtMoney(tx.total_ttc)} TTC</span>
                         </div>
-                        <p class="text-[10px] text-slate-500">Horodatage : ${dtLabel} • Régime : ${t.sale_type} • Articles : ${qtySum} • Cliquer pour QR & actions</p>
+                        <p class="text-[10px] text-slate-500">${tx.created_at} • Régime : ${tx.sale_type} • Articles : ${qtySum}</p>
                     </div>
                 `;
             }).join('');
@@ -1761,155 +1696,84 @@
             const size = 21;
             const cells = Array.from({ length: size }, () => Array(size).fill(false));
             const addFinder = (r0, c0) => {
-                for (let r = 0; r < 7; r++) {
-                    for (let c = 0; c < 7; c++) {
-                        const border = r === 0 || r === 6 || c === 0 || c === 6;
-                        const core = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-                        if (r0 + r < size && c0 + c < size) cells[r0 + r][c0 + c] = border || core;
-                    }
+                for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+                    if (r0 + r < size && c0 + c < size) cells[r0 + r][c0 + c] = (r === 0 || r === 6 || c === 0 || c === 6) || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
                 }
             };
-            addFinder(0, 0);
-            addFinder(0, size - 7);
-            addFinder(size - 7, 0);
-
+            addFinder(0, 0); addFinder(0, size - 7); addFinder(size - 7, 0);
             let hash = 2166136261;
-            for (let i = 0; i < payloadText.length; i++) {
-                hash ^= payloadText.charCodeAt(i);
-                hash = Math.imul(hash, 16777619);
-            }
-
-            for (let r = 0; r < size; r++) {
-                for (let c = 0; c < size; c++) {
-                    const inFinder = (r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8);
-                    if (!inFinder) {
-                        const mix = (hash ^ Math.imul(r + 1, 73856093) ^ Math.imul(c + 1, 19349663)) >>> 0;
-                        cells[r][c] = (mix % 2) === 0;
-                    }
+            for (let i = 0; i < payloadText.length; i++) { hash ^= payloadText.charCodeAt(i); hash = Math.imul(hash, 16777619); }
+            for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) {
+                if (!((r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8))) {
+                    cells[r][c] = (((hash ^ Math.imul(r + 1, 73856093) ^ Math.imul(c + 1, 19349663)) >>> 0) % 2) === 0;
                 }
             }
-
             const px = 5;
             const rects = [];
-            for (let r = 0; r < size; r++) {
-                for (let c = 0; c < size; c++) {
-                    if (cells[r][c]) rects.push(`<rect x="${c * px}" y="${r * px}" width="${px}" height="${px}" fill="#0f172a"/>`);
-                }
-            }
+            for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (cells[r][c]) rects.push(`<rect x="${c * px}" y="${r * px}" width="${px}" height="${px}" fill="#0f172a"/>`);
             return `<svg width="${size * px}" height="${size * px}" viewBox="0 0 ${size * px} ${size * px}" xmlns="http://www.w3.org/2000/svg">${rects.join('')}</svg>`;
         }
 
-        function getTicketTraceabilityList(tx) {
-            const supMap = {};
-            suppliers.forEach(s => { supMap[s.id] = s; });
-            const ingMap = {};
-            ingredientsConfig.forEach(i => { ingMap[i.id] = i; });
-
-            const traceMap = {};
-            (tx.items || []).forEach(line => {
-                const rec = getRecipeForItem(line);
-                Object.keys(rec).forEach(ingId => {
-                    const ing = ingMap[ingId];
-                    if (!ing) return;
-                    const sup = supMap[ing.supplierId] || { name: 'Fournisseur Standard', vatNumber: '-' };
-                    const used = Number(rec[ingId]) * Number(line.qty);
-                    const key = `${ing.id}-${ing.lot}`;
-                    if (!traceMap[key]) {
-                        traceMap[key] = { ingName: ing.name, lot: ing.lot, supName: sup.name, vatNumber: sup.vatNumber, qty: used, unit: ing.unit };
-                    } else {
-                        traceMap[key].qty += used;
-                    }
-                });
-            });
-            return Object.values(traceMap);
-        }
-
         function openTicketModal(index) {
+            const t = getActiveTenant();
             selectedTicketIndex = index;
-            const tx = transactions[index];
+            const tx = t.transactions[index];
             if (!tx) return;
             const bd = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null);
-            const traceList = getTicketTraceabilityList(tx);
-            const dtLabel = tx.created_at || `${tx.date} ${tx.time || ''}`;
-
             document.getElementById('modal-tx-id').innerText = tx.id;
-            document.getElementById('modal-tx-meta').innerHTML = `
-                <p>Date & Heure : ${dtLabel} • Statut : ${tx.cancelled ? 'ANNULÉ' : (tx.is_test ? 'TEST' : 'RÉEL')}</p>
-                <p>Régime : ${tx.sale_type === 'emporter' ? 'À Emporter' : 'Sur Place'}</p>
-            `;
-            document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `
-                <div class="py-1.5 flex justify-between">
-                    <span>${l.name} (x${l.qty}) <span class="text-[10px] text-slate-500">[TVA ${(l.vatRate * 100).toFixed(0)}%]</span></span>
-                    <span class="text-sky-300">${l.lineNetHt.toFixed(2)} € HT</span>
-                </div>
-            `).join('');
+            document.getElementById('modal-tx-meta').innerHTML = `<p>Établissement : ${t.name} (${t.id}) • Date : ${tx.created_at}</p>`;
+            document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `<div class="py-1.5 flex justify-between"><span>${l.name} (x${l.qty})</span><span class="text-sky-300">${l.lineNetHt.toFixed(2)} HT</span></div>`).join('');
             document.getElementById('modal-tx-totals').innerHTML = `
-                <div class="flex justify-between"><span>Net HT :</span><span>${bd.netHt.toFixed(2)} €</span></div>
-                <div class="flex justify-between"><span>TVA :</span><span>${bd.totalVat.toFixed(2)} €</span></div>
-                <div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${bd.totalTtc.toFixed(2)} €</span></div>
+                <div class="flex justify-between"><span>Net HT :</span><span>${fmtMoney(bd.netHt)}</span></div>
+                <div class="flex justify-between"><span>TVA :</span><span>${fmtMoney(bd.totalVat)}</span></div>
+                <div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${fmtMoney(bd.totalTtc)}</span></div>
             `;
-            const qrPayload = JSON.stringify({ tx: tx.id, dt: dtLabel, ttc: tx.total_ttc, lots: traceList.map(t => `${t.ingName}:${t.lot}:${t.supName}`) });
-            document.getElementById('modal-qr-container').innerHTML = buildQrSvg(qrPayload);
-            document.getElementById('modal-qr-summary').innerText = `cheer-tec://${tx.id} • ${traceList.length} lot(s)`;
+            document.getElementById('modal-qr-container').innerHTML = buildQrSvg(`${tx.id}|${t.id}|${bd.totalTtc.toFixed(2)}`);
+            document.getElementById('modal-qr-summary').innerText = `cheer-tec://${t.id}/${tx.id}`;
             document.getElementById('ticket-modal').classList.remove('hidden');
         }
 
-        function closeTicketModal() {
-            document.getElementById('ticket-modal').classList.add('hidden');
-        }
-
-        function requestEditCurrentTicket() {
-            closeTicketModal();
-            openAdminModal('edit_ticket');
-        }
-
-        function requestCancelCurrentTicket() {
-            closeTicketModal();
-            openAdminModal('cancel_ticket');
-        }
+        function closeTicketModal() { document.getElementById('ticket-modal').classList.add('hidden'); }
+        function requestEditCurrentTicket() { closeTicketModal(); openAdminModal('edit_ticket'); }
+        function requestCancelCurrentTicket() { closeTicketModal(); openAdminModal('cancel_ticket'); }
 
         function openAdminModal(mode, extraId = null) {
+            if (!sessionState.authenticated) return navigateRoute('/');
             adminActionMode = mode;
             pendingSupplierId = extraId;
             document.getElementById('admin-pin-input').value = '';
             document.getElementById('admin-modal').classList.remove('hidden');
         }
 
-        function closeAdminModal() {
-            document.getElementById('admin-modal').classList.add('hidden');
-            document.getElementById('admin-pin-input').value = '';
-        }
+        function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); }
 
         function submitAdminAction() {
             const pin = document.getElementById('admin-pin-input').value.trim();
-            if (pin !== MANAGER_PIN) return alert("Code PIN Administrateur / Superviseur incorrect.");
+            if (pin !== MANAGER_PIN) return alert("Code PIN incorrect.");
+            const t = getActiveTenant();
             const mode = adminActionMode;
             const supId = pendingSupplierId;
             const stamp = formatNowDateTime();
             closeAdminModal();
 
             if (mode === 'purge') {
-                transactions = transactions.filter(t => !t.is_test);
-                persistTransactions();
-                appendAuditEvent('ADMIN_PURGE', `Purge transactions test (${stamp.full})`);
-                syncAllViews();
-                alert("Purge des transactions de test effectuée.");
+                t.transactions = (t.transactions || []).filter(tx => !tx.is_test);
+                persistStore();
+                syncActiveView();
             } else if (mode === 'edit_ticket' && selectedTicketIndex !== null) {
                 openEditTicketModal(selectedTicketIndex);
             } else if (mode === 'cancel_ticket' && selectedTicketIndex !== null) {
-                transactions[selectedTicketIndex].cancelled = true;
-                transactions[selectedTicketIndex].cancelled_at = stamp.full;
-                persistTransactions();
-                appendAuditEvent('TX_CANCEL', `Ticket ${transactions[selectedTicketIndex].id} annulé (${stamp.full})`);
-                syncAllViews();
-                alert(`Ticket annulé (${stamp.full}).`);
+                t.transactions[selectedTicketIndex].cancelled = true;
+                t.transactions[selectedTicketIndex].cancelled_at = stamp.full;
+                persistStore();
+                syncActiveView();
             } else if (mode === 'validate_po' && supId) {
                 validateSupplierPurchaseOrder(supId);
             }
         }
 
         function openEditTicketModal(index) {
-            const tx = transactions[index];
+            const tx = getActiveTenant().transactions[index];
             if (!tx) return;
             document.getElementById('edit-tx-id').innerText = tx.id;
             document.getElementById('edit-sale-type').value = tx.sale_type || 'sur_place';
@@ -1923,21 +1787,19 @@
             document.getElementById('edit-ticket-modal').classList.remove('hidden');
         }
 
-        function closeEditTicketModal() {
-            document.getElementById('edit-ticket-modal').classList.add('hidden');
-        }
+        function closeEditTicketModal() { document.getElementById('edit-ticket-modal').classList.add('hidden'); }
 
         function saveEditedTicket() {
-            const tx = transactions[selectedTicketIndex];
+            const t = getActiveTenant();
+            const tx = t.transactions[selectedTicketIndex];
             if (!tx) return;
-            const stamp = formatNowDateTime();
             const newSaleType = document.getElementById('edit-sale-type').value;
             const newDiscPct = Math.min(100, Math.max(0, parseFloat(document.getElementById('edit-discount-pct').value) || 0));
             const updatedItems = (tx.items || [])
                 .map((item, idx) => ({ ...item, qty: Math.max(0, parseInt(document.getElementById(`edit-qty-${idx}`).value, 10) || 0) }))
                 .filter(i => i.qty > 0);
             const bd = computeCartBreakdown(updatedItems, newSaleType, newDiscPct, tx.voucher || null);
-            transactions[selectedTicketIndex] = {
+            t.transactions[selectedTicketIndex] = {
                 ...tx,
                 cancelled: false,
                 sale_type: newSaleType,
@@ -1949,18 +1811,17 @@
                 total_ttc: Number(bd.totalTtc.toFixed(2)),
                 cogs: Number(bd.cogsTotal.toFixed(2)),
                 gross_margin: Number(bd.grossMargin.toFixed(2)),
-                buckets: bd.buckets,
-                edited_at: stamp.full
+                edited_at: formatNowDateTime().full
             };
-            persistTransactions();
-            appendAuditEvent('TX_EDIT', `Ticket ${tx.id} corrigé (${stamp.full}) • TTC ${bd.totalTtc.toFixed(2)} €`);
+            persistStore();
             closeEditTicketModal();
-            syncAllViews();
+            syncActiveView();
         }
 
         function renderSupplierPortfolioCheckboxes(selectedIngIds = []) {
+            const t = getActiveTenant();
             const setIds = new Set(selectedIngIds);
-            document.getElementById('supplier-portfolio-checkboxes').innerHTML = ingredientsConfig.map(ing => `
+            document.getElementById('supplier-portfolio-checkboxes').innerHTML = t.ingredients.map(ing => `
                 <label class="flex items-center gap-1.5 text-slate-200 cursor-pointer">
                     <input type="checkbox" class="sup-ing-chk accent-sky-500" value="${ing.id}" ${setIds.has(ing.id) ? 'checked' : ''}/>
                     <span>${ing.name}</span>
@@ -1969,7 +1830,7 @@
         }
 
         function startEditSupplier(supId) {
-            const sup = suppliers.find(s => s.id === supId);
+            const sup = getActiveTenant().suppliers.find(s => s.id === supId);
             if (!sup) return;
             editingSupplierId = supId;
             document.getElementById('supplier-form-title').innerText = `Modifier Fournisseur — ${sup.name}`;
@@ -1979,7 +1840,7 @@
             document.getElementById('new-sup-contact').value = sup.contact || '';
             document.getElementById('new-sup-vat-reg').value = `${sup.vatNumber || ''} / ${sup.companyNumber || ''}`;
             document.getElementById('save-sup-btn').innerText = 'Enregistrer Modifications';
-            renderSupplierPortfolioCheckboxes(ingredientsConfig.filter(i => i.supplierId === supId).map(i => i.id));
+            renderSupplierPortfolioCheckboxes(getActiveTenant().ingredients.filter(i => i.supplierId === supId).map(i => i.id));
         }
 
         function resetSupplierForm() {
@@ -1992,60 +1853,47 @@
         }
 
         function deleteSupplier(supId) {
-            if (suppliers.length <= 1) return alert("Impossible de supprimer le dernier fournisseur actif.");
-            const fallbackSup = suppliers.find(s => s.id !== supId);
-            suppliers = suppliers.filter(s => s.id !== supId);
-            if (fallbackSup) {
-                ingredientsConfig = ingredientsConfig.map(ing => ing.supplierId === supId ? { ...ing, supplierId: fallbackSup.id } : ing);
-                persistIngredientsConfig();
-            }
-            persistSuppliers();
+            const t = getActiveTenant();
+            if (t.suppliers.length <= 1) return alert("Impossible de supprimer le dernier fournisseur.");
+            const fallbackSup = t.suppliers.find(s => s.id !== supId);
+            t.suppliers = t.suppliers.filter(s => s.id !== supId);
+            if (fallbackSup) t.ingredients = t.ingredients.map(ing => ing.supplierId === supId ? { ...ing, supplierId: fallbackSup.id } : ing);
+            persistStore();
             if (editingSupplierId === supId) resetSupplierForm();
-            syncAllViews();
+            updateStockView();
         }
 
         function saveSupplierForm() {
+            const t = getActiveTenant();
             const name = document.getElementById('new-sup-name').value.trim();
+            if (!name) return alert("Saisissez le nom du fournisseur.");
             const address = document.getElementById('new-sup-address').value.trim();
             const contact = document.getElementById('new-sup-contact').value.trim();
             const vatReg = document.getElementById('new-sup-vat-reg').value.trim();
-            if (!name) return alert("Saisissez le nom du fournisseur.");
             const parts = vatReg.split('/').map(s => s.trim());
             const checkedIngIds = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value);
 
             let targetSupId = editingSupplierId;
             if (editingSupplierId) {
-                suppliers = suppliers.map(s => s.id === editingSupplierId ? {
-                    ...s, name, address: address || '-', contact: contact || '-',
-                    vatNumber: parts[0] || s.vatNumber || '-', companyNumber: parts[1] || parts[0] || s.companyNumber || '-'
-                } : s);
+                t.suppliers = t.suppliers.map(s => s.id === editingSupplierId ? { ...s, name, address: address || '-', contact: contact || '-', vatNumber: parts[0] || s.vatNumber || '-', companyNumber: parts[1] || parts[0] || s.companyNumber || '-' } : s);
             } else {
                 targetSupId = 'SUP-' + Date.now();
-                suppliers.push({
-                    id: targetSupId, name, address: address || '-', contact: contact || '-',
-                    vatNumber: parts[0] || '-', companyNumber: parts[1] || parts[0] || '-'
-                });
+                t.suppliers.push({ id: targetSupId, name, address: address || '-', contact: contact || '-', vatNumber: parts[0] || '-', companyNumber: parts[1] || parts[0] || '-' });
             }
-            if (checkedIngIds.length > 0) {
-                ingredientsConfig = ingredientsConfig.map(ing => checkedIngIds.includes(ing.id) ? { ...ing, supplierId: targetSupId } : ing);
-                persistIngredientsConfig();
-            }
-            persistSuppliers();
+            if (checkedIngIds.length > 0) t.ingredients = t.ingredients.map(ing => checkedIngIds.includes(ing.id) ? { ...ing, supplierId: targetSupId } : ing);
+            persistStore();
             resetSupplierForm();
-            syncAllViews();
+            updateStockView();
         }
 
         function updateStockView() {
+            const t = getActiveTenant();
             const stockState = computeStockState();
             const currentChecked = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value);
-            renderSupplierPortfolioCheckboxes(editingSupplierId
-                ? ingredientsConfig.filter(i => i.supplierId === editingSupplierId).map(i => i.id)
-                : currentChecked
-            );
+            renderSupplierPortfolioCheckboxes(editingSupplierId ? t.ingredients.filter(i => i.supplierId === editingSupplierId).map(i => i.id) : currentChecked);
 
             document.getElementById('stock-table-body').innerHTML = stockState.map(st => {
-                const stockColor = st.needsOrder ? 'text-rose-400' : 'text-emerald-400';
-                const supOptions = suppliers.map(s => `<option value="${s.id}" ${s.id === st.supplierId ? 'selected' : ''}>${s.name}</option>`).join('');
+                const supOptions = t.suppliers.map(s => `<option value="${s.id}" ${s.id === st.supplierId ? 'selected' : ''}>${s.name}</option>`).join('');
                 return `
                     <tr>
                         <td class="p-3 text-slate-100 font-bold">${st.name} <span class="text-[10px] text-slate-500">(${st.unit} • ${st.lot})</span></td>
@@ -2053,20 +1901,19 @@
                         <td class="p-3"><input type="number" min="0" value="${st.initialQty}" onchange="updateInitialStock('${st.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/></td>
                         <td class="p-3 text-amber-400">-${st.consumedQty}</td>
                         <td class="p-3"><input type="number" min="0" value="${st.wasteQty}" onchange="updateWasteQty('${st.id}', this.value)" class="w-16 bg-slate-900 border border-rose-900/70 px-2 py-1 rounded text-rose-300 text-right"/></td>
-                        <td class="p-3 font-bold ${stockColor}">${st.currentQty}</td>
+                        <td class="p-3 font-bold ${st.needsOrder ? 'text-rose-400' : 'text-emerald-400'}">${st.currentQty}</td>
                         <td class="p-3"><input type="number" min="0" value="${st.minThreshold}" onchange="updateMinThreshold('${st.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/></td>
                     </tr>
                 `;
             }).join('');
 
-            document.getElementById('suppliers-portfolio-grid').innerHTML = suppliers.map(sup => {
+            document.getElementById('suppliers-portfolio-grid').innerHTML = t.suppliers.map(sup => {
                 const portfolioItems = stockState.filter(i => i.supplierId === sup.id);
                 return `
                     <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between space-y-2">
                         <div class="space-y-1">
                             <p class="font-bold text-sky-300 text-sm">${sup.name}</p>
                             <p class="text-[11px] text-slate-300">${sup.address || '-'}</p>
-                            <p class="text-[11px] text-amber-300">TVA : ${sup.vatNumber || '-'}</p>
                             <ul class="text-[11px] text-emerald-300 space-y-0.5 pt-1 border-t border-slate-800">
                                 ${portfolioItems.length === 0 ? '<li class="text-slate-500">Aucun produit</li>' : portfolioItems.map(p => `<li>• ${p.name} (${p.currentQty})</li>`).join('')}
                             </ul>
@@ -2079,7 +1926,7 @@
                 `;
             }).join('');
 
-            const poCards = suppliers.map(sup => {
+            const poCards = t.suppliers.map(sup => {
                 const neededLines = stockState.filter(i => i.supplierId === sup.id && i.needsOrder);
                 if (neededLines.length === 0) return '';
                 return `
@@ -2093,143 +1940,91 @@
                 `;
             }).filter(Boolean);
 
-            document.getElementById('suggested-po-container').innerHTML = poCards.length === 0
-                ? '<p class="text-emerald-400">Stocks au-dessus des seuils minimums.</p>'
-                : poCards.join('');
-
-            document.getElementById('validated-po-history').innerHTML = validatedPOs.length === 0
-                ? '<p class="text-slate-500">Aucun bon validé.</p>'
-                : validatedPOs.slice(0, 5).map(po => `<p class="text-[11px] text-slate-300">• ${po.poId} [${po.validated_at}] — ${po.supplierName}</p>`).join('');
+            document.getElementById('suggested-po-container').innerHTML = poCards.length === 0 ? '<p class="text-emerald-400">Stocks au-dessus des seuils minimums.</p>' : poCards.join('');
+            document.getElementById('validated-po-history').innerHTML = (t.validatedPOs || []).length === 0 ? '<p class="text-slate-500">Aucun bon validé.</p>' : t.validatedPOs.slice(0, 5).map(po => `<p class="text-[11px] text-slate-300">• ${po.poId} [${po.validated_at}] — ${po.supplierName}</p>`).join('');
         }
 
         function updateRecipesView() {
-            const stockState = computeStockState();
+            const t = getActiveTenant();
             const stateMap = {};
-            stockState.forEach(s => { stateMap[s.id] = s; });
+            computeStockState().forEach(s => { stateMap[s.id] = s; });
             const supMap = {};
-            suppliers.forEach(s => { supMap[s.id] = s; });
+            t.suppliers.forEach(s => { supMap[s.id] = s; });
             const allItems = [];
-            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push({ ...i, catTitle: c.title })));
+            CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => allItems.push(i)));
 
             document.getElementById('recipes-grid').innerHTML = allItems.map(item => {
                 const linesHtml = Object.entries(item.recipe || {}).map(([ingId, q]) => {
                     const st = stateMap[ingId];
                     const sup = st ? (supMap[st.supplierId] || {}) : {};
-                    return `<li class="text-slate-300">• <strong>${st ? st.name : ingId}</strong> : ${q} ${st ? st.unit : ''} — <span class="text-amber-300">Lot ${st ? st.lot : '-'}</span> • <span class="text-sky-300">${sup.name || '-'}</span></li>`;
+                    return `<li class="text-slate-300">• <strong>${st ? st.name : ingId}</strong> : ${q} — <span class="text-amber-300">Lot ${st ? st.lot : '-'}</span> • <span class="text-sky-300">${sup.name || '-'}</span></li>`;
                 }).join('');
                 return `<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2"><p class="font-bold text-sky-300 text-sm">${item.name}</p><ul class="space-y-1 text-[11px]">${linesHtml}</ul></div>`;
             }).join('');
         }
 
-        function assignIngredientSupplier(ingId, supId) {
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, supplierId: supId } : i);
-            persistIngredientsConfig();
-            syncAllViews();
-        }
-
-        function updateInitialStock(ingId, val) {
-            const num = Math.max(0, parseInt(val, 10) || 0);
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, initialQty: num } : i);
-            persistIngredientsConfig();
-            appendAuditEvent('STOCK_INIT', `${ingId} stock initial = ${num}`);
-            syncAllViews();
-        }
-
-        function updateWasteQty(ingId, val) {
-            const num = Math.max(0, parseInt(val, 10) || 0);
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, wasteQty: num } : i);
-            persistIngredientsConfig();
-            appendAuditEvent('STOCK_WASTE', `${ingId} casse = ${num}`);
-            syncAllViews();
-        }
-
-        function updateMinThreshold(ingId, val) {
-            ingredientsConfig = ingredientsConfig.map(i => i.id === ingId ? { ...i, minThreshold: Math.max(0, parseInt(val, 10) || 0) } : i);
-            persistIngredientsConfig();
-            syncAllViews();
-        }
+        function assignIngredientSupplier(ingId, supId) { const t = getActiveTenant(); t.ingredients = t.ingredients.map(i => i.id === ingId ? { ...i, supplierId: supId } : i); persistStore(); updateStockView(); }
+        function updateInitialStock(ingId, val) { const t = getActiveTenant(); t.ingredients = t.ingredients.map(i => i.id === ingId ? { ...i, initialQty: Math.max(0, parseInt(val, 10) || 0) } : i); persistStore(); updateStockView(); }
+        function updateWasteQty(ingId, val) { const t = getActiveTenant(); t.ingredients = t.ingredients.map(i => i.id === ingId ? { ...i, wasteQty: Math.max(0, parseInt(val, 10) || 0) } : i); persistStore(); updateStockView(); }
+        function updateMinThreshold(ingId, val) { const t = getActiveTenant(); t.ingredients = t.ingredients.map(i => i.id === ingId ? { ...i, minThreshold: Math.max(0, parseInt(val, 10) || 0) } : i); persistStore(); updateStockView(); }
 
         function validateSupplierPurchaseOrder(supId) {
-            const sup = suppliers.find(s => s.id === supId);
+            const t = getActiveTenant();
+            const sup = t.suppliers.find(s => s.id === supId);
             const needed = computeStockState().filter(i => i.supplierId === supId && i.needsOrder);
             if (!sup || needed.length === 0) return;
-            const stamp = formatNowDateTime();
-            ingredientsConfig = ingredientsConfig.map(ing => {
+            t.ingredients = t.ingredients.map(ing => {
                 const match = needed.find(n => n.id === ing.id);
                 return match ? { ...ing, initialQty: Number(ing.initialQty || 0) + Number(match.suggestedQty || 0) } : ing;
             });
-            persistIngredientsConfig();
-            const poId = 'PO-' + Date.now();
-            validatedPOs.unshift({ poId, validated_at: stamp.full, supplierName: sup.name, lines: needed.map(n => ({ name: n.name, qty: n.suggestedQty })) });
-            persistValidatedPOs();
-            appendAuditEvent('PO_VALIDATED', `${poId} (${sup.name}) • ${stamp.full}`);
-            syncAllViews();
+            t.validatedPOs.unshift({ poId: 'PO-' + Date.now(), validated_at: formatNowDateTime().full, supplierName: sup.name });
+            persistStore();
+            updateStockView();
         }
 
-        async function exportFullAuditBundle() {
+        function exportFullAuditBundle() {
+            const t = getActiveTenant();
             const selectedDate = document.getElementById('pos-date-input').value;
-            const dayData = aggregateDayData(selectedDate);
-            const costSnap = computeFinancialSnapshot(selectedDate);
-            const stockState = computeStockState();
-
-            const bundleBase = {
+            const payload = {
                 exported_at: formatNowDateTime().full,
-                client_id: govState.clientId,
-                jurisdiction: govState.country,
-                pnl_day: { date: selectedDate, ht: dayData.ht, vat: dayData.vat, ttc: dayData.ca, z_sequence: zSequenceCounter },
-                costs_snapshot: { ht: costSnap.periodHt, cogs: costSnap.periodCogs, opex: costSnap.totalChargesEur, pre_reserve_net: costSnap.preReserveNet, net_gain: costSnap.netGain },
-                stocks_waste: stockState.map(s => ({ id: s.id, name: s.name, lot: s.lot, initial: s.initialQty, consumed: s.consumedQty, waste: s.wasteQty, current: s.currentQty })),
-                iot_sensors: iotSensors,
-                audit_chain: auditEntries
+                tenant: { id: t.id, name: t.name, fiscal: t.fiscal },
+                pnl_day: aggregateTransactions((t.transactions || []).filter(tx => tx.date === selectedDate)),
+                costs_snapshot: computeFinancialSnapshot(selectedDate),
+                stocks: computeStockState(),
+                hr_shifts: t.hrShifts,
+                audit_chain: t.auditEntries
             };
-            const integrityHash = computeIntegrityHash(JSON.stringify(bundleBase));
-            const bundle = { ...bundleBase, integrity_hash: integrityHash };
-
-            try {
-                await fetch(WORKER_AUDIT_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bundle)
-                });
-            } catch (_) {}
-
-            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify({ ...payload, integrity_hash: computeIntegrityHash(JSON.stringify(payload)) }, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `lexwallet-audit-bundle-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `lexwallet-${t.id}-audit.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
         function exportAuditCsv() {
-            const rows = [['Ticket_ID', 'Horodatage', 'Statut', 'Regime', 'Net_HT', 'TVA', 'Total_TTC', 'COGS', 'Marge_Brute', 'Hash']];
-            transactions.forEach(tx => {
-                rows.push([
-                    tx.id, tx.created_at || `${tx.date} ${tx.time || ''}`,
-                    tx.cancelled ? 'ANNULE' : (tx.is_test ? 'TEST' : 'VALIDE'),
-                    tx.sale_type || '', Number(tx.total_ht || 0).toFixed(2), Number(tx.vat || 0).toFixed(2),
-                    Number(tx.total_ttc || 0).toFixed(2), Number(tx.cogs || 0).toFixed(2), Number(tx.gross_margin || 0).toFixed(2),
-                    tx.integrity_hash || ''
-                ]);
+            const t = getActiveTenant();
+            const rows = [['Ticket_ID', 'Horodatage', 'Statut', 'Regime', 'Net_HT', 'TVA', 'Total_TTC', 'COGS']];
+            (t.transactions || []).forEach(tx => {
+                rows.push([tx.id, tx.created_at, tx.cancelled ? 'ANNULE' : (tx.is_test ? 'TEST' : 'VALIDE'), tx.sale_type, Number(tx.total_ht).toFixed(2), Number(tx.vat).toFixed(2), Number(tx.total_ttc).toFixed(2), Number(tx.cogs).toFixed(2)]);
             });
-            const csvBody = rows.map(r => r.join(';')).join('\n');
-            const blob = new Blob([`${csvBody}\n# INTEGRITY_HASH;${computeIntegrityHash(csvBody)}`], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([rows.map(r => r.join(';')).join('\n')], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `lexwallet-audit-${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = `lexwallet-${t.id}-tickets.csv`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
         function exportBackupJson() {
-            const payload = { exported_at: formatNowDateTime().full, govState, transactions, ingredientsConfig, suppliers, validatedPOs, costConfig, hrShifts, auditEntries };
-            const blob = new Blob([JSON.stringify({ ...payload, integrity_hash: computeIntegrityHash(JSON.stringify(payload)) }, null, 2)], { type: 'application/json' });
+            const t = getActiveTenant();
+            const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `lexwallet-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `lexwallet-${t.id}-backup.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -2241,16 +2036,11 @@
             reader.onload = () => {
                 try {
                     const data = JSON.parse(String(reader.result || '{}'));
-                    if (Array.isArray(data.transactions)) { transactions = data.transactions; persistTransactions(); }
-                    if (Array.isArray(data.ingredientsConfig)) { ingredientsConfig = data.ingredientsConfig; persistIngredientsConfig(); }
-                    if (Array.isArray(data.suppliers)) { suppliers = data.suppliers; persistSuppliers(); }
-                    if (Array.isArray(data.validatedPOs)) { validatedPOs = data.validatedPOs; persistValidatedPOs(); }
-                    if (Array.isArray(data.hrShifts)) { hrShifts = data.hrShifts; persistHrShifts(); }
-                    if (Array.isArray(data.auditEntries)) { auditEntries = data.auditEntries; localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(auditEntries)); }
-                    if (data.govState) { govState = { ...govState, ...data.govState }; persistGovState(); hydrateGovAndJurisdiction(); }
-                    if (data.costConfig) { costConfig = { ...costConfig, ...data.costConfig }; persistCostConfig(); hydrateCostInputs(); }
-                    syncAllViews();
-                    alert("Sauvegarde importée et synchronisée.");
+                    const t = getActiveTenant();
+                    tenantStore[t.id] = { ...t, ...data, id: t.id };
+                    persistStore();
+                    syncActiveView();
+                    alert("Sauvegarde importée dans l'établissement actif.");
                 } catch (_) { alert("Fichier JSON invalide."); }
             };
             reader.readAsText(file);
