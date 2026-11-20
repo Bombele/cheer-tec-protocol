@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexwallet.app — Point Zero POS, Gouvernance, Coûts, RH & DePIN IoT</title>
+    <title>Lexwallet.app — Point Zero POS, KYC, Finance, Supply Chain & RH</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased min-h-screen p-4 md:p-8">
@@ -12,111 +12,127 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
                 <h1 class="text-xl md:text-2xl font-bold text-sky-400">Lexwallet.app — Point Zero POS</h1>
-                <p id="header-context-label" class="text-xs text-slate-400 font-mono">Client : CHEER-FLAGSHIP-01 • Niveau : Holding Admin • Juridiction : UE / BE (Paramétrable)</p>
+                <p id="header-context-label" class="text-xs text-slate-400 font-mono">Client : CHEER-FLAGSHIP-01 • Accès : Holding (cbltec@proton.me) • Juridiction : BE</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button onclick="switchTab('governance')" id="tab-btn-governance" class="px-3 py-2 rounded text-xs font-bold bg-amber-600 text-white transition">Gouvernance</button>
-                <button onclick="switchTab('pos')" id="tab-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Caisse (POS)</button>
-                <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Rapport P&L & Z</button>
-                <button onclick="switchTab('costs')" id="tab-btn-costs" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Analyse Coûts & Réserves</button>
-                <button onclick="switchTab('history')" id="tab-btn-history" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Historique & QR</button>
-                <button onclick="switchTab('stock')" id="tab-btn-stock" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks & Fournisseurs</button>
-                <button onclick="switchTab('recipes')" id="tab-btn-recipes" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Recettes & Traçabilité</button>
-                <button onclick="switchTab('hr')" id="tab-btn-hr" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">RH & Paie</button>
-                <button onclick="switchTab('depin')" id="tab-btn-depin" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">DePIN & IoT</button>
+                <button onclick="switchPage('kyc')" id="page-btn-kyc" class="px-3 py-2 rounded text-xs font-bold bg-amber-600 text-white transition">KYC & Paramètres</button>
+                <button onclick="switchPage('pos')" id="page-btn-pos" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Caisse (Page Seule)</button>
+                <button onclick="switchPage('finance')" id="page-btn-finance" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">P&L, Coûts & Tickets</button>
+                <button onclick="switchPage('supply')" id="page-btn-supply" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">Stocks, IoT & Scanners</button>
+                <button onclick="switchPage('hr')" id="page-btn-hr" class="px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition">RH & Paie</button>
                 <button onclick="openAdminModal('purge')" class="bg-rose-950 border border-rose-800 text-rose-300 px-3 py-2 rounded text-xs font-bold transition">Admin Holding</button>
             </div>
         </header>
 
-        <!-- VUE 0 : GOUVERNANCE GLOBALE, NIVEAUX RÉSEAU & PARAMÉTRAGE FISCAL/CLIENT -->
-        <div id="view-governance" class="space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+        <!-- PAGE 1 : KYC D'ENTRÉE, BYPASS HOLDING (cbltec@proton.me) & PARAMÈTRES PAYS/FISCAUX/SOCIAUX -->
+        <div id="page-kyc" class="space-y-6">
+            <div class="flex flex-wrap gap-2 font-mono text-xs">
+                <button onclick="switchSubTab('kyc', 'entry')" id="sub-kyc-entry" class="px-3 py-1.5 rounded font-bold bg-amber-600 text-white">Sous-onglet : KYC & Connexion</button>
+                <button onclick="switchSubTab('kyc', 'fiscal')" id="sub-kyc-fiscal" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Paramètres Pays, Fiscal & Social</button>
+            </div>
+
+            <div id="panel-kyc-entry" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5 font-mono text-xs">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-3 gap-2">
                     <div>
-                        <h2 class="text-base font-bold text-amber-400">Gouvernance Globale, Niveaux Réseau & Conformité Multi-Pays</h2>
-                        <p class="text-slate-400">Accueil d'identification • Holding → Master Franchisé → Franchisé → Gestion Propre • Règles fiscales par pays ou identifiant client</p>
+                        <h2 class="text-base font-bold text-amber-400">Portail d'Entrée — KYC & Accès Direct Holding</h2>
+                        <p class="text-slate-400">Seul l'administrateur Holding (<span class="text-emerald-300">cbltec@proton.me</span>) entre sans KYC. Les autres profils valident leur KYC.</p>
                     </div>
-                    <span id="gov-session-badge" class="px-3 py-1.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 font-bold">Session Validée</span>
+                    <span id="kyc-status-badge" class="px-3 py-1.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-300 font-bold">Statut : Actif</span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="bg-slate-950 border border-emerald-800/60 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-emerald-400">Accès Direct Administrateur Holding (Sans KYC)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Email Administrateur Holding</label>
+                            <input type="email" id="holding-email-input" value="cbltec@proton.me" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Code / Mot de passe (optionnel en test)</label>
+                            <input type="password" id="holding-pass-input" placeholder="Ne pas coller de secret sensible en clair" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="loginHoldingDirect()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold w-full">Entrer Directement (Holding sans KYC)</button>
+                        </div>
+                    </div>
+                    <p id="holding-login-msg" class="text-[11px] text-emerald-300"></p>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-sky-300">Validation KYC — Master Franchisé / Franchisé / Gestion Propre / Opérateur</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Rôle / Niveau</label>
+                            <select id="kyc-role-select" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white">
+                                <option value="master_franchise">Master Franchisé</option>
+                                <option value="franchise">Franchisé</option>
+                                <option value="own_managed">Restaurant en Gestion Propre</option>
+                                <option value="staff_pos">Opérateur Caisse / Staff</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Identité / Raison Sociale</label>
+                            <input type="text" id="kyc-full-name" placeholder="Nom complet ou entité" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">N° Registre / ID Document KYC</label>
+                            <input type="text" id="kyc-doc-id" placeholder="Ex: ENT-123456 / ID-987" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                        <div>
+                            <label class="text-[11px] text-slate-400 block mb-1">Identifiant Client (`client_id`)</label>
+                            <input type="text" id="kyc-client-id" value="CHEER-FLAGSHIP-01" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        </div>
+                    </div>
+                    <button onclick="submitKycVerification()" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold">Valider le KYC & Accéder</button>
+                    <div id="kyc-audit-logs" class="space-y-1 pt-2 border-t border-slate-800 text-[11px] text-slate-400 max-h-36 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div id="panel-kyc-fiscal" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 font-mono text-xs">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Niveau Hiérarchique</label>
-                        <select id="gov-level-select" onchange="onGovernanceLevelChange()" class="bg-slate-950 border border-slate-700 px-3 py-2 rounded w-full text-white">
-                            <option value="holding">1. Holding (Niveau Supérieur)</option>
-                            <option value="master_franchise">2. Master Franchisé</option>
-                            <option value="franchise">3. Franchisé</option>
-                            <option value="own_managed">4. Restaurant en Gestion Propre</option>
+                        <h2 class="text-base font-bold text-sky-300">Paramètres Pays, Fiscaux & Sociaux (Réservé Holding / Paramétrable Client)</h2>
+                        <p class="text-slate-400">Modifiable par le niveau Holding (`cbltec@proton.me`) ou par identifiant client.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <div>
+                        <label class="text-[11px] text-slate-400 block mb-1">Pays / Juridiction</label>
+                        <select id="jur-country" onchange="applyJurisdictionPreset()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white">
+                            <option value="BE">Belgique (BE)</option>
+                            <option value="FR">France (FR)</option>
+                            <option value="ES">Espagne (ES)</option>
+                            <option value="VE">Venezuela (VE)</option>
+                            <option value="CUSTOM">Personnalisé (Firme / Client)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Identifiant Client / Unité</label>
-                        <input type="text" id="gov-client-id" value="CHEER-FLAGSHIP-01" class="bg-slate-950 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        <label class="text-[11px] text-slate-400 block mb-1">TVA Sur Place (%)</label>
+                        <input type="number" step="0.5" id="jur-vat-place" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
                     </div>
                     <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Opérateur / Utilisateur</label>
-                        <input type="text" id="gov-user-name" value="Camille — Direction / Holding" class="bg-slate-950 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        <label class="text-[11px] text-slate-400 block mb-1">TVA Emporter (%)</label>
+                        <input type="number" step="0.5" id="jur-vat-takeout" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
                     </div>
                     <div>
-                        <label class="text-[11px] text-slate-400 block mb-1">Code PIN Niveau</label>
-                        <input type="password" id="gov-access-pin" placeholder="PIN (ex: CHEEZ-ADMIN-2026)" class="bg-slate-950 border border-slate-700 px-3 py-2 rounded w-full text-white"/>
+                        <label class="text-[11px] text-slate-400 block mb-1">Charges Patronales RH (%)</label>
+                        <input type="number" step="0.5" id="jur-employer-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-400 block mb-1">Retenue Salariale Est. (%)</label>
+                        <input type="number" step="0.5" id="jur-employee-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-400 block mb-1">Devise</label>
+                        <input type="text" id="jur-currency" value="€" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-2 rounded w-full text-white"/>
                     </div>
                 </div>
-
-                <div class="flex flex-wrap items-center gap-3">
-                    <button onclick="validateGovernanceSession()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">Valider Identification & Charger Profil</button>
-                    <span id="gov-auth-status" class="text-emerald-400"></span>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <h3 class="text-sm font-bold text-sky-300">Paramétrage Juridiction, TVA & Charges Sociales (Client / Pays)</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Pays / Zone</label>
-                                <select id="jur-country" onchange="applyJurisdictionPreset()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white">
-                                    <option value="BE">Belgique (BE)</option>
-                                    <option value="FR">France (FR)</option>
-                                    <option value="ES">Espagne (ES)</option>
-                                    <option value="VE">Venezuela (VE)</option>
-                                    <option value="CUSTOM">Personnalisé (Firme / Client)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">TVA Sur Place (%)</label>
-                                <input type="number" step="0.5" id="jur-vat-place" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">TVA Emporter (%)</label>
-                                <input type="number" step="0.5" id="jur-vat-takeout" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Charges Patronales RH (%)</label>
-                                <input type="number" step="0.5" id="jur-employer-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Retenue Salariale Est. (%)</label>
-                                <input type="number" step="0.5" id="jur-employee-rate" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                            <div>
-                                <label class="text-[11px] text-slate-400 block mb-1">Devise Affichage</label>
-                                <input type="text" id="jur-currency" value="€" onchange="saveJurisdictionConfig()" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded w-full text-white"/>
-                            </div>
-                        </div>
-                        <p id="jur-summary-line" class="text-[11px] text-amber-300 pt-1"></p>
-                    </div>
-
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                        <h3 class="text-sm font-bold text-emerald-300">Droits d'Accès par Niveau & Historique Gouvernance</h3>
-                        <p id="gov-level-permissions" class="text-slate-300"></p>
-                        <div id="gov-audit-log" class="space-y-1 pt-2 border-t border-slate-800 text-[11px] text-slate-400 max-h-36 overflow-y-auto"></div>
-                    </div>
-                </div>
+                <p id="jur-summary-line" class="text-amber-300"></p>
             </div>
         </div>
 
-        <!-- VUE 1 : CAISSE (POS) -->
-        <div id="view-pos" class="hidden space-y-6">
+        <!-- PAGE 2 : CAISSE (POS) SUR UNE PAGE SEULE -->
+        <div id="page-pos" class="hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-900 p-4 rounded-xl border border-slate-800 gap-3">
                 <div class="flex flex-wrap items-center gap-2">
                     <span class="text-xs text-slate-400">Régime Service :</span>
@@ -171,9 +187,15 @@
             </div>
         </div>
 
-        <!-- VUE 2 : RAPPORT P&L FISCAL & Z -->
-        <div id="view-pnl" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+        <!-- PAGE 3 : P&L, COÛTS & HISTORIQUE TICKETS (SOUS-ONGLETS) -->
+        <div id="page-finance" class="hidden space-y-6">
+            <div class="flex flex-wrap gap-2 font-mono text-xs">
+                <button onclick="switchSubTab('finance', 'pnl')" id="sub-finance-pnl" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Sous-onglet : Rapport P&L & Z</button>
+                <button onclick="switchSubTab('finance', 'costs')" id="sub-finance-costs" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Analyse Coûts & Réserves</button>
+                <button onclick="switchSubTab('finance', 'history')" id="sub-finance-history" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Historique & QR</button>
+            </div>
+
+            <div id="panel-finance-pnl" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
                         <h2 class="text-base font-bold text-amber-400">Rapport P&L Fiscal & Clôture Z</h2>
@@ -241,15 +263,12 @@
                     <div id="z-report-content" class="space-y-1 text-slate-300"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- VUE 3 : ANALYSE DES COÛTS, CHARGES & VENTILATION TRÉSORERIE (SYNCHRONISÉE P&L / TICKETS) -->
-        <div id="view-costs" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+            <div id="panel-finance-costs" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
                         <h2 class="text-base font-bold text-emerald-400">Analyse des Coûts, Charges & Ventilation Trésorerie</h2>
-                        <p class="text-xs text-slate-400 font-mono">Date ciblée : <span id="costs-date-label"></span> • Synchronisé avec P&L & Tickets • CA Réel HT : <span id="costs-real-ht-label" class="text-sky-300">0.00 €</span></p>
+                        <p class="text-xs text-slate-400 font-mono">Date ciblée : <span id="costs-date-label"></span> • Synchronisé P&L & Tickets • CA Réel HT : <span id="costs-real-ht-label" class="text-sky-300">0.00 €</span></p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
                         <button onclick="setCostPeriodMode('daily')" id="period-btn-daily" class="px-3 py-1.5 rounded font-bold bg-sky-600 text-white">Journalier</button>
@@ -345,15 +364,12 @@
                 </div>
 
                 <div id="rnd-grant-card" class="hidden bg-slate-950 border border-emerald-700/50 p-5 rounded-xl space-y-2 font-mono text-xs">
-                    <h3 class="text-sm font-bold text-emerald-400">Synthèse Preuve R&D / Subvention (Traçabilité, Pilier Financier & Intégrité)</h3>
+                    <h3 class="text-sm font-bold text-emerald-400">Synthèse Preuve R&D / Subvention</h3>
                     <div id="rnd-grant-content" class="space-y-1 text-slate-300"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- VUE 4 : HISTORIQUE DES COMMANDES & QR -->
-        <div id="view-history" class="hidden space-y-6 max-w-4xl mx-auto">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
+            <div id="panel-finance-history" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <h2 class="text-base font-bold text-sky-300">Registre, QR Traçabilité & Historique Horodaté</h2>
                     <span class="text-[11px] text-slate-400 font-mono">Cliquez sur un ticket pour QR traçabilité, modification ou annulation</span>
@@ -364,13 +380,20 @@
             </div>
         </div>
 
-        <!-- VUE 5 : STOCKS, CASSE, FOURNISSEURS & BONS DE COMMANDE -->
-        <div id="view-stock" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+        <!-- PAGE 4 : SUPPLY CHAIN — STOCKS, CAPTEURS IoT, SCANNERS, FOURNISSEURS & RECETTES (SOUS-ONGLETS) -->
+        <div id="page-supply" class="hidden space-y-6">
+            <div class="flex flex-wrap gap-2 font-mono text-xs">
+                <button onclick="switchSubTab('supply', 'stock')" id="sub-supply-stock" class="px-3 py-1.5 rounded font-bold bg-emerald-600 text-white">Sous-onglet : Stocks & Casse</button>
+                <button onclick="switchSubTab('supply', 'iotscan')" id="sub-supply-iotscan" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Capteurs IoT & Scanners</button>
+                <button onclick="switchSubTab('supply', 'suppliers')" id="sub-supply-suppliers" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Fournisseurs & Bons</button>
+                <button onclick="switchSubTab('supply', 'recipes')" id="sub-supply-recipes" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Recettes & Lots</button>
+            </div>
+
+            <div id="panel-supply-stock" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
-                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé, Casse/Pertes, Fournisseurs & Bons</h2>
-                        <p class="text-xs text-slate-400 font-mono">Stock théorique vs casse réelle • Sélecteur fournisseur • Validation superviseur</p>
+                        <h2 class="text-base font-bold text-emerald-400">Inventaire Synchronisé & Casse / Pertes</h2>
+                        <p class="text-xs text-slate-400 font-mono">Stock théorique vs casse réelle • Synchronisé avec les tickets POS</p>
                     </div>
                     <div class="flex flex-wrap gap-2 text-xs font-mono">
                         <button onclick="exportAuditCsv()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export CSV</button>
@@ -398,115 +421,13 @@
                         <tbody id="stock-table-body" class="divide-y divide-slate-900"></tbody>
                     </table>
                 </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4 font-mono text-xs">
-                    <div class="flex justify-between items-center">
-                        <h3 id="supplier-form-title" class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
-                        <button id="cancel-sup-edit-btn" onclick="resetSupplierForm()" class="hidden text-[11px] text-amber-400 underline">Annuler modification</button>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                        <input type="text" id="new-sup-name" placeholder="Nom fournisseur*" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <input type="text" id="new-sup-address" placeholder="Adresse complète" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <input type="text" id="new-sup-contact" placeholder="Contact (tél / email)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                        <input type="text" id="new-sup-vat-reg" placeholder="N° TVA & N° Entreprise" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
-                    </div>
-                    <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-2">
-                        <span class="text-[11px] text-sky-300 font-bold block">Produits en portefeuille pour ce fournisseur :</span>
-                        <div id="supplier-portfolio-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-[11px]"></div>
-                    </div>
-                    <button onclick="saveSupplierForm()" id="save-sup-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
-
-                    <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2"></div>
-                </div>
-
-                <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-4 font-mono text-xs">
-                    <div>
-                        <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
-                        <p class="text-[11px] text-slate-400">Générées automatiquement lorsque Stock Actuel &lt; Seuil Min</p>
-                    </div>
-                    <div id="suggested-po-container" class="space-y-3"></div>
-                    <div id="validated-po-history" class="space-y-2 pt-3 border-t border-slate-800"></div>
-                </div>
             </div>
-        </div>
 
-        <!-- VUE 6 : RECETTES ARTICLES & TRAÇABILITÉ MATIÈRES -->
-        <div id="view-recipes" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+            <div id="panel-supply-iotscan" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
                     <div>
-                        <h2 class="text-base font-bold text-emerald-400">Recettes Articles & Traçabilité Matières</h2>
-                        <p class="text-xs text-slate-400 font-mono">Synchronisation temps réel avec l'inventaire, les lots de provenance et les fournisseurs</p>
-                    </div>
-                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold font-mono">Export Traçabilité CSV</button>
-                </div>
-
-                <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs"></div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3 font-mono text-xs">
-                    <h3 class="text-sm font-bold text-sky-300">Registre des Lots & Provenances Actifs</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="border-b border-slate-800 text-slate-400">
-                                <tr>
-                                    <th class="p-2.5">Ingrédient</th>
-                                    <th class="p-2.5">N° Lot</th>
-                                    <th class="p-2.5">Fournisseur</th>
-                                    <th class="p-2.5">N° TVA / Entreprise</th>
-                                    <th class="p-2.5">Stock Actuel</th>
-                                </tr>
-                            </thead>
-                            <tbody id="traceability-lots-body" class="divide-y divide-slate-900"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VUE 7 : ONGLET RH — BADGEAGE ANTI-MANIPULATION, FICHES DE PAIE & CHARGES SOCIALES -->
-        <div id="view-hr" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-emerald-400">RH — Badgeage Heures, Fiches de Paie & Charges Sociales</h2>
-                        <p class="text-slate-400">Connexion badgeuse UID / lecteur externe • Calcul déterministe rémunérations & charges • Échéancier paiements</p>
-                    </div>
-                    <button onclick="connectBadgeReader()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Connecter / Tester Badgeuse</button>
-                </div>
-
-                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4">
-                    <h3 class="text-sm font-bold text-sky-300">Enregistrement Badgeage Signé (Anti-Manipulation)</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-                        <input type="text" id="badge-staff-name" placeholder="Nom équipier" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                        <input type="text" id="badge-uid" placeholder="Badge UID (ex: BDG-01)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                        <input type="number" step="0.25" min="0.25" max="24" id="badge-hours" value="8" placeholder="Heures" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                        <input type="number" step="0.5" min="5" id="badge-rate" value="14.50" placeholder="Taux horaire brut" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
-                    </div>
-                    <button onclick="recordBadgeShift()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">+ Enregistrer Badgeage Signé</button>
-                    <div id="hr-payroll-summary" class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-slate-200 space-y-1"></div>
-                    <div id="badge-logs-list" class="space-y-1 text-[11px] text-slate-400"></div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <h3 class="text-sm font-bold text-amber-300">Fiches de Paie Déterministes (Par Équipier)</h3>
-                        <div id="payslips-list" class="space-y-2 text-slate-300"></div>
-                    </div>
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
-                        <h3 class="text-sm font-bold text-sky-300">Où et Quand Payer (Charges Sociales & Rémunérations)</h3>
-                        <div id="hr-payment-schedule" class="space-y-2 text-slate-300"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- VUE 8 : ONGLET SUPPLY CHAIN DePIN, CAPTEURS IoT & SCANNERS -->
-        <div id="view-depin" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-amber-300">Supply Chain DePIN, Capteurs IoT & Scanners Lots</h2>
-                        <p class="text-slate-400">Chaîne du froid (affinage/congélation), compteur énergie, alertes automatiques & scan lot/code-barres</p>
+                        <h2 class="text-base font-bold text-amber-300">Capteurs IoT (Froid / Affinage / Énergie) & Scanners Lots</h2>
+                        <p class="text-slate-400">Télémétrie temps réel et scan codes-barres / QR lots lié à l'inventaire</p>
                     </div>
                     <button onclick="simulateIoTTelemetry()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Rafraîchir Télémétrie Capteurs</button>
                 </div>
@@ -531,6 +452,105 @@
                         <li>• <strong>Scanners Réception & Lots</strong> : douchette USB/BLE ou caméra QR liée au numéro de lot et au fournisseur pour alimenter automatiquement le stock et la traçabilité.</li>
                     </ul>
                 </div>
+            </div>
+
+            <div id="panel-supply-suppliers" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 id="supplier-form-title" class="text-sm font-bold text-sky-300">Répertoire & Portefeuille Fournisseurs</h3>
+                        <button id="cancel-sup-edit-btn" onclick="resetSupplierForm()" class="hidden text-[11px] text-amber-400 underline">Annuler modification</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                        <input type="text" id="new-sup-name" placeholder="Nom fournisseur*" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="new-sup-address" placeholder="Adresse complète" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="new-sup-contact" placeholder="Contact (tél / email)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                        <input type="text" id="new-sup-vat-reg" placeholder="N° TVA & N° Entreprise" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white text-xs"/>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-2">
+                        <span class="text-[11px] text-sky-300 font-bold block">Produits en portefeuille pour ce fournisseur :</span>
+                        <div id="supplier-portfolio-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-[11px]"></div>
+                    </div>
+                    <button onclick="saveSupplierForm()" id="save-sup-btn" class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded font-bold text-xs">+ Ajouter Fournisseur</button>
+                    <div id="suppliers-portfolio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2"></div>
+                </div>
+
+                <div class="bg-slate-950 border border-amber-700/40 p-4 rounded-xl space-y-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-amber-400">Suggestions de Bons de Commande (Validation Superviseur)</h3>
+                        <p class="text-[11px] text-slate-400">Générées automatiquement lorsque Stock Actuel &lt; Seuil Min</p>
+                    </div>
+                    <div id="suggested-po-container" class="space-y-3"></div>
+                    <div id="validated-po-history" class="space-y-2 pt-3 border-t border-slate-800"></div>
+                </div>
+            </div>
+
+            <div id="panel-supply-recipes" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-emerald-400">Recettes Articles & Traçabilité Matières</h2>
+                        <p class="text-slate-400">Synchronisation temps réel avec l'inventaire, les lots de provenance et les fournisseurs</p>
+                    </div>
+                    <button onclick="exportAuditCsv()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded text-xs font-bold">Export Traçabilité CSV</button>
+                </div>
+                <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-sky-300">Registre des Lots & Provenances Actifs</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="border-b border-slate-800 text-slate-400">
+                                <tr>
+                                    <th class="p-2.5">Ingrédient</th>
+                                    <th class="p-2.5">N° Lot</th>
+                                    <th class="p-2.5">Fournisseur</th>
+                                    <th class="p-2.5">N° TVA / Entreprise</th>
+                                    <th class="p-2.5">Stock Actuel</th>
+                                </tr>
+                            </thead>
+                            <tbody id="traceability-lots-body" class="divide-y divide-slate-900"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 5 : RH, BADGEAGE, FICHES DE PAIE & ÉCHÉANCIER (SOUS-ONGLETS) -->
+        <div id="page-hr" class="hidden space-y-6">
+            <div class="flex flex-wrap gap-2 font-mono text-xs">
+                <button onclick="switchSubTab('hr', 'badge')" id="sub-hr-badge" class="px-3 py-1.5 rounded font-bold bg-emerald-600 text-white">Sous-onglet : Badgeage & Fiches de Paie</button>
+                <button onclick="switchSubTab('hr', 'schedule')" id="sub-hr-schedule" class="px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300">Sous-onglet : Où & Quand Payer (Charges)</button>
+            </div>
+
+            <div id="panel-hr-badge" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-emerald-400">RH — Badgeage Heures Anti-Manipulation & Calcul Déterministe</h2>
+                        <p class="text-slate-400">Connexion badgeuse UID • Calcul brut/net/charges • Fiches de paie</p>
+                    </div>
+                    <button onclick="connectBadgeReader()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Connecter / Tester Badgeuse</button>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-4">
+                    <h3 class="text-sm font-bold text-sky-300">Enregistrement Badgeage Signé</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                        <input type="text" id="badge-staff-name" placeholder="Nom équipier" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                        <input type="text" id="badge-uid" placeholder="Badge UID (ex: BDG-01)" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                        <input type="number" step="0.25" min="0.25" max="24" id="badge-hours" value="8" placeholder="Heures" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                        <input type="number" step="0.5" min="5" id="badge-rate" value="14.50" placeholder="Taux horaire brut" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 rounded text-white"/>
+                    </div>
+                    <button onclick="recordBadgeShift()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">+ Enregistrer Badgeage Signé</button>
+                    <div id="hr-payroll-summary" class="bg-slate-900 border border-slate-800 p-3 rounded-lg text-slate-200 space-y-1"></div>
+                    <div id="badge-logs-list" class="space-y-1 text-[11px] text-slate-400"></div>
+                </div>
+
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-amber-300">Fiches de Paie Déterministes (Par Équipier)</h3>
+                    <div id="payslips-list" class="space-y-2 text-slate-300"></div>
+                </div>
+            </div>
+
+            <div id="panel-hr-schedule" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 font-mono text-xs">
+                <h2 class="text-base font-bold text-sky-300">Échéancier de Paiement — Rémunérations & Charges Sociales</h2>
+                <div id="hr-payment-schedule" class="space-y-2 text-slate-300"></div>
             </div>
         </div>
 
@@ -603,6 +623,7 @@
     </div>
 
     <script>
+        const HOLDING_ADMIN_EMAIL = 'cbltec@proton.me';
         const TX_STORAGE_KEY_V2 = 'lexwallet_pos_tx_v2';
         const TX_STORAGE_KEY_V1 = 'lexwallet_pos_tx_v1';
         const STOCK_STORAGE_KEY = 'lexwallet_pos_stock_v2';
@@ -689,6 +710,8 @@
             { id: 'IOT-FREEZE-02', label: 'Congélation / Matières', metric: '-18.6 °C', status: 'OK', node: 'DePIN-EU-01' },
             { id: 'IOT-PWR-03', label: 'Compteur Énergie & Extraction', metric: '4.8 kW • Nominal', status: 'OK', node: 'DePIN-EU-02' }
         ];
+        let activePage = 'kyc';
+        let activeSubTabs = { kyc: 'entry', finance: 'pnl', supply: 'stock', hr: 'badge' };
         let costPeriodMode = 'daily';
         let saleType = 'sur_place';
         let quickDiscountPercent = 0;
@@ -740,16 +763,19 @@
 
         function loadGovState() {
             const defaults = {
+                email: HOLDING_ADMIN_EMAIL,
                 level: 'holding',
+                kycVerified: true,
+                kycBypassedForHolding: true,
                 clientId: 'CHEER-FLAGSHIP-01',
-                userName: 'Camille — Direction / Holding',
+                userName: 'Administrateur Holding',
                 country: 'BE',
                 vatPlacePct: 21,
                 vatTakeoutPct: 6,
                 employerRatePct: 28,
                 employeeRatePct: 13.07,
                 currency: '€',
-                logs: ['[INIT] Session Holding initialisée pour CHEER-FLAGSHIP-01']
+                logs: ['[INIT] Accès Holding actif pour cbltec@proton.me (sans KYC)']
             };
             try {
                 const raw = localStorage.getItem(GOV_STORAGE_KEY);
@@ -763,21 +789,17 @@
         }
 
         function updateHeaderContext() {
-            const levelLabels = {
-                holding: 'Holding (Niveau Supérieur)',
-                master_franchise: 'Master Franchisé',
-                franchise: 'Franchisé',
-                own_managed: 'Gestion Propre'
-            };
+            const accessLabel = govState.email.toLowerCase() === HOLDING_ADMIN_EMAIL
+                ? `Holding Direct (${HOLDING_ADMIN_EMAIL} • Sans KYC)`
+                : `${govState.level} (${govState.kycVerified ? 'KYC Validé' : 'KYC En Attente'})`;
             document.getElementById('header-context-label').innerText =
-                `Client : ${govState.clientId} • Niveau : ${levelLabels[govState.level] || govState.level} • Pays : ${govState.country} (TVA ${govState.vatPlacePct}% / ${govState.vatTakeoutPct}%)`;
+                `Client : ${govState.clientId} • ${accessLabel} • Juridiction : ${govState.country} (TVA ${govState.vatPlacePct}% / ${govState.vatTakeoutPct}%)`;
         }
 
         function hydrateGovAndJurisdiction() {
-            document.getElementById('gov-level-select').value = govState.level;
-            document.getElementById('gov-client-id').value = govState.clientId;
-            document.getElementById('gov-user-name').value = govState.userName;
-            document.getElementById('jur-country').value = govState.country;
+            document.getElementById('holding-email-input').value = govState.email || HOLDING_ADMIN_EMAIL;
+            document.getElementById('kyc-client-id').value = govState.clientId || 'CHEER-FLAGSHIP-01';
+            document.getElementById('jur-country').value = govState.country || 'BE';
             document.getElementById('jur-vat-place').value = govState.vatPlacePct;
             document.getElementById('jur-vat-takeout').value = govState.vatTakeoutPct;
             document.getElementById('jur-employer-rate').value = govState.employerRatePct;
@@ -785,6 +807,44 @@
             document.getElementById('jur-currency').value = govState.currency || '€';
             updateHeaderContext();
             renderGovernanceView();
+        }
+
+        function loginHoldingDirect() {
+            const email = (document.getElementById('holding-email-input').value || '').trim().toLowerCase();
+            if (email !== HOLDING_ADMIN_EMAIL) {
+                return alert(`Seul le compte ${HOLDING_ADMIN_EMAIL} peut entrer directement sans KYC.`);
+            }
+            const stamp = formatNowDateTime();
+            govState.email = HOLDING_ADMIN_EMAIL;
+            govState.level = 'holding';
+            govState.kycVerified = true;
+            govState.kycBypassedForHolding = true;
+            govState.userName = 'Holding Admin (cbltec@proton.me)';
+            govState.logs.unshift(`[${stamp.full}] Connexion directe Holding sans KYC : ${HOLDING_ADMIN_EMAIL}`);
+            persistGovState();
+            document.getElementById('holding-login-msg').innerText = `Accès Holding validé sans KYC (${stamp.full}) — ${HOLDING_ADMIN_EMAIL}`;
+            renderGovernanceView();
+        }
+
+        function submitKycVerification() {
+            const role = document.getElementById('kyc-role-select').value;
+            const fullName = document.getElementById('kyc-full-name').value.trim();
+            const docId = document.getElementById('kyc-doc-id').value.trim();
+            const clientId = document.getElementById('kyc-client-id').value.trim() || 'CHEER-FLAGSHIP-01';
+            if (!fullName || !docId) {
+                return alert("Renseignez l'identité / raison sociale et l'identifiant KYC.");
+            }
+            const stamp = formatNowDateTime();
+            govState.email = `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, '.')}@client.local`;
+            govState.level = role;
+            govState.kycVerified = true;
+            govState.kycBypassedForHolding = false;
+            govState.clientId = clientId;
+            govState.userName = fullName;
+            govState.logs.unshift(`[${stamp.full}] KYC validé pour ${fullName} (${role}, Doc: ${docId}) • Client ${clientId}`);
+            persistGovState();
+            renderGovernanceView();
+            alert(`KYC validé (${stamp.full}) pour ${fullName}.`);
         }
 
         function applyJurisdictionPreset() {
@@ -816,46 +876,54 @@
             govState.employeeRatePct = Math.max(0, parseFloat(document.getElementById('jur-employee-rate').value) || 0);
             govState.currency = (document.getElementById('jur-currency').value || '€').trim();
             const stamp = formatNowDateTime();
-            govState.logs.unshift(`[${stamp.full}] Maj règles ${govState.clientId} (${govState.country}) : TVA ${govState.vatPlacePct}%/${govState.vatTakeoutPct}%, RH ${govState.employerRatePct}%`);
+            govState.logs.unshift(`[${stamp.full}] Maj paramètres ${govState.clientId} (${govState.country}) : TVA ${govState.vatPlacePct}%/${govState.vatTakeoutPct}%, RH ${govState.employerRatePct}%`);
             persistGovState();
             syncAllTabs();
         }
 
-        function onGovernanceLevelChange() {
-            govState.level = document.getElementById('gov-level-select').value;
-            persistGovState();
-            renderGovernanceView();
-        }
-
-        function validateGovernanceSession() {
-            const pin = document.getElementById('gov-access-pin').value.trim();
-            const level = document.getElementById('gov-level-select').value;
-            const clientId = document.getElementById('gov-client-id').value.trim() || 'CHEER-FLAGSHIP-01';
-            const userName = document.getElementById('gov-user-name').value.trim() || 'Opérateur';
-            if (level === 'holding' && pin && pin !== MANAGER_PIN) {
-                return alert("PIN Holding incorrect pour le niveau supérieur.");
-            }
-            const stamp = formatNowDateTime();
-            govState.level = level;
-            govState.clientId = clientId;
-            govState.userName = userName;
-            govState.logs.unshift(`[${stamp.full}] Connexion validée : ${userName} (${level}) sur ${clientId}`);
-            persistGovState();
-            document.getElementById('gov-auth-status').innerText = `Identifié : ${userName} (${clientId})`;
-            renderGovernanceView();
-        }
-
         function renderGovernanceView() {
-            const descMap = {
-                holding: 'Niveau 1 — Holding : gouvernance globale réseau, royalties, réserves, règles fiscales/client, purge et exports d\'intégrité.',
-                master_franchise: 'Niveau 2 — Master Franchisé : supervision régionale multi-franchisés, conformité, reporting consolidé et habilitations.',
-                franchise: 'Niveau 3 — Franchisé : exploitation du point de vente, caisse, stocks, fournisseurs, badgeage RH et clôture Z.',
-                own_managed: 'Niveau 4 — Restaurant en Gestion Propre : exploitation directe rattachée à la direction/holding avec suivi P&L, stocks et RH.'
-            };
-            document.getElementById('gov-level-permissions').innerText = descMap[govState.level] || '';
+            const isHolding = govState.email && govState.email.toLowerCase() === HOLDING_ADMIN_EMAIL;
+            document.getElementById('kyc-status-badge').innerText = isHolding
+                ? `Holding Direct (${HOLDING_ADMIN_EMAIL} • Sans KYC)`
+                : (govState.kycVerified ? `KYC Validé (${govState.level})` : 'KYC En Attente');
             document.getElementById('jur-summary-line').innerText =
-                `Profil ${govState.clientId} (${govState.country}) • TVA Sur Place : ${govState.vatPlacePct}% • TVA Emporter : ${govState.vatTakeoutPct}% • Charges patronales RH : ${govState.employerRatePct}% • Devise : ${govState.currency}`;
-            document.getElementById('gov-audit-log').innerHTML = (govState.logs || []).slice(0, 8).map(l => `<p>• ${l}</p>`).join('');
+                `Client ${govState.clientId} • Pays : ${govState.country} • TVA Sur Place : ${govState.vatPlacePct}% • TVA Emporter : ${govState.vatTakeoutPct}% • Charges patronales RH : ${govState.employerRatePct}% • Devise : ${govState.currency}`;
+            document.getElementById('kyc-audit-logs').innerHTML = (govState.logs || []).slice(0, 8).map(l => `<p>• ${l}</p>`).join('');
+        }
+
+        function switchPage(page) {
+            activePage = page;
+            ['kyc', 'pos', 'finance', 'supply', 'hr'].forEach(p => {
+                document.getElementById('page-' + p).classList.add('hidden');
+                document.getElementById('page-btn-' + p).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
+            });
+            document.getElementById('page-' + page).classList.remove('hidden');
+            document.getElementById('page-btn-' + page).className = page === 'kyc'
+                ? "px-3 py-2 rounded text-xs font-bold bg-amber-600 text-white transition"
+                : "px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition";
+            switchSubTab(page, activeSubTabs[page] || null);
+            syncAllTabs();
+        }
+
+        function switchSubTab(page, sub) {
+            if (!sub) return;
+            activeSubTabs[page] = sub;
+            const map = {
+                kyc: ['entry', 'fiscal'],
+                finance: ['pnl', 'costs', 'history'],
+                supply: ['stock', 'iotscan', 'suppliers', 'recipes'],
+                hr: ['badge', 'schedule']
+            };
+            (map[page] || []).forEach(s => {
+                const panel = document.getElementById(`panel-${page}-${s}`);
+                const btn = document.getElementById(`sub-${page}-${s}`);
+                if (panel) panel.classList.add('hidden');
+                if (btn) btn.className = "px-3 py-1.5 rounded font-bold bg-slate-900 text-slate-300";
+            });
+            const activePanel = document.getElementById(`panel-${page}-${sub}`);
+            const activeBtn = document.getElementById(`sub-${page}-${sub}`);
+            if (activePanel) activePanel.classList.remove('hidden');
+            if (activeBtn) activeBtn.className = "px-3 py-1.5 rounded font-bold bg-sky-600 text-white";
         }
 
         function loadTransactions() {
@@ -1109,18 +1177,6 @@
                     </div>
                 </div>
             `).join('');
-        }
-
-        function switchTab(tab) {
-            ['governance', 'pos', 'pnl', 'costs', 'history', 'stock', 'recipes', 'hr', 'depin'].forEach(t => {
-                document.getElementById('view-' + t).classList.add('hidden');
-                document.getElementById('tab-btn-' + t).className = "px-3 py-2 rounded text-xs font-bold bg-slate-900 text-slate-300 transition";
-            });
-            document.getElementById('view-' + tab).classList.remove('hidden');
-            document.getElementById('tab-btn-' + tab).className = tab === 'governance'
-                ? "px-3 py-2 rounded text-xs font-bold bg-amber-600 text-white transition"
-                : "px-3 py-2 rounded text-xs font-bold bg-sky-600 text-white transition";
-            syncAllTabs();
         }
 
         function syncAllTabs() {
@@ -1498,7 +1554,7 @@
             const totalEmployerCost = hrShifts.reduce((a, s) => a + Number(s.totalCost || 0), 0);
 
             document.getElementById('hr-payroll-summary').innerHTML = `
-                <p><strong>Calcul Déterministe RH (${govState.country}) :</strong> ${totalHours.toFixed(2)} h badgées • Brut : <strong>${totalGross.toFixed(2)} €</strong> • Net salarié est. : <strong>${totalNetSal.toFixed(2)} €</strong> • Charges sociales totales (patronales + retenues) : <strong>${totalCharges.toFixed(2)} €</strong> • Coût employeur total : <strong class="text-amber-300">${totalEmployerCost.toFixed(2)} €</strong></p>
+                <p><strong>Calcul Déterministe RH (${govState.country}) :</strong> ${totalHours.toFixed(2)} h badgées • Brut : <strong>${totalGross.toFixed(2)} €</strong> • Net salarié est. : <strong>${totalNetSal.toFixed(2)} €</strong> • Charges sociales totales : <strong>${totalCharges.toFixed(2)} €</strong> • Coût employeur total : <strong class="text-amber-300">${totalEmployerCost.toFixed(2)} €</strong></p>
             `;
             document.getElementById('badge-logs-list').innerHTML = hrShifts.length === 0
                 ? '<p class="text-slate-500">Aucun badgeage enregistré.</p>'
@@ -1550,7 +1606,7 @@
 
         function renderIoTSensors() {
             document.getElementById('iot-sensors-grid').innerHTML = iotSensors.map(s => `
-                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-1">
+                <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-1">
                     <div class="flex justify-between items-center">
                         <span class="font-bold text-sky-300">${s.id}</span>
                         <span class="text-[10px] ${s.status === 'OK' ? 'text-emerald-400' : 'text-rose-400'} font-bold">${s.status} • ${s.node}</span>
