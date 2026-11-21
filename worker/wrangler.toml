@@ -1,0 +1,8 @@
+name = "cheer-tec-pos-worker"
+main = "src/index.js"
+compatibility_date = "2026-05-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cheer_tec_pos_db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
