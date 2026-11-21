@@ -714,6 +714,7 @@
                 return alert("Aucun endpoint Worker configuré. Ajoutez l'URL dans Fiscalité & API > Endpoint Worker (ou conservez le stockage local).");
             }
             const t = getActiveTenant();
+            pushAllSalesToHistoryD1(t);
             queueAndSyncTenant(t);
             await flushSyncQueue();
             try {
@@ -753,6 +754,70 @@
             badge.innerText = base
                 ? `Cloud Worker actif (${syncQueue.length} en file)`
                 : "Stockage local actif (Worker optionnel)";
+        }
+
+        let isHydratingSales = false;
+
+        async function pushAllSalesToHistoryD1(tenantObj) {
+            const base = getWorkerApiBase();
+            if (!base || !tenantObj || !tenantObj.id || !Array.isArray(tenantObj.transactions) || tenantObj.transactions.length === 0) return;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 6000);
+            try {
+                await fetch(`${base}/api/sales/history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tenantId: tenantObj.id,
+                        actorEmail: sessionState.email || 'pos-edge',
+                        tickets: tenantObj.transactions.slice(0, 200)
+                    }),
+                    signal: controller.signal
+                });
+            } catch (_) {} finally { clearTimeout(timer); }
+        }
+
+        async function hydrateSalesHistoryFromD1(tenantId, saleDate = '', onAfterMerge = null) {
+            const base = getWorkerApiBase();
+            if (!base || !tenantId || isHydratingSales) return;
+            isHydratingSales = true;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            try {
+                const qs = new URLSearchParams({ tenantId, limit: '200' });
+                if (saleDate) qs.set('date', saleDate);
+                const res = await fetch(`${base}/api/sales/history?${qs.toString()}`, { signal: controller.signal });
+                if (!res.ok) return;
+                const data = await res.json().catch(() => null);
+                const remoteSales = Array.isArray(data?.sales) ? data.sales : [];
+                if (remoteSales.length === 0 || !tenantStore[tenantId]) return;
+                const t = tenantStore[tenantId];
+                const byId = new Map();
+                (t.transactions || []).forEach(tx => { if (tx && tx.id) byId.set(String(tx.id), tx); });
+                let changed = false;
+                remoteSales.forEach(row => {
+                    const remoteTx = row?.ticket && typeof row.ticket === 'object' ? row.ticket : {
+                        id: row.id, date: row.sale_date, created_at: row.created_at,
+                        sale_type: row.sale_type, is_test: Boolean(row.is_test), cancelled: Boolean(row.cancelled),
+                        total_ht: Number(row.total_ht || 0), vat: Number(row.vat || 0), total_ttc: Number(row.total_ttc || 0),
+                        cogs: Number(row.cogs || 0), items: []
+                    };
+                    if (!remoteTx || !remoteTx.id) return;
+                    const existing = byId.get(String(remoteTx.id));
+                    if (!existing) {
+                        byId.set(String(remoteTx.id), remoteTx);
+                        changed = true;
+                    } else if (Boolean(remoteTx.cancelled) !== Boolean(existing.cancelled) || Number(remoteTx.total_ttc || 0) !== Number(existing.total_ttc || 0)) {
+                        byId.set(String(remoteTx.id), { ...existing, ...remoteTx });
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    t.transactions = Array.from(byId.values()).sort((a, b) => String(b.created_at || b.id).localeCompare(String(a.created_at || a.id)));
+                    persistLocalOnly();
+                    if (typeof onAfterMerge === 'function') onAfterMerge();
+                }
+            } catch (_) {} finally { clearTimeout(timer); isHydratingSales = false; }
         }
 
         function getActiveTenant() {
@@ -875,6 +940,18 @@
                     email: authUser.email,
                     activeTenantId: authUser.tenantId || 'CHEER-FLAGSHIP-01'
                 };
+                const targetTenantId = sessionState.activeTenantId;
+                persistLocalOnly();
+                if (typeof syncUserToD1 === 'function') {
+                    syncUserToD1({
+                        email: authUser.email,
+                        passHash: hashSecret(password),
+                        role: authUser.role,
+                        tenantId: targetTenantId,
+                        label: authUser.label || authUser.email
+                    });
+                }
+                await hydrateSalesHistoryFromD1(targetTenantId);
                 persistLocalOnly();
                 appendAuditEvent('AUTH_LOGIN', `${authUser.role.toUpperCase()} • ${authUser.email}`);
                 updateHeader();
@@ -1378,14 +1455,24 @@
             active.forEach(tx => { const rc = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null); rc.buckets.forEach(b => { if (!buckets[b.key]) buckets[b.key] = { label: b.label, rateLabel: `${(b.rate * 100).toFixed(1)}%`, ht: 0, vat: 0, ttc: 0 }; buckets[b.key].ht += b.ht; buckets[b.key].vat += b.vat; buckets[b.key].ttc += b.ttc; }); rc.lines.forEach(l => { if (!prods[l.sku]) prods[l.sku] = { sku: l.sku, name: l.name, rubricLabel: l.rubricLabel, qty: 0, ht: 0, ttc: 0 }; prods[l.sku].qty += l.qty; prods[l.sku].ht += l.lineNetHt; prods[l.sku].ttc += l.lineTtc; }); });
             return { active, ca, ht, vat, totalCogs, buckets: Object.values(buckets), topProducts: Object.values(prods).sort((a, b) => b.qty - a.qty) };
         }
-        function updatePnL() { const t = getActiveTenant(); const d = document.getElementById('pos-date-input').value; document.getElementById('pnl-date-label').innerText = `${d} • ${t.name}`; const data = aggregateTransactions((t.transactions || []).filter(tx => tx.date === d)); document.getElementById('pnl-ca').innerText = fmtMoney(data.ca); document.getElementById('pnl-ht').innerText = fmtMoney(data.ht); document.getElementById('pnl-vat').innerText = fmtMoney(data.vat); document.getElementById('pnl-buckets-body').innerHTML = data.buckets.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">Aucune vente.</td></tr>' : data.buckets.map(b => `<tr><td class="p-3">${b.label}</td><td class="p-3 text-amber-300">${b.rateLabel}</td><td class="p-3">${fmtMoney(b.ht)}</td><td class="p-3">${fmtMoney(b.vat)}</td><td class="p-3 text-sky-400 font-bold">${fmtMoney(b.ttc)}</td></tr>`).join(''); document.getElementById('pnl-products-body').innerHTML = data.topProducts.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-slate-500">Aucun produit.</td></tr>' : data.topProducts.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.rubricLabel}</td><td class="p-3 text-sky-300 font-bold">${p.qty}</td><td class="p-3">${fmtMoney(p.ht)}</td><td class="p-3 text-emerald-400 font-bold">${fmtMoney(p.ttc)}</td></tr>`).join(''); }
+        function updatePnL() {
+            const _pnlTid = getActiveTenant().id;
+            hydrateSalesHistoryFromD1(_pnlTid, document.getElementById('pos-date-input').value, () => { if (parseHashRoute().toLowerCase().startsWith('/pos/rapport') || parseHashRoute().toLowerCase().startsWith('/pos/pnl')) renderPnLData(); });
+            renderPnLData();
+        }
+        function renderPnLData() {
         function generateZReport() { const t = getActiveTenant(); const d = document.getElementById('pos-date-input').value; const data = aggregateTransactions((t.transactions || []).filter(tx => tx.date === d)); zSequenceCounter += 1; document.getElementById('z-report-card').classList.remove('hidden'); document.getElementById('z-report-content').innerHTML = `<p>Z#${zSequenceCounter} • ${t.name} • ${d}</p><p>HT : ${fmtMoney(data.ht)} • TVA : ${fmtMoney(data.vat)} • TTC : <strong class="text-sky-400">${fmtMoney(data.ca)}</strong></p>`; }
         function computeFinancialSnapshot(d) { const t = getActiveTenant(); const data = costScopeMode === 'all_real' ? aggregateTransactions(t.transactions || []) : aggregateTransactions((t.transactions || []).filter(tx => tx.date === d)); const cfg = t.costConfig; const ht = data.ht; const rentEur = ht * (Math.min(7, Number(cfg.rentPct || 0)) / 100); const royaltiesEur = ht * (Number(cfg.royaltiesPct || 0) / 100); const staffEur = ht * (Number(cfg.staffPct || 0) / 100); const maintEur = ht * (Number(cfg.maintPct || 0) / 100); const otherEur = ht * (Number(cfg.otherPct || 0) / 100); const charges = rentEur + royaltiesEur + staffEur + maintEur + otherEur; const preReserveNet = ht - data.totalCogs - charges; const taxR = ht * (Number(cfg.taxReservePct || 0) / 100); const capR = ht * (Number(cfg.capReservePct || 0) / 100); return { ht, totalCogs: data.totalCogs, rentEur, royaltiesEur, staffEur, maintEur, otherEur, charges, preReserveNet, totalSetAside: data.vat + taxR + capR, netGain: preReserveNet - taxR - capR }; }
         function updateCostsView() { const d = document.getElementById('pos-date-input').value; document.getElementById('costs-date-label').innerText = `${getActiveTenant().name} (${costScopeMode === 'all_real' ? 'Cumul' : d})`; const s = computeFinancialSnapshot(d); document.getElementById('costs-real-ht-label').innerText = fmtMoney(s.ht); document.getElementById('calc-rent-eur').innerText = `${fmtMoney(s.rentEur)} (max 7%)`; document.getElementById('calc-royalties-eur').innerText = fmtMoney(s.royaltiesEur); document.getElementById('calc-staff-eur').innerText = fmtMoney(s.staffEur); document.getElementById('calc-maint-eur').innerText = fmtMoney(s.maintEur); document.getElementById('calc-other-eur').innerText = fmtMoney(s.otherEur); document.getElementById('cost-cogs-val').innerText = '-' + fmtMoney(s.totalCogs); document.getElementById('cost-opex-val').innerText = '-' + fmtMoney(s.charges); document.getElementById('cost-pre-reserve-val').innerText = fmtMoney(s.preReserveNet); document.getElementById('cost-reserve-val').innerText = fmtMoney(s.totalSetAside); document.getElementById('cost-net-gain-val').innerText = fmtMoney(s.netGain); document.getElementById('cost-breakdown-summary').innerHTML = `<p>Bénéfice net : <strong class="${s.netGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtMoney(s.netGain)}</strong></p>`; }
         function simulateIoTTelemetry() { iotSensors = [{ id: 'IOT-COLD-01', label: 'Chambre Froide', metric: `${(2.8 + Math.random() * 1.3).toFixed(1)} °C`, status: 'OK', node: getActiveTenant().id }, { id: 'IOT-FREEZE-02', label: 'Congélation', metric: `${(-19.2 + Math.random() * 1.1).toFixed(1)} °C`, status: 'OK', node: getActiveTenant().id }, { id: 'IOT-PWR-03', label: 'Énergie', metric: `${(4.2 + Math.random() * 1.5).toFixed(1)} kW`, status: 'OK', node: getActiveTenant().id }]; renderIoTSensors(); }
         function renderIoTSensors() { document.getElementById('iot-sensors-grid').innerHTML = iotSensors.map(s => `<div class="bg-slate-950 border border-slate-800 p-3 rounded-xl"><div class="flex justify-between"><span class="font-bold text-sky-300">${s.id}</span><span class="text-[10px] text-emerald-400">${s.status}</span></div><p class="text-slate-200 mt-1">${s.label}</p><p class="text-amber-300 font-bold mt-1">${s.metric}</p></div>`).join(''); }
         function processScannedLot() { const t = getActiveTenant(); const code = (document.getElementById('scanner-code-input').value || '').trim().toUpperCase(); const addQty = Math.max(0, parseInt(document.getElementById('scanner-add-qty').value, 10) || 0); const m = t.ingredients.find(i => (i.lot || '').toUpperCase().startsWith(code) || (i.id || '').toUpperCase() === code); if (!m || addQty <= 0) return alert("Lot ou quantité invalide."); t.ingredients = t.ingredients.map(i => i.id === m.id ? { ...i, initialQty: Number(i.initialQty || 0) + addQty } : i); appendAuditEvent('STOCK_SCAN', `+${addQty} ${m.unit} sur ${m.name}`); queueAndSyncTenant(t); document.getElementById('scanner-code-input').value = ''; document.getElementById('scanner-feedback').innerText = `+${addQty} ${m.unit} sur ${m.name}`; updateStockView(); }
-        function updateHistory() { const t = getActiveTenant(); const list = t.transactions || []; document.getElementById('history-container').innerHTML = list.length === 0 ? '<p class="text-slate-500 text-center py-8">Aucun ticket.</p>' : list.map((tx, idx) => `<div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border border-slate-800 bg-slate-950 hover:border-sky-500"><div class="flex justify-between font-bold text-sm"><span>${tx.id} ${tx.cancelled ? '(ANNULÉ)' : (tx.is_test ? '(TEST)' : '')}</span><span class="text-sky-400">${fmtMoney(tx.total_ttc)}</span></div><p class="text-[10px] text-slate-500">${tx.created_at}</p></div>`).join(''); }
+        function updateHistory() {
+            const _hisTid = getActiveTenant().id;
+            hydrateSalesHistoryFromD1(_hisTid, '', () => { if (parseHashRoute().toLowerCase().startsWith('/pos/historique')) renderHistoryData(); });
+            renderHistoryData();
+        }
+        function renderHistoryData() {
         function buildQrSvg(payload) { const size = 21; const cells = Array.from({ length: size }, () => Array(size).fill(false)); const finder = (r0, c0) => { for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (r0 + r < size && c0 + c < size) cells[r0 + r][c0 + c] = (r === 0 || r === 6 || c === 0 || c === 6) || (r >= 2 && r <= 4 && c >= 2 && c <= 4); }; finder(0, 0); finder(0, size - 7); finder(size - 7, 0); const h = parseInt(hashSecret(payload).slice(0, 8), 16); for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (!((r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8))) cells[r][c] = (((h ^ Math.imul(r + 1, 73856093) ^ Math.imul(c + 1, 19349663)) >>> 0) % 2) === 0; const px = 5; const rects = []; for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (cells[r][c]) rects.push(`<rect x="${c * px}" y="${r * px}" width="${px}" height="${px}" fill="#0f172a"/>`); return `<svg width="${size * px}" height="${size * px}" viewBox="0 0 ${size * px} ${size * px}" xmlns="http://www.w3.org/2000/svg">${rects.join('')}</svg>`; }
         function openTicketModal(index) { const t = getActiveTenant(); selectedTicketIndex = index; const tx = t.transactions[index]; if (!tx) return; const bd = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null); document.getElementById('modal-tx-id').innerText = tx.id; document.getElementById('modal-tx-meta').innerHTML = `<p>${t.name} • ${tx.created_at}</p>`; document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `<div class="py-1 flex justify-between"><span>${l.name} (x${l.qty})</span><span>${l.lineNetHt.toFixed(2)}</span></div>`).join(''); document.getElementById('modal-tx-totals').innerHTML = `<div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${fmtMoney(bd.totalTtc)}</span></div>`; document.getElementById('modal-qr-container').innerHTML = buildQrSvg(`${tx.id}|${t.id}|${bd.totalTtc.toFixed(2)}`); document.getElementById('modal-qr-summary').innerText = `${t.id}/${tx.id}`; document.getElementById('ticket-modal').classList.remove('hidden'); }
         function closeTicketModal() { document.getElementById('ticket-modal').classList.add('hidden'); }
