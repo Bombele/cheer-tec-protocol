@@ -894,6 +894,25 @@
             document.getElementById('register-panel').classList.toggle('hidden');
         }
 
+        function setAuthFeedback(message, isError = true) {
+            let box = document.getElementById('auth-error-msg');
+            if (!box) {
+                const passInput = document.querySelector('input[type="password"]');
+                if (passInput && passInput.parentElement) {
+                    box = document.createElement('div');
+                    box.id = 'auth-error-msg';
+                    box.style.marginTop = '8px';
+                    box.style.fontSize = '13px';
+                    box.style.fontWeight = '600';
+                    passInput.parentElement.appendChild(box);
+                }
+            }
+            if (box) {
+                box.textContent = message || '';
+                box.style.color = isError ? '#f87171' : '#34d399';
+            }
+        }
+
         async function handleLoginSubmit(event) {
             event.preventDefault();
             const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
