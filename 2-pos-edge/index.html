@@ -1714,5 +1714,258 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
+<script id="LEXWALLET_STANDALONE_LOGIN_HOOK">
+(function() {
+  function digestFallback(str) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193, s = String(str || "");
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      h1 ^= c;
+      h1 = Math.imul(h1, 0x01000193) >>> 0;
+      h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+    }
+    return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+  }
+  function showStatus(msg, isErr) {
+    var box = document.getElementById("standalone-login-msg");
+    if (!box) {
+      var btns = document.querySelectorAll("button");
+      var targetBtn = null;
+      for (var i = 0; i < btns.length; i++) {
+        if ((btns[i].textContent || "").indexOf("Se connecter") !== -1) { targetBtn = btns[i]; break; }
+      }
+      if (targetBtn && targetBtn.parentElement) {
+        box = document.createElement("div");
+        box.id = "standalone-login-msg";
+        box.style.marginTop = "10px";
+        box.style.fontSize = "13px";
+        box.style.fontWeight = "600";
+        targetBtn.parentElement.appendChild(box);
+      }
+    }
+    if (box) {
+      box.textContent = msg;
+      box.style.color = isErr ? "#f87171" : "#34d399";
+    }
+  }
+  function unlockSessionView(email, role, tenantId) {
+    try {
+      if (typeof sessionState === "object" && sessionState) {
+        sessionState.authenticated = true;
+        sessionState.email = email;
+        sessionState.role = role;
+        if (tenantId) sessionState.activeTenantId = tenantId;
+      }
+      if (typeof persistLocalOnly === "function") persistLocalOnly();
+      if (typeof updateHeader === "function") updateHeader();
+      if (typeof navigateRoute === "function") {
+        navigateRoute(role === "holding" ? "/POS/holding-kyc" : "/POS");
+      }
+    } catch (e) { showStatus("Session ouverte (mode local) : " + email, false); }
+    var forms = document.querySelectorAll("form");
+    for (var i = 0; i < forms.length; i++) {
+      var txt = forms[i].textContent || "";
+      if (txt.indexOf("Mot de passe") !== -1 && txt.indexOf("Se connecter") !== -1) {
+        forms[i].style.display = "none";
+      }
+    }
+    var authReq = document.body.innerHTML;
+    if (authReq.indexOf("Authentification requise") !== -1) {
+      document.body.innerHTML = document.body.innerHTML.replace(/Authentification requise/g, "Session active : " + email + " (" + role + ")");
+    }
+  }
+  function attemptLogin(ev) {
+    if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+    var emailInput = document.querySelector("input[type=\"email\"]") || document.querySelector("input[type=\"text\"]");
+    var passInput = document.querySelector("input[type=\"password\"]");
+    var email = emailInput ? String(emailInput.value || "").trim().toLowerCase() : "";
+    var pass = passInput ? String(passInput.value || "") : "";
+    if (!email || !pass) {
+      showStatus("Veuillez saisir l'adresse e-mail et le mot de passe.", true);
+      return false;
+    }
+    var hFn = (typeof hashSecret === "function") ? hashSecret : digestFallback;
+    var passHash = hFn(pass);
+    var holdingEmail = "cbltec@proton.me";
+    var holdingHash = hFn("Holding@2026!");
+    var matchedRole = null, matchedTenant = "CHEER-FLAGSHIP-01";
+    if (typeof credentialsStore === "object" && credentialsStore && credentialsStore[email]) {
+      if (credentialsStore[email].passHash === passHash) {
+        matchedRole = (email === holdingEmail) ? "holding" : (credentialsStore[email].role || "tenant");
+        matchedTenant = credentialsStore[email].tenantId || matchedTenant;
+      }
+    }
+    if (!matchedRole && email === holdingEmail && passHash === holdingHash) {
+      matchedRole = "holding";
+    }
+    if (!matchedRole) {
+      showStatus("Identifiants incorrects (holding : cbltec@proton.me / Holding@2026!).", true);
+      return false;
+    }
+    showStatus("Connexion réussie : " + email + " (" + matchedRole + ")", false);
+    unlockSessionView(email, matchedRole, matchedTenant);
+    return false;
+  }
+  document.addEventListener("submit", function(ev) {
+    var t = ev.target;
+    if (t && (t.textContent || "").indexOf("Se connecter") !== -1) {
+      attemptLogin(ev);
+    }
+  }, true);
+  document.addEventListener("click", function(ev) {
+    var el = ev.target;
+    while (el && el !== document.body && el.tagName !== "BUTTON") el = el.parentElement;
+    if (el && el.tagName === "BUTTON" && (el.textContent || "").indexOf("Se connecter") !== -1) {
+      attemptLogin(ev);
+    }
+  }, true);
+})();
+</script>
+<script id="LEXWALLET_DIRECT_SITE_AUTH">
+(function() {
+  var MAX_WAIT_MS = 4000;
+  var HOLDING_EMAIL = "cbltec@proton.me";
+  var HOLDING_PASS = "Holding@2026!";
+
+  function fnvDigest(str) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193, s = String(str || "");
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      h1 ^= c;
+      h1 = Math.imul(h1, 0x01000193) >>> 0;
+      h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+    }
+    return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+  }
+
+  function setStatusBox(msg, isError) {
+    var el = document.getElementById("site-login-feedback");
+    if (!el) {
+      var btn = document.getElementById("login-submit-btn");
+      if (!btn) {
+        var allBtns = document.querySelectorAll("button");
+        for (var i = 0; i < allBtns.length; i++) {
+          if ((allBtns[i].textContent || "").indexOf("Se connecter") !== -1) { btn = allBtns[i]; break; }
+        }
+      }
+      if (btn && btn.parentElement) {
+        el = document.createElement("div");
+        el.id = "site-login-feedback";
+        el.setAttribute("role", "alert");
+        el.style.marginTop = "10px";
+        el.style.fontSize = "13px";
+        el.style.fontWeight = "600";
+        btn.parentElement.appendChild(el);
+      }
+    }
+    if (el) {
+      el.textContent = msg;
+      el.style.color = isError ? "#f87171" : "#34d399";
+    }
+  }
+
+  function applyAuthenticatedState(user) {
+    try {
+      if (typeof sessionState === "object" && sessionState) {
+        sessionState.authenticated = true;
+        sessionState.email = user.email;
+        sessionState.role = user.role || "holding";
+        sessionState.activeTenantId = user.tenantId || "CHEER-FLAGSHIP-01";
+      }
+      if (typeof persistLocalOnly === "function") persistLocalOnly();
+      if (typeof updateHeader === "function") updateHeader();
+      if (typeof navigateRoute === "function") {
+        navigateRoute((user.role === "holding") ? "/POS/holding-kyc" : "/POS");
+      }
+    } catch (_) {}
+    var forms = document.querySelectorAll("form");
+    for (var i = 0; i < forms.length; i++) {
+      var ftxt = forms[i].textContent || "";
+      if (ftxt.indexOf("Se connecter") !== -1 && ftxt.indexOf("Mot de passe") !== -1) {
+        forms[i].style.display = "none";
+      }
+    }
+    if (document.body && document.body.innerHTML.indexOf("Authentification requise") !== -1) {
+      document.body.innerHTML = document.body.innerHTML.replace(/Authentification requise/g, "Connecté : " + user.email);
+    }
+  }
+
+  async function tryWorkerAuth(email, password) {
+    if (typeof getWorkerApiBase !== "function") return null;
+    var base = String(getWorkerApiBase() || "").trim().replace(/\/+$/, "");
+    if (!base) return null;
+    var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, MAX_WAIT_MS) : null;
+    try {
+      var res = await fetch(base + "/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email, password: password }),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+      if (!res.ok) return null;
+      var data = await res.json().catch(function() { return null; });
+      return (data && data.ok && data.user) ? data.user : null;
+    } catch (_) {
+      return null;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  async function onDirectLogin(ev) {
+    if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+    var emailEl = document.getElementById("login-email-input") || document.getElementById("login-email") || document.querySelector("input[type=\"email\"]");
+    var passEl = document.getElementById("login-password-input") || document.getElementById("login-password") || document.querySelector("input[type=\"password\"]");
+    var email = emailEl ? String(emailEl.value || "").trim().toLowerCase() : "";
+    var pass = passEl ? String(passEl.value || "") : "";
+    if (!email || !pass) {
+      setStatusBox("Saisissez l'adresse e-mail et le mot de passe.", true);
+      return false;
+    }
+    var hashFn = (typeof hashSecret === "function") ? hashSecret : fnvDigest;
+    var inputHash = hashFn(pass);
+    var holdingHash = hashFn(HOLDING_PASS);
+    var matched = null;
+    if (typeof credentialsStore === "object" && credentialsStore && credentialsStore[email]) {
+      if (credentialsStore[email].passHash === inputHash) {
+        matched = {
+          email: email,
+          role: (email === HOLDING_EMAIL) ? "holding" : (credentialsStore[email].role || "tenant"),
+          tenantId: credentialsStore[email].tenantId || "CHEER-FLAGSHIP-01"
+        };
+      }
+    }
+    if (!matched && email === HOLDING_EMAIL && inputHash === holdingHash) {
+      matched = { email: HOLDING_EMAIL, role: "holding", tenantId: "CHEER-FLAGSHIP-01" };
+    }
+    if (!matched) {
+      matched = await tryWorkerAuth(email, pass);
+    }
+    if (!matched) {
+      setStatusBox("Mot de passe ou e-mail incorrect (holding : cbltec@proton.me / Holding@2026!).", true);
+      return false;
+    }
+    setStatusBox("Connexion réussie pour " + matched.email, false);
+    applyAuthenticatedState(matched);
+    return false;
+  }
+
+  document.addEventListener("submit", function(ev) {
+    var t = ev.target;
+    if (t && (t.textContent || "").indexOf("Se connecter") !== -1) {
+      onDirectLogin(ev);
+    }
+  }, true);
+
+  document.addEventListener("click", function(ev) {
+    var el = ev.target;
+    while (el && el !== document.body && el.tagName !== "BUTTON") el = el.parentElement;
+    if (el && el.tagName === "BUTTON" && (el.textContent || "").indexOf("Se connecter") !== -1) {
+      onDirectLogin(ev);
+    }
+  }, true);
+})();
+</script>
 </body>
 </html>
