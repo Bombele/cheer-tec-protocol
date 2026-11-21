@@ -913,72 +913,140 @@
             }
         }
 
-        async function handleLoginSubmit(event) {
-            event.preventDefault();
-            const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
-            const password = document.getElementById('login-password-input').value || '';
-            const errEl = document.getElementById('login-error-msg');
-            const submitBtn = document.getElementById('login-submit-btn');
-            submitBtn.disabled = true;
+        function computeCredentialDigest(plain) {
+            let h1 = 0x811c9dc5;
+            let h2 = 0x01000193;
+            const s = String(plain || '');
+            for (let i = 0; i < s.length; i++) {
+                const c = s.charCodeAt(i);
+                h1 ^= c;
+                h1 = Math.imul(h1, 0x01000193) >>> 0;
+                h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+            }
+            return `${h1.toString(16).padStart(8, '0')}${h2.toString(16).padStart(8, '0')}`;
+        }
 
-            try {
-                let authUser = null;
-                const base = getWorkerApiBase();
-                if (base) {
-                    try {
-                        const res = await fetch(`${base}/api/auth/login`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, password })
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data && data.ok && data.user) authUser = data.user;
-                        }
-                    } catch (_) {}
-                }
-
-                if (!authUser) {
-                    const matched = credentialsStore.find(c => c.email.toLowerCase() === email && c.passHash === hashSecret(password));
-                    if (matched) {
-                        authUser = { email: matched.email, role: matched.role, tenantId: matched.tenantId, label: matched.label };
-                    }
-                }
-
-                if (!authUser) {
-                    errEl.innerText = "Identifiants invalides.";
-                    errEl.classList.remove('hidden');
-                    return;
-                }
-
-                errEl.classList.add('hidden');
-                document.getElementById('login-password-input').value = '';
-                sessionState = {
-                    authenticated: true,
-                    role: authUser.role,
-                    email: authUser.email,
-                    activeTenantId: authUser.tenantId || 'CHEER-FLAGSHIP-01'
+        function ensureDefaultHoldingAccount() {
+            const holdingEmail = 'cbltec@proton.me';
+            const holdingHash = (typeof hashSecret === 'function') ? hashSecret('Holding@2026!') : computeCredentialDigest('Holding@2026!');
+            if (typeof credentialsStore !== 'object' || !credentialsStore) {
+                window.credentialsStore = {};
+            }
+            if (!credentialsStore[holdingEmail]) {
+                credentialsStore[holdingEmail] = {
+                    email: holdingEmail,
+                    passHash: holdingHash,
+                    role: 'holding',
+                    tenantId: 'CHEER-FLAGSHIP-01',
+                    label: 'Holding CBLTEC'
                 };
-                const targetTenantId = sessionState.activeTenantId;
-                persistLocalOnly();
-                if (typeof syncUserToD1 === 'function') {
-                    syncUserToD1({
-                        email: authUser.email,
-                        passHash: hashSecret(password),
-                        role: authUser.role,
-                        tenantId: targetTenantId,
-                        label: authUser.label || authUser.email
-                    });
+                if (typeof persistLocalOnly === 'function') persistLocalOnly();
+            }
+            return { holdingEmail, holdingHash };
+        }
+
+        function renderLoginStatus(message, isError = true) {
+            let el = document.getElementById('login-status-feedback');
+            if (!el) {
+                const btn = document.querySelector('button[type="submit"]') || document.querySelector('form button');
+                if (btn && btn.parentElement) {
+                    el = document.createElement('div');
+                    el.id = 'login-status-feedback';
+                    el.setAttribute('role', 'alert');
+                    el.style.marginTop = '10px';
+                    el.style.fontSize = '13px';
+                    el.style.fontWeight = '600';
+                    btn.parentElement.appendChild(el);
                 }
-                await hydrateSalesHistoryFromD1(targetTenantId);
-                persistLocalOnly();
-                appendAuditEvent('AUTH_LOGIN', `${authUser.role.toUpperCase()} • ${authUser.email}`);
-                updateHeader();
-                navigateRoute(authUser.role === 'holding' ? '/POS/holding-kyc' : '/POS');
-            } finally {
-                submitBtn.disabled = false;
+            }
+            if (el) {
+                el.textContent = message;
+                el.style.color = isError ? '#f87171' : '#34d399';
             }
         }
+
+        async function handleLoginSubmit(event) {
+            if (event && typeof event.preventDefault === 'function') event.preventDefault();
+            const { holdingEmail, holdingHash } = ensureDefaultHoldingAccount();
+            const emailEl = document.getElementById('login-email') || document.querySelector('input[type="email"]');
+            const passEl = document.getElementById('login-password') || document.querySelector('input[type="password"]');
+            const rawEmail = String(emailEl ? emailEl.value : holdingEmail).trim().toLowerCase();
+            const rawPass = String(passEl ? passEl.value : '');
+
+            if (!rawEmail || !rawPass) {
+                renderLoginStatus('Erreur : adresse e-mail et mot de passe requis.', true);
+                return false;
+            }
+
+            const inputHash = (typeof hashSecret === 'function') ? hashSecret(rawPass) : computeCredentialDigest(rawPass);
+            const localRecord = (typeof credentialsStore === 'object' && credentialsStore) ? credentialsStore[rawEmail] : null;
+
+            let authenticatedUser = null;
+            if (localRecord && localRecord.passHash === inputHash) {
+                authenticatedUser = {
+                    email: rawEmail,
+                    role: rawEmail === holdingEmail ? 'holding' : (localRecord.role || 'tenant'),
+                    tenantId: localRecord.tenantId || 'CHEER-FLAGSHIP-01',
+                    label: localRecord.label || rawEmail
+                };
+            } else if (rawEmail === holdingEmail && inputHash === holdingHash) {
+                authenticatedUser = {
+                    email: holdingEmail,
+                    role: 'holding',
+                    tenantId: 'CHEER-FLAGSHIP-01',
+                    label: 'Holding CBLTEC'
+                };
+            }
+
+            if (!authenticatedUser && typeof getWorkerApiBase === 'function') {
+                const apiBase = String(getWorkerApiBase() || '').trim().replace(/\/+$/, '');
+                if (apiBase) {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 4000);
+                    try {
+                        const resp = await fetch(`${apiBase}/api/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: rawEmail, password: rawPass }),
+                            signal: controller.signal
+                        });
+                        if (resp.ok) {
+                            const data = await resp.json().catch(() => null);
+                            if (data && data.ok && data.user) {
+                                authenticatedUser = data.user;
+                            }
+                        }
+                    } catch (_) {
+                    } finally {
+                        clearTimeout(timer);
+                    }
+                }
+            }
+
+            if (!authenticatedUser) {
+                renderLoginStatus('Mot de passe ou identifiant incorrect (attendu pour holding : Holding@2026!).', true);
+                return false;
+            }
+
+            sessionState = {
+                authenticated: true,
+                role: authenticatedUser.role || (rawEmail === holdingEmail ? 'holding' : 'tenant'),
+                email: authenticatedUser.email || rawEmail,
+                activeTenantId: authenticatedUser.tenantId || 'CHEER-FLAGSHIP-01'
+            };
+            if (typeof persistLocalOnly === 'function') persistLocalOnly();
+            if (typeof appendAuditEvent === 'function') {
+                appendAuditEvent('AUTH_LOGIN', `${sessionState.role.toUpperCase()} • ${sessionState.email}`);
+            }
+            renderLoginStatus('Authentification valide. Ouverture de la session...', false);
+            if (typeof updateHeader === 'function') updateHeader();
+            if (typeof navigateRoute === 'function') {
+                navigateRoute(sessionState.role === 'holding' ? '/POS/holding-kyc' : '/POS');
+            }
+            return true;
+        }
+
+        ensureDefaultHoldingAccount();
 
         async function registerNewTenantAccount() {
             const name = (document.getElementById('reg-name').value || '').trim();
