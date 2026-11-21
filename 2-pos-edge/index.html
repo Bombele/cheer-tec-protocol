@@ -109,7 +109,7 @@
                     </button>
                     <button onclick="navigateRoute('/POS/stocks-iot-scanners')" class="text-left bg-slate-950 hover:border-emerald-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-emerald-300 font-bold text-sm">/POS/stocks-iot-scanners</p>
-                        <p class="text-slate-400">Stocks & casse du point de vente, capteurs IoT et scanner lots.</p>
+                        <p class="text-slate-400">Stock réel déduit par tickets (plats & boissons), casse, IoT et lots.</p>
                     </button>
                     <button onclick="navigateRoute('/POS/fournisseurs-recettes')" class="text-left bg-slate-950 hover:border-amber-500 border border-slate-800 p-4 rounded-xl space-y-1.5 transition">
                         <p class="text-amber-300 font-bold text-sm">/POS/fournisseurs-recettes</p>
@@ -347,12 +347,16 @@
         <!-- STOCKS, IOT & SCANNER -->
         <section id="view-supply" class="hidden bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6 font-mono text-xs">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-3">
-                <div><p class="text-[11px] text-sky-400">Chemin : /POS/stocks-iot-scanners</p><h2 class="text-base font-bold text-emerald-400">Stocks, Capteurs IoT & Scanner</h2></div>
+                <div>
+                    <p class="text-[11px] text-sky-400">Chemin : /POS/stocks-iot-scanners</p>
+                    <h2 class="text-base font-bold text-emerald-400">Stocks Réels (Tickets & Boissons), Capteurs IoT & Scanner</h2>
+                    <p id="stock-tickets-summary" class="text-[11px] text-slate-400 mt-1">Déduction calculée depuis les tickets validés.</p>
+                </div>
                 <div class="flex flex-wrap gap-2"><button onclick="switchSupplySubTab('stock')" id="sup-tab-stock" class="px-3 py-1.5 rounded font-bold bg-emerald-600 text-white">Stock & Casse</button><button onclick="switchSupplySubTab('iot')" id="sup-tab-iot" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Capteurs IoT</button><button onclick="switchSupplySubTab('scanner')" id="sup-tab-scanner" class="px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300">Scanner Lots</button></div>
             </div>
             <div id="sup-panel-stock" class="space-y-4">
                 <div class="flex flex-wrap gap-2"><button onclick="exportFullAuditBundle()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">Export Audit JSON</button><button onclick="exportBackupJson()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-2 rounded font-bold">Sauvegarde JSON</button><label class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded font-bold cursor-pointer">Import JSON<input type="file" accept=".json" onchange="importBackupJson(event)" class="hidden"/></label></div>
-                <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800"><table class="w-full text-left font-mono text-xs"><thead class="border-b border-slate-800 text-slate-400"><tr><th class="p-3">Ingrédient</th><th class="p-3">Fournisseur</th><th class="p-3">Départ</th><th class="p-3">Consommé</th><th class="p-3">Casse</th><th class="p-3">Actuel</th><th class="p-3">Seuil Min</th></tr></thead><tbody id="stock-table-body" class="divide-y divide-slate-900"></tbody></table></div>
+                <div class="overflow-x-auto bg-slate-950 rounded-xl border border-slate-800"><table class="w-full text-left font-mono text-xs"><thead class="border-b border-slate-800 text-slate-400"><tr><th class="p-3">Ingrédient / Boisson</th><th class="p-3">Fournisseur</th><th class="p-3">Départ</th><th class="p-3">Consommé (Tickets)</th><th class="p-3">Casse</th><th class="p-3">Actuel</th><th class="p-3">Seuil Min</th></tr></thead><tbody id="stock-table-body" class="divide-y divide-slate-900"></tbody></table></div>
             </div>
             <div id="sup-panel-iot" class="hidden space-y-4"><div class="flex justify-between items-center"><h3 class="text-sm font-bold text-amber-300">Capteurs IoT</h3><button onclick="simulateIoTTelemetry()" class="bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold">Actualiser</button></div><div id="iot-sensors-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div></div>
             <div id="sup-panel-scanner" class="hidden space-y-4"><h3 class="text-sm font-bold text-emerald-300">Scanner Lot</h3><div class="flex flex-col sm:flex-row gap-2"><input type="text" id="scanner-code-input" placeholder="Code lot (ex: LOT-CHED-1126)" class="bg-slate-950 border border-slate-700 px-3 py-2 rounded text-white flex-1"/><input type="number" min="0" id="scanner-add-qty" value="25" class="w-28 bg-slate-950 border border-slate-700 px-3 py-2 rounded text-white text-right"/><button onclick="processScannedLot()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded font-bold">Valider (+Stock)</button></div><p id="scanner-feedback" class="text-[11px] text-sky-300"></p></div>
@@ -433,7 +437,7 @@
     <script>
         const HOLDING_ADMIN_EMAIL = 'cbltec@proton.me';
         const CREDENTIALS_STORE_KEY = 'lexwallet_auth_credentials_v2';
-        const TENANT_STORE_KEY = 'lexwallet_tenant_store_v3';
+        const TENANT_STORE_KEY = 'lexwallet_tenant_store_v4';
         const SESSION_STATE_KEY = 'lexwallet_session_v3';
         const WORKER_URL_KEY = 'lexwallet_worker_api_v1';
         const SYNC_QUEUE_KEY = 'lexwallet_sync_queue_v1';
@@ -462,8 +466,10 @@
             { id: 'ING-TRUFFE', name: 'Crème Truffe', unit: 'dose', unitCost: 0.70, initialQty: 150, wasteQty: 0, minThreshold: 40, supplierId: 'SUP-ELEVAGE', lot: 'LOT-TRUF-1126', orderQty: 120 },
             { id: 'ING-FRITES', name: 'Pommes de Terre / Frites', unit: 'portion', unitCost: 0.85, initialQty: 300, wasteQty: 0, minThreshold: 75, supplierId: 'SUP-BOULANGERIE', lot: 'LOT-FRIT-1126', orderQty: 250 },
             { id: 'ING-FROMAGE', name: 'Assortiment Fromages', unit: 'plateau', unitCost: 4.50, initialQty: 80, wasteQty: 0, minThreshold: 20, supplierId: 'SUP-ELEVAGE', lot: 'LOT-FROM-1126', orderQty: 60 },
-            { id: 'ING-SOFT', name: 'Boisson Soft / Jus', unit: 'unité', unitCost: 1.00, initialQty: 200, wasteQty: 0, minThreshold: 50, supplierId: 'SUP-CAVE', lot: 'LOT-SOFT-1126', orderQty: 180 },
-            { id: 'ING-VIN', name: 'Vin / Spiritueux', unit: 'verre/dose', unitCost: 2.00, initialQty: 150, wasteQty: 0, minThreshold: 40, supplierId: 'SUP-CAVE', lot: 'LOT-VINS-1126', orderQty: 120 }
+            { id: 'ING-COLA', name: 'Boisson Artisanale / Limonade (33cl)', unit: 'unité', unitCost: 1.00, initialQty: 250, wasteQty: 0, minThreshold: 60, supplierId: 'SUP-CAVE', lot: 'LOT-COLA-1126', orderQty: 200 },
+            { id: 'ING-JUICE', name: 'Jus Pressé Maison (25cl)', unit: 'unité', unitCost: 1.25, initialQty: 200, wasteQty: 0, minThreshold: 50, supplierId: 'SUP-CAVE', lot: 'LOT-JUIC-1126', orderQty: 150 },
+            { id: 'ING-WINE', name: 'Verre de Vin Sélection', unit: 'verre', unitCost: 2.00, initialQty: 200, wasteQty: 0, minThreshold: 50, supplierId: 'SUP-CAVE', lot: 'LOT-WINE-1126', orderQty: 150 },
+            { id: 'ING-SPIRIT', name: 'Spiritueux Signature (4cl)', unit: 'dose', unitCost: 2.60, initialQty: 150, wasteQty: 0, minThreshold: 40, supplierId: 'SUP-CAVE', lot: 'LOT-SPIR-1126', orderQty: 120 }
         ];
 
         const CATALOG_CATEGORIES = [
@@ -474,12 +480,12 @@
                 { sku: 'CHEESE-PLATE-01', name: 'Plateau de Fromages Affinés', desc: 'Sélection du terroir', price_ht: 14.00, unit_cogs: 4.50, baseGroup: 'plats_sur_place', recipe: { 'ING-FROMAGE': 1 } }
             ]},
             { id: 'CAT-SOFT', title: 'Boissons Normal / Soft', items: [
-                { sku: 'BEV-COLA-01', name: 'Boisson Artisanale / Limonade', desc: '33cl', price_ht: 3.50, unit_cogs: 1.00, baseGroup: 'boissons_soft', recipe: { 'ING-SOFT': 1 } },
-                { sku: 'BEV-JUICE-01', name: 'Jus Pressé Maison', desc: '25cl frais', price_ht: 4.20, unit_cogs: 1.25, baseGroup: 'boissons_soft', recipe: { 'ING-SOFT': 1 } }
+                { sku: 'BEV-COLA-01', name: 'Boisson Artisanale / Limonade', desc: '33cl', price_ht: 3.50, unit_cogs: 1.00, baseGroup: 'boissons_soft', recipe: { 'ING-COLA': 1 } },
+                { sku: 'BEV-JUICE-01', name: 'Jus Pressé Maison', desc: '25cl frais', price_ht: 4.20, unit_cogs: 1.25, baseGroup: 'boissons_soft', recipe: { 'ING-JUICE': 1 } }
             ]},
             { id: 'CAT-ALCOOL', title: 'Vins, Alcools & Spiritueux', items: [
-                { sku: 'BEV-WINE-01', name: 'Verre de Vin Sélection', desc: 'Rouge / Blanc / Rosé', price_ht: 6.00, unit_cogs: 2.00, baseGroup: 'vins_alcools', recipe: { 'ING-VIN': 1 } },
-                { sku: 'SPIRIT-01', name: 'Spiritueux Signature (4cl)', desc: 'Service bar', price_ht: 8.50, unit_cogs: 2.60, baseGroup: 'vins_alcools', recipe: { 'ING-VIN': 1 } }
+                { sku: 'BEV-WINE-01', name: 'Verre de Vin Sélection', desc: 'Rouge / Blanc / Rosé', price_ht: 6.00, unit_cogs: 2.00, baseGroup: 'vins_alcools', recipe: { 'ING-WINE': 1 } },
+                { sku: 'SPIRIT-01', name: 'Spiritueux Signature (4cl)', desc: 'Service bar', price_ht: 8.50, unit_cogs: 2.60, baseGroup: 'vins_alcools', recipe: { 'ING-SPIRIT': 1 } }
             ]}
         ];
 
@@ -513,7 +519,51 @@
             return '';
         }
 
-        function buildDefaultTenant(id, name, accountType, country, stockQty = 200, kyc = {}) {
+        function normalizeIngredientsWithBeverages(existingIngredients, stockQty = 250, tenantSuffix = '01') {
+            const existingMap = {};
+            (Array.isArray(existingIngredients) ? existingIngredients : []).forEach(ing => {
+                if (ing && ing.id) existingMap[ing.id] = { ...ing };
+            });
+
+            // Migrer les anciens identifiants génériques ING-SOFT / ING-VIN si présents
+            if (existingMap['ING-SOFT'] && !existingMap['ING-COLA']) {
+                existingMap['ING-COLA'] = { ...existingMap['ING-SOFT'], id: 'ING-COLA', name: 'Boisson Artisanale / Limonade (33cl)', lot: `LOT-COLA-1126-${tenantSuffix}` };
+            }
+            if (existingMap['ING-SOFT'] && !existingMap['ING-JUICE']) {
+                existingMap['ING-JUICE'] = { ...existingMap['ING-SOFT'], id: 'ING-JUICE', name: 'Jus Pressé Maison (25cl)', lot: `LOT-JUIC-1126-${tenantSuffix}` };
+            }
+            if (existingMap['ING-VIN'] && !existingMap['ING-WINE']) {
+                existingMap['ING-WINE'] = { ...existingMap['ING-VIN'], id: 'ING-WINE', name: 'Verre de Vin Sélection', lot: `LOT-WINE-1126-${tenantSuffix}` };
+            }
+            if (existingMap['ING-VIN'] && !existingMap['ING-SPIRIT']) {
+                existingMap['ING-SPIRIT'] = { ...existingMap['ING-VIN'], id: 'ING-SPIRIT', name: 'Spiritueux Signature (4cl)', lot: `LOT-SPIR-1126-${tenantSuffix}` };
+            }
+
+            return DEFAULT_INGREDIENTS_BASE.map(baseIng => {
+                const cur = existingMap[baseIng.id];
+                if (cur) {
+                    return {
+                        ...baseIng,
+                        ...cur,
+                        name: baseIng.name,
+                        unit: baseIng.unit,
+                        unitCost: Number(cur.unitCost ?? baseIng.unitCost),
+                        initialQty: Number(cur.initialQty ?? stockQty),
+                        wasteQty: Math.max(0, Number(cur.wasteQty ?? 0)),
+                        minThreshold: Number(cur.minThreshold ?? baseIng.minThreshold),
+                        lot: cur.lot || `${baseIng.lot}-${tenantSuffix}`
+                    };
+                }
+                return {
+                    ...baseIng,
+                    initialQty: stockQty,
+                    wasteQty: 0,
+                    lot: `${baseIng.lot}-${tenantSuffix}`
+                };
+            });
+        }
+
+        function buildDefaultTenant(id, name, accountType, country, stockQty = 250, kyc = {}) {
             const preset = JURISDICTION_PRESETS[country] || JURISDICTION_PRESETS.BE;
             return {
                 id,
@@ -525,7 +575,7 @@
                 transactions: [],
                 invoices: [],
                 hrShifts: [],
-                ingredients: DEFAULT_INGREDIENTS_BASE.map(ing => ({ ...ing, initialQty: stockQty, wasteQty: 0, lot: `${ing.lot}-${id.slice(-2)}` })),
+                ingredients: normalizeIngredientsWithBeverages([], stockQty, id.slice(-2)),
                 suppliers: DEFAULT_SUPPLIERS.map(s => ({ ...s })),
                 validatedPOs: [],
                 auditEntries: []
@@ -535,15 +585,26 @@
         function loadTenants() {
             const defaults = {
                 'CHEER-FLAGSHIP-01': buildDefaultTenant('CHEER-FLAGSHIP-01', 'Cheer Flagship Bruxelles', 'restaurant_propre', 'BE', 250, { legalId: 'BE0700111222', representative: 'Direction Holding', kycStatus: 'Vérifié' }),
-                'CHEER-FR-LYON-02': buildDefaultTenant('CHEER-FR-LYON-02', 'Franchise Cheer Lyon Part-Dieu', 'franchise', 'FR', 180, { legalId: 'FR-RCS-890123456', representative: 'Gérant Franchisé Lyon', kycStatus: 'Vérifié' }),
+                'CHEER-FR-LYON-02': buildDefaultTenant('CHEER-FR-LYON-02', 'Franchise Cheer Lyon Part-Dieu', 'franchise', 'FR', 200, { legalId: 'FR-RCS-890123456', representative: 'Gérant Franchisé Lyon', kycStatus: 'Vérifié' }),
                 'CHEER-ES-BCN-03': buildDefaultTenant('CHEER-ES-BCN-03', 'Franchise Cheer Barcelona Gràcia', 'franchise', 'ES', 220, { legalId: 'ES-B67890123', representative: 'Gestor Franquicia BCN', kycStatus: 'Vérifié' }),
-                'CHEER-VE-CCS-04': buildDefaultTenant('CHEER-VE-CCS-04', 'Restaurant Cheer Litoral / Caracas', 'restaurant_propre', 'VE', 160, { legalId: 'VE-J400112233', representative: 'Direction Locale VE', kycStatus: 'Vérifié' })
+                'CHEER-VE-CCS-04': buildDefaultTenant('CHEER-VE-CCS-04', 'Restaurant Cheer Litoral / Caracas', 'restaurant_propre', 'VE', 200, { legalId: 'VE-J400112233', representative: 'Direction Locale VE', kycStatus: 'Vérifié' })
             };
             try {
-                const raw = localStorage.getItem(TENANT_STORE_KEY);
+                const raw = localStorage.getItem(TENANT_STORE_KEY) || localStorage.getItem('lexwallet_tenant_store_v3');
                 if (!raw) return defaults;
                 const parsed = JSON.parse(raw);
-                return Object.keys(parsed).length > 0 ? parsed : defaults;
+                if (!parsed || Object.keys(parsed).length === 0) return defaults;
+                const normalized = {};
+                Object.keys(parsed).forEach(tid => {
+                    const item = parsed[tid];
+                    const base = defaults[tid] || buildDefaultTenant(tid, item.name || tid, item.accountType || 'franchise', item.fiscal?.country || 'BE', 250, item.kyc || {});
+                    normalized[tid] = {
+                        ...base,
+                        ...item,
+                        ingredients: normalizeIngredientsWithBeverages(item.ingredients, 250, tid.slice(-2))
+                    };
+                });
+                return normalized;
             } catch (_) { return defaults; }
         }
 
@@ -650,7 +711,7 @@
         async function syncNowManual() {
             const base = getWorkerApiBase();
             if (!base) {
-                return alert("Aucun endpoint Worker configuré. Ajoutez l'URL dans Paramètres > Endpoint Worker (ou conservez le stockage local).");
+                return alert("Aucun endpoint Worker configuré. Ajoutez l'URL dans Fiscalité & API > Endpoint Worker (ou conservez le stockage local).");
             }
             const t = getActiveTenant();
             queueAndSyncTenant(t);
@@ -663,7 +724,11 @@
                         const localTxCount = (t.transactions || []).length;
                         const remoteTxCount = (data.tenant.transactions || []).length;
                         if (remoteTxCount >= localTxCount) {
-                            tenantStore[t.id] = { ...t, ...data.tenant };
+                            tenantStore[t.id] = {
+                                ...t,
+                                ...data.tenant,
+                                ingredients: normalizeIngredientsWithBeverages(data.tenant.ingredients, 250, t.id.slice(-2))
+                            };
                             persistLocalOnly();
                             syncActiveView();
                         }
@@ -694,7 +759,9 @@
             if (!tenantStore[sessionState.activeTenantId]) {
                 sessionState.activeTenantId = Object.keys(tenantStore)[0];
             }
-            return tenantStore[sessionState.activeTenantId];
+            const t = tenantStore[sessionState.activeTenantId];
+            t.ingredients = normalizeIngredientsWithBeverages(t.ingredients, 250, t.id.slice(-2));
+            return t;
         }
 
         function fmtMoney(val) {
@@ -784,9 +851,7 @@
                             const data = await res.json();
                             if (data && data.ok && data.user) authUser = data.user;
                         }
-                    } catch (_) {
-                        // Repli automatique vers authentification locale si le Worker est injoignable
-                    }
+                    } catch (_) {}
                 }
 
                 if (!authUser) {
@@ -832,7 +897,7 @@
             if (credentialsStore.some(c => c.email.toLowerCase() === email)) return alert("Email déjà utilisé.");
 
             const tenantId = `CHEER-${country}-${String(Object.keys(tenantStore).length + 1).padStart(2, '0')}`;
-            const newTenant = buildDefaultTenant(tenantId, name, type, country, 200, { legalId, representative: rep || name, kycStatus: 'Vérifié' });
+            const newTenant = buildDefaultTenant(tenantId, name, type, country, 250, { legalId, representative: rep || name, kycStatus: 'Vérifié' });
             tenantStore[tenantId] = newTenant;
             credentialsStore.push({ email, passHash: hashSecret(password), role: 'tenant', tenantId, label: name });
             sessionState = { authenticated: true, role: 'tenant', email, activeTenantId: tenantId };
@@ -871,7 +936,7 @@
             if (tenantStore[rawId]) return alert("Cet identifiant existe déjà.");
             if (credentialsStore.some(c => c.email.toLowerCase() === email)) return alert("Cet email existe déjà.");
 
-            const newTenant = buildDefaultTenant(rawId, name, type, country, 200, { legalId: legal, representative: kycDoc || 'Validé Holding', kycStatus: 'Vérifié Holding' });
+            const newTenant = buildDefaultTenant(rawId, name, type, country, 250, { legalId: legal, representative: kycDoc || 'Validé Holding', kycStatus: 'Vérifié Holding' });
             tenantStore[rawId] = newTenant;
             credentialsStore.push({ email, passHash: hashSecret(password), role: 'tenant', tenantId: rawId, label: name });
             sessionState.activeTenantId = rawId;
@@ -1191,16 +1256,64 @@
         function setCostScopeMode(mode) { costScopeMode = mode; document.getElementById('scope-btn-day').className = mode === 'day' ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300"; document.getElementById('scope-btn-all_real').className = mode === 'all_real' ? "px-3 py-1.5 rounded font-bold bg-emerald-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300"; updateCostsView(); }
         function saveCostConfig() { const t = getActiveTenant(); t.costConfig = { rentPct: Math.min(7, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)), royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)), staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)), maintPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-maint-pct').value) || 0)), otherPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-other-pct').value) || 0)), taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)), capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0)) }; queueAndSyncTenant(t); hydrateTenantInputs(); updateCostsView(); }
         function findCatalogItem(sku) { for (const c of CATALOG_CATEGORIES) { const f = c.items.find(i => i.sku === sku); if (f) return f; } return null; }
-        function getRecipeForItem(item) { if (item.recipe) return item.recipe; const c = findCatalogItem(item.sku); return (c && c.recipe) ? c.recipe : {}; }
+
+        function getRecipeForItem(item) {
+            if (!item) return {};
+            if (item.recipe && typeof item.recipe === 'object' && Object.keys(item.recipe).length > 0) {
+                return item.recipe;
+            }
+            const c = findCatalogItem(item.sku);
+            if (c && c.recipe) return c.recipe;
+            const nameLower = String(item.name || '').toLowerCase();
+            if (nameLower.includes('truffle')) return { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 2, 'ING-BACON': 2, 'ING-TRUFFE': 1, 'ING-SAUCE': 1 };
+            if (nameLower.includes('burger') || nameLower.includes('hamburger')) return { 'ING-PAIN': 1, 'ING-BOEUF': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1, 'ING-SALADE': 1 };
+            if (nameLower.includes('frites') || nameLower.includes('box')) return { 'ING-FRITES': 1, 'ING-CHEDDAR': 1, 'ING-SAUCE': 1 };
+            if (nameLower.includes('fromage')) return { 'ING-FROMAGE': 1 };
+            if (nameLower.includes('limonade') || nameLower.includes('cola') || nameLower.includes('soft')) return { 'ING-COLA': 1 };
+            if (nameLower.includes('jus')) return { 'ING-JUICE': 1 };
+            if (nameLower.includes('vin')) return { 'ING-WINE': 1 };
+            if (nameLower.includes('spiritueux')) return { 'ING-SPIRIT': 1 };
+            return {};
+        }
+
         function computeStockState() {
-            const t = getActiveTenant(); const consumedMap = {}; t.ingredients.forEach(ing => { consumedMap[ing.id] = 0; });
-            (t.transactions || []).filter(tx => !tx.is_test && !tx.cancelled).forEach(tx => { (tx.items || []).forEach(line => { const rec = getRecipeForItem(line); Object.keys(rec).forEach(ingId => { consumedMap[ingId] = (consumedMap[ingId] || 0) + (rec[ingId] * Number(line.qty || 0)); }); }); });
+            const t = getActiveTenant();
+            const consumedMap = {};
+            t.ingredients.forEach(ing => { consumedMap[ing.id] = 0; });
+
+            const validTickets = (t.transactions || []).filter(tx => !tx.is_test && !tx.cancelled);
+            validTickets.forEach(tx => {
+                (tx.items || []).forEach(line => {
+                    const rec = getRecipeForItem(line);
+                    const lineQty = Math.max(0, Number(line.qty || 0));
+                    Object.keys(rec).forEach(ingId => {
+                        const qtyPerUnit = Number(rec[ingId] || 0);
+                        consumedMap[ingId] = (consumedMap[ingId] || 0) + (qtyPerUnit * lineQty);
+                    });
+                });
+            });
+
             return t.ingredients.map(ing => {
-                const initialQty = Number(ing.initialQty || 0); const consumedQty = Number(consumedMap[ing.id] || 0); const wasteQty = Math.max(0, Number(ing.wasteQty || 0));
-                const currentQty = initialQty - consumedQty - wasteQty; const minThreshold = Number(ing.minThreshold || 0); const needsOrder = currentQty < minThreshold;
-                return { ...ing, initialQty, consumedQty, wasteQty, wasteCost: wasteQty * Number(ing.unitCost || 0), currentQty, minThreshold, needsOrder, suggestedQty: needsOrder ? Math.max(Number(ing.orderQty || 50), (minThreshold - currentQty) + Number(ing.orderQty || 50)) : 0 };
+                const initialQty = Number(ing.initialQty || 0);
+                const consumedQty = Number(consumedMap[ing.id] || 0);
+                const wasteQty = Math.max(0, Number(ing.wasteQty || 0));
+                const currentQty = initialQty - consumedQty - wasteQty;
+                const minThreshold = Number(ing.minThreshold || 0);
+                const needsOrder = currentQty < minThreshold;
+                return {
+                    ...ing,
+                    initialQty,
+                    consumedQty,
+                    wasteQty,
+                    wasteCost: wasteQty * Number(ing.unitCost || 0),
+                    currentQty,
+                    minThreshold,
+                    needsOrder,
+                    suggestedQty: needsOrder ? Math.max(Number(ing.orderQty || 50), (minThreshold - currentQty) + Number(ing.orderQty || 50)) : 0
+                };
             });
         }
+
         function getVatRateForItem(item, st) { const t = getActiveTenant(); const pct = st === 'emporter' ? Number(t.fiscal.vatTakeoutPct || 0) : Number(t.fiscal.vatPlacePct || 0); return { rubricKey: item.baseGroup, rubricLabel: st === 'emporter' ? 'Emporter' : 'Sur Place', rate: pct / 100 }; }
         function computeCartBreakdown(items, st, discPct, voucher) {
             const rawHt = items.reduce((a, i) => a + (i.price_ht * i.qty), 0); const cogsTotal = items.reduce((a, i) => a + (i.unit_cogs * i.qty), 0);
@@ -1222,7 +1335,7 @@
         function setQuickDiscount(pct) { quickDiscountPercent = pct; [0, 5, 10].forEach(v => { document.getElementById('disc-btn-' + v).className = v === pct ? "py-1.5 rounded font-bold bg-sky-600 text-white" : "py-1.5 rounded font-bold bg-slate-800 text-slate-300"; }); updateCartUI(); }
         function applyCoupon() { const code = (document.getElementById('coupon-input').value || '').trim().toUpperCase(); if (!code) return; if (VOUCHER_CODES[code]) activeVoucher = { code, ...VOUCHER_CODES[code] }; else { const m = code.match(/^BON(\d{1,2})$/); if (m) activeVoucher = { code, type: 'percent', value: Math.min(80, Math.max(1, parseInt(m[1], 10))), label: `Bon ${code}` }; else return alert("Code invalide."); } const el = document.getElementById('coupon-status'); el.innerText = `Actif : ${activeVoucher.label}`; el.classList.remove('hidden'); updateCartUI(); }
         function clearCoupon() { activeVoucher = null; document.getElementById('coupon-input').value = ''; document.getElementById('coupon-status').classList.add('hidden'); updateCartUI(); }
-        function addToCart(sku) { const b = findCatalogItem(sku); if (!b) return; const ex = cart.find(i => i.sku === sku); if (ex) ex.qty += 1; else cart.push({ ...b, qty: 1 }); updateCartUI(); }
+        function addToCart(sku) { const b = findCatalogItem(sku); if (!b) return; const ex = cart.find(i => i.sku === sku); if (ex) ex.qty += 1; else cart.push({ ...b, recipe: { ...(b.recipe || {}) }, qty: 1 }); updateCartUI(); }
         function removeFromCart(idx) { cart.splice(idx, 1); updateCartUI(); }
         function updateCartUI() {
             const container = document.getElementById('cart-items-container'); const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher); const cnt = cart.reduce((a, i) => a + i.qty, 0);
@@ -1234,12 +1347,29 @@
         function checkout(isTest) {
             if (!sessionState.authenticated || cart.length === 0) return;
             const t = getActiveTenant(); const bd = computeCartBreakdown(cart, saleType, quickDiscountPercent, activeVoucher); const stamp = formatNowDateTime();
-            const tx = { id: `${t.id}-TX-${Date.now()}`, date: document.getElementById('pos-date-input').value, time: stamp.time, created_at: stamp.full, is_test: isTest, cancelled: false, sale_type: saleType, quick_discount_pct: quickDiscountPercent, voucher: activeVoucher ? { ...activeVoucher } : null, discount_ht: Number(bd.discountHt.toFixed(2)), total_ht: Number(bd.netHt.toFixed(2)), vat: Number(bd.totalVat.toFixed(2)), total_ttc: Number(bd.totalTtc.toFixed(2)), cogs: Number(bd.cogsTotal.toFixed(2)), gross_margin: Number(bd.grossMargin.toFixed(2)), items: cart.map(i => ({ ...i })) };
+            const tx = {
+                id: `${t.id}-TX-${Date.now()}`,
+                date: document.getElementById('pos-date-input').value,
+                time: stamp.time,
+                created_at: stamp.full,
+                is_test: isTest,
+                cancelled: false,
+                sale_type: saleType,
+                quick_discount_pct: quickDiscountPercent,
+                voucher: activeVoucher ? { ...activeVoucher } : null,
+                discount_ht: Number(bd.discountHt.toFixed(2)),
+                total_ht: Number(bd.netHt.toFixed(2)),
+                vat: Number(bd.totalVat.toFixed(2)),
+                total_ttc: Number(bd.totalTtc.toFixed(2)),
+                cogs: Number(bd.cogsTotal.toFixed(2)),
+                gross_margin: Number(bd.grossMargin.toFixed(2)),
+                items: cart.map(i => ({ ...i, recipe: { ...(i.recipe || {}) } }))
+            };
             t.transactions.unshift(tx);
             appendAuditEvent(isTest ? 'TX_TEST' : 'TX_REAL', `${tx.id} • ${fmtMoney(tx.total_ttc)}`);
             queueAndSyncTenant(t);
             cart = []; quickDiscountPercent = 0; activeVoucher = null; setQuickDiscount(0); clearCoupon(); updateCartUI();
-            alert(isTest ? "Mode test enregistré." : `Vente validée : ${fmtMoney(tx.total_ttc)}`);
+            alert(isTest ? "Mode test enregistré (sans déduction de stock)." : `Vente validée : ${fmtMoney(tx.total_ttc)} — Stock mis à jour.`);
         }
         function aggregateTransactions(txList) {
             const active = txList.filter(t => !t.is_test && !t.cancelled); const ca = active.reduce((a, t) => a + t.total_ttc, 0); const ht = active.reduce((a, t) => a + t.total_ht, 0); const vat = active.reduce((a, t) => a + t.vat, 0);
@@ -1254,7 +1384,7 @@
         function updateCostsView() { const d = document.getElementById('pos-date-input').value; document.getElementById('costs-date-label').innerText = `${getActiveTenant().name} (${costScopeMode === 'all_real' ? 'Cumul' : d})`; const s = computeFinancialSnapshot(d); document.getElementById('costs-real-ht-label').innerText = fmtMoney(s.ht); document.getElementById('calc-rent-eur').innerText = `${fmtMoney(s.rentEur)} (max 7%)`; document.getElementById('calc-royalties-eur').innerText = fmtMoney(s.royaltiesEur); document.getElementById('calc-staff-eur').innerText = fmtMoney(s.staffEur); document.getElementById('calc-maint-eur').innerText = fmtMoney(s.maintEur); document.getElementById('calc-other-eur').innerText = fmtMoney(s.otherEur); document.getElementById('cost-cogs-val').innerText = '-' + fmtMoney(s.totalCogs); document.getElementById('cost-opex-val').innerText = '-' + fmtMoney(s.charges); document.getElementById('cost-pre-reserve-val').innerText = fmtMoney(s.preReserveNet); document.getElementById('cost-reserve-val').innerText = fmtMoney(s.totalSetAside); document.getElementById('cost-net-gain-val').innerText = fmtMoney(s.netGain); document.getElementById('cost-breakdown-summary').innerHTML = `<p>Bénéfice net : <strong class="${s.netGain >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${fmtMoney(s.netGain)}</strong></p>`; }
         function simulateIoTTelemetry() { iotSensors = [{ id: 'IOT-COLD-01', label: 'Chambre Froide', metric: `${(2.8 + Math.random() * 1.3).toFixed(1)} °C`, status: 'OK', node: getActiveTenant().id }, { id: 'IOT-FREEZE-02', label: 'Congélation', metric: `${(-19.2 + Math.random() * 1.1).toFixed(1)} °C`, status: 'OK', node: getActiveTenant().id }, { id: 'IOT-PWR-03', label: 'Énergie', metric: `${(4.2 + Math.random() * 1.5).toFixed(1)} kW`, status: 'OK', node: getActiveTenant().id }]; renderIoTSensors(); }
         function renderIoTSensors() { document.getElementById('iot-sensors-grid').innerHTML = iotSensors.map(s => `<div class="bg-slate-950 border border-slate-800 p-3 rounded-xl"><div class="flex justify-between"><span class="font-bold text-sky-300">${s.id}</span><span class="text-[10px] text-emerald-400">${s.status}</span></div><p class="text-slate-200 mt-1">${s.label}</p><p class="text-amber-300 font-bold mt-1">${s.metric}</p></div>`).join(''); }
-        function processScannedLot() { const t = getActiveTenant(); const code = (document.getElementById('scanner-code-input').value || '').trim().toUpperCase(); const addQty = Math.max(0, parseInt(document.getElementById('scanner-add-qty').value, 10) || 0); const m = t.ingredients.find(i => (i.lot || '').toUpperCase() === code || (i.id || '').toUpperCase() === code); if (!m || addQty <= 0) return alert("Lot ou quantité invalide."); t.ingredients = t.ingredients.map(i => i.id === m.id ? { ...i, initialQty: Number(i.initialQty || 0) + addQty } : i); queueAndSyncTenant(t); document.getElementById('scanner-code-input').value = ''; document.getElementById('scanner-feedback').innerText = `+${addQty} ${m.unit} sur ${m.name}`; updateStockView(); }
+        function processScannedLot() { const t = getActiveTenant(); const code = (document.getElementById('scanner-code-input').value || '').trim().toUpperCase(); const addQty = Math.max(0, parseInt(document.getElementById('scanner-add-qty').value, 10) || 0); const m = t.ingredients.find(i => (i.lot || '').toUpperCase().startsWith(code) || (i.id || '').toUpperCase() === code); if (!m || addQty <= 0) return alert("Lot ou quantité invalide."); t.ingredients = t.ingredients.map(i => i.id === m.id ? { ...i, initialQty: Number(i.initialQty || 0) + addQty } : i); appendAuditEvent('STOCK_SCAN', `+${addQty} ${m.unit} sur ${m.name}`); queueAndSyncTenant(t); document.getElementById('scanner-code-input').value = ''; document.getElementById('scanner-feedback').innerText = `+${addQty} ${m.unit} sur ${m.name}`; updateStockView(); }
         function updateHistory() { const t = getActiveTenant(); const list = t.transactions || []; document.getElementById('history-container').innerHTML = list.length === 0 ? '<p class="text-slate-500 text-center py-8">Aucun ticket.</p>' : list.map((tx, idx) => `<div onclick="openTicketModal(${idx})" class="cursor-pointer p-3 rounded-lg border border-slate-800 bg-slate-950 hover:border-sky-500"><div class="flex justify-between font-bold text-sm"><span>${tx.id} ${tx.cancelled ? '(ANNULÉ)' : (tx.is_test ? '(TEST)' : '')}</span><span class="text-sky-400">${fmtMoney(tx.total_ttc)}</span></div><p class="text-[10px] text-slate-500">${tx.created_at}</p></div>`).join(''); }
         function buildQrSvg(payload) { const size = 21; const cells = Array.from({ length: size }, () => Array(size).fill(false)); const finder = (r0, c0) => { for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (r0 + r < size && c0 + c < size) cells[r0 + r][c0 + c] = (r === 0 || r === 6 || c === 0 || c === 6) || (r >= 2 && r <= 4 && c >= 2 && c <= 4); }; finder(0, 0); finder(0, size - 7); finder(size - 7, 0); const h = parseInt(hashSecret(payload).slice(0, 8), 16); for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (!((r < 8 && c < 8) || (r < 8 && c >= size - 8) || (r >= size - 8 && c < 8))) cells[r][c] = (((h ^ Math.imul(r + 1, 73856093) ^ Math.imul(c + 1, 19349663)) >>> 0) % 2) === 0; const px = 5; const rects = []; for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (cells[r][c]) rects.push(`<rect x="${c * px}" y="${r * px}" width="${px}" height="${px}" fill="#0f172a"/>`); return `<svg width="${size * px}" height="${size * px}" viewBox="0 0 ${size * px} ${size * px}" xmlns="http://www.w3.org/2000/svg">${rects.join('')}</svg>`; }
         function openTicketModal(index) { const t = getActiveTenant(); selectedTicketIndex = index; const tx = t.transactions[index]; if (!tx) return; const bd = computeCartBreakdown(tx.items || [], tx.sale_type || 'sur_place', tx.quick_discount_pct || 0, tx.voucher || null); document.getElementById('modal-tx-id').innerText = tx.id; document.getElementById('modal-tx-meta').innerHTML = `<p>${t.name} • ${tx.created_at}</p>`; document.getElementById('modal-tx-items').innerHTML = bd.lines.map(l => `<div class="py-1 flex justify-between"><span>${l.name} (x${l.qty})</span><span>${l.lineNetHt.toFixed(2)}</span></div>`).join(''); document.getElementById('modal-tx-totals').innerHTML = `<div class="flex justify-between font-bold text-sky-400"><span>Total TTC :</span><span>${fmtMoney(bd.totalTtc)}</span></div>`; document.getElementById('modal-qr-container').innerHTML = buildQrSvg(`${tx.id}|${t.id}|${bd.totalTtc.toFixed(2)}`); document.getElementById('modal-qr-summary').innerText = `${t.id}/${tx.id}`; document.getElementById('ticket-modal').classList.remove('hidden'); }
@@ -1279,7 +1409,24 @@
         function resetSupplierForm() { editingSupplierId = null; document.getElementById('cancel-sup-edit-btn').classList.add('hidden'); ['new-sup-name', 'new-sup-address', 'new-sup-contact', 'new-sup-vat-reg'].forEach(id => { document.getElementById(id).value = ''; }); document.getElementById('save-sup-btn').innerText = '+ Ajouter Fournisseur'; renderSupplierPortfolioCheckboxes([]); }
         function deleteSupplier(supId) { const t = getActiveTenant(); if (t.suppliers.length <= 1) return; const fb = t.suppliers.find(s => s.id !== supId); t.suppliers = t.suppliers.filter(s => s.id !== supId); if (fb) t.ingredients = t.ingredients.map(i => i.supplierId === supId ? { ...i, supplierId: fb.id } : i); queueAndSyncTenant(t); resetSupplierForm(); updateStockView(); }
         function saveSupplierForm() { const t = getActiveTenant(); const name = (document.getElementById('new-sup-name').value || '').trim(); if (!name) return; const parts = (document.getElementById('new-sup-vat-reg').value || '').split('/').map(s => s.trim()); const checked = Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value); let targetId = editingSupplierId; if (editingSupplierId) t.suppliers = t.suppliers.map(s => s.id === editingSupplierId ? { ...s, name, address: document.getElementById('new-sup-address').value.trim() || '-', contact: document.getElementById('new-sup-contact').value.trim() || '-', vatNumber: parts[0] || '-', companyNumber: parts[1] || parts[0] || '-' } : s); else { targetId = 'SUP-' + Date.now(); t.suppliers.push({ id: targetId, name, address: document.getElementById('new-sup-address').value.trim() || '-', contact: document.getElementById('new-sup-contact').value.trim() || '-', vatNumber: parts[0] || '-', companyNumber: parts[1] || parts[0] || '-' }); } if (checked.length > 0) t.ingredients = t.ingredients.map(i => checked.includes(i.id) ? { ...i, supplierId: targetId } : i); queueAndSyncTenant(t); resetSupplierForm(); updateStockView(); }
-        function updateStockView() { const t = getActiveTenant(); const st = computeStockState(); renderSupplierPortfolioCheckboxes(editingSupplierId ? t.ingredients.filter(i => i.supplierId === editingSupplierId).map(i => i.id) : Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value)); document.getElementById('stock-table-body').innerHTML = st.map(s => { const opts = t.suppliers.map(sup => `<option value="${sup.id}" ${sup.id === s.supplierId ? 'selected' : ''}>${sup.name}</option>`).join(''); return `<tr><td class="p-3 font-bold">${s.name} <span class="text-[10px] text-slate-500">(${s.lot})</span></td><td class="p-3"><select onchange="assignIngredientSupplier('${s.id}', this.value)" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-sky-300 text-xs">${opts}</select></td><td class="p-3"><input type="number" min="0" value="${s.initialQty}" onchange="updateInitialStock('${s.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/></td><td class="p-3 text-amber-400">-${s.consumedQty}</td><td class="p-3"><input type="number" min="0" value="${s.wasteQty}" onchange="updateWasteQty('${s.id}', this.value)" class="w-16 bg-slate-900 border border-rose-900/70 px-2 py-1 rounded text-rose-300 text-right"/></td><td class="p-3 font-bold ${s.needsOrder ? 'text-rose-400' : 'text-emerald-400'}">${s.currentQty}</td><td class="p-3"><input type="number" min="0" value="${s.minThreshold}" onchange="updateMinThreshold('${s.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/></td></tr>`; }).join(''); document.getElementById('suppliers-portfolio-grid').innerHTML = t.suppliers.map(sup => { const items = st.filter(i => i.supplierId === sup.id); return `<div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between space-y-2"><div><p class="font-bold text-sky-300 text-sm">${sup.name}</p><ul class="text-[11px] text-emerald-300 mt-1">${items.map(p => `<li>• ${p.name} (${p.currentQty})</li>`).join('')}</ul></div><div class="flex gap-2 pt-2 border-t border-slate-800"><button onclick="startEditSupplier('${sup.id}')" class="bg-slate-800 text-sky-300 px-2.5 py-1 rounded text-[11px] font-bold flex-1">Modifier</button><button onclick="deleteSupplier('${sup.id}')" class="bg-rose-950 text-rose-300 px-2.5 py-1 rounded text-[11px] font-bold">Supprimer</button></div></div>`; }).join(''); const poCards = t.suppliers.map(sup => { const needed = st.filter(i => i.supplierId === sup.id && i.needsOrder); if (needed.length === 0) return ''; return `<div class="bg-slate-900 border border-amber-700/50 p-4 rounded-xl space-y-2"><div class="flex justify-between items-center"><p class="font-bold text-amber-300">${sup.name}</p><button onclick="openAdminModal('validate_po', '${sup.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-bold text-xs">Valider Bon</button></div>${needed.map(n => `<p class="text-slate-300">• ${n.name} : +${n.suggestedQty}</p>`).join('')}</div>`; }).filter(Boolean); document.getElementById('suggested-po-container').innerHTML = poCards.length === 0 ? '<p class="text-emerald-400">Stocks conformes.</p>' : poCards.join(''); document.getElementById('validated-po-history').innerHTML = (t.validatedPOs || []).slice(0, 5).map(po => `<p class="text-[11px] text-slate-300">• ${po.poId} — ${po.supplierName}</p>`).join(''); }
+        function updateStockView() {
+            const t = getActiveTenant();
+            const st = computeStockState();
+            const validCount = (t.transactions || []).filter(tx => !tx.is_test && !tx.cancelled).length;
+            const totalUnitsSold = (t.transactions || []).filter(tx => !tx.is_test && !tx.cancelled).reduce((sum, tx) => sum + (tx.items || []).reduce((s2, l) => s2 + Number(l.qty || 0), 0), 0);
+            document.getElementById('stock-tickets-summary').innerText =
+                `Calcul réel sur ${validCount} ticket(s) validé(s) (${totalUnitsSold} article(s) facturé(s)) • Plats & Boissons inclus.`;
+
+            renderSupplierPortfolioCheckboxes(editingSupplierId ? t.ingredients.filter(i => i.supplierId === editingSupplierId).map(i => i.id) : Array.from(document.querySelectorAll('.sup-ing-chk:checked')).map(el => el.value));
+            document.getElementById('stock-table-body').innerHTML = st.map(s => {
+                const opts = t.suppliers.map(sup => `<option value="${sup.id}" ${sup.id === s.supplierId ? 'selected' : ''}>${sup.name}</option>`).join('');
+                return `<tr><td class="p-3 font-bold">${s.name} <span class="text-[10px] text-slate-500">(${s.lot})</span></td><td class="p-3"><select onchange="assignIngredientSupplier('${s.id}', this.value)" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-sky-300 text-xs">${opts}</select></td><td class="p-3"><input type="number" min="0" value="${s.initialQty}" onchange="updateInitialStock('${s.id}', this.value)" class="w-20 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white text-right"/></td><td class="p-3 text-amber-400 font-bold">-${s.consumedQty}</td><td class="p-3"><input type="number" min="0" value="${s.wasteQty}" onchange="updateWasteQty('${s.id}', this.value)" class="w-16 bg-slate-900 border border-rose-900/70 px-2 py-1 rounded text-rose-300 text-right"/></td><td class="p-3 font-bold ${s.needsOrder ? 'text-rose-400' : 'text-emerald-400'}">${s.currentQty}</td><td class="p-3"><input type="number" min="0" value="${s.minThreshold}" onchange="updateMinThreshold('${s.id}', this.value)" class="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-slate-200 text-right"/></td></tr>`;
+            }).join('');
+            document.getElementById('suppliers-portfolio-grid').innerHTML = t.suppliers.map(sup => { const items = st.filter(i => i.supplierId === sup.id); return `<div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col justify-between space-y-2"><div><p class="font-bold text-sky-300 text-sm">${sup.name}</p><ul class="text-[11px] text-emerald-300 mt-1">${items.map(p => `<li>• ${p.name} (${p.currentQty})</li>`).join('')}</ul></div><div class="flex gap-2 pt-2 border-t border-slate-800"><button onclick="startEditSupplier('${sup.id}')" class="bg-slate-800 text-sky-300 px-2.5 py-1 rounded text-[11px] font-bold flex-1">Modifier</button><button onclick="deleteSupplier('${sup.id}')" class="bg-rose-950 text-rose-300 px-2.5 py-1 rounded text-[11px] font-bold">Supprimer</button></div></div>`; }).join('');
+            const poCards = t.suppliers.map(sup => { const needed = st.filter(i => i.supplierId === sup.id && i.needsOrder); if (needed.length === 0) return ''; return `<div class="bg-slate-900 border border-amber-700/50 p-4 rounded-xl space-y-2"><div class="flex justify-between items-center"><p class="font-bold text-amber-300">${sup.name}</p><button onclick="openAdminModal('validate_po', '${sup.id}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded font-bold text-xs">Valider Bon</button></div>${needed.map(n => `<p class="text-slate-300">• ${n.name} : +${n.suggestedQty}</p>`).join('')}</div>`; }).filter(Boolean);
+            document.getElementById('suggested-po-container').innerHTML = poCards.length === 0 ? '<p class="text-emerald-400">Stocks conformes.</p>' : poCards.join('');
+            document.getElementById('validated-po-history').innerHTML = (t.validatedPOs || []).slice(0, 5).map(po => `<p class="text-[11px] text-slate-300">• ${po.poId} — ${po.supplierName}</p>`).join('');
+        }
         function updateRecipesView() { const t = getActiveTenant(); const sm = {}; computeStockState().forEach(s => { sm[s.id] = s; }); const all = []; CATALOG_CATEGORIES.forEach(c => c.items.forEach(i => all.push(i))); document.getElementById('recipes-grid').innerHTML = all.map(item => `<div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2"><p class="font-bold text-sky-300 text-sm">${item.name}</p><ul class="space-y-1 text-[11px]">${Object.entries(item.recipe || {}).map(([id, q]) => `<li class="text-slate-300">• ${sm[id]?.name || id} : ${q} (${sm[id]?.lot || '-'})</li>`).join('')}</ul></div>`).join(''); }
         function assignIngredientSupplier(ingId, supId) { const t = getActiveTenant(); t.ingredients = t.ingredients.map(i => i.id === ingId ? { ...i, supplierId: supId } : i); queueAndSyncTenant(t); updateStockView(); }
         function updateInitialStock(ingId, v) { const t = getActiveTenant(); t.ingredients = t.ingredients.map(i => i.id === ingId ? { ...i, initialQty: Math.max(0, parseInt(v, 10) || 0) } : i); queueAndSyncTenant(t); updateStockView(); }
@@ -1289,7 +1436,7 @@
         function exportFullAuditBundle() { const t = getActiveTenant(); const d = document.getElementById('pos-date-input').value; const payload = { exported_at: formatNowDateTime().full, tenant: { id: t.id, name: t.name, kyc: t.kyc, fiscal: t.fiscal }, pnl_day: aggregateTransactions((t.transactions || []).filter(tx => tx.date === d)), costs: computeFinancialSnapshot(d), stocks: computeStockState(), invoices: t.invoices, hr_shifts: t.hrShifts, audit: t.auditEntries }; const blob = new Blob([JSON.stringify({ ...payload, integrity_hash: computeIntegrityHash(JSON.stringify(payload)) }, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-audit.json`; a.click(); URL.revokeObjectURL(url); }
         function exportAuditCsv() { const t = getActiveTenant(); const rows = [['Ticket_ID', 'Horodatage', 'Statut', 'Regime', 'Net_HT', 'TVA', 'Total_TTC', 'COGS']]; (t.transactions || []).forEach(tx => rows.push([tx.id, tx.created_at, tx.cancelled ? 'ANNULE' : (tx.is_test ? 'TEST' : 'VALIDE'), tx.sale_type, Number(tx.total_ht).toFixed(2), Number(tx.vat).toFixed(2), Number(tx.total_ttc).toFixed(2), Number(tx.cogs).toFixed(2)])); const blob = new Blob([rows.map(r => r.join(';')).join('\n')], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-tickets.csv`; a.click(); URL.revokeObjectURL(url); }
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
-        function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
+        function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
 </body>
 </html>
