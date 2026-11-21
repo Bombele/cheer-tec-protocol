@@ -669,45 +669,147 @@
             } catch (_) {}
         }
 
-        function queueAndSyncTenant(tenantObj) {
-            if (!tenantObj || !tenantObj.id) return;
-            syncQueue = syncQueue.filter(item => item.tenantId !== tenantObj.id);
-            syncQueue.push({ tenantId: tenantObj.id, tenant: tenantObj, actorEmail: sessionState.email || 'system', queuedAt: Date.now() });
-            persistLocalOnly();
-            flushSyncQueue();
-        }
+        let syncInFlight = false;
+        let salesHydrateInFlight = false;
 
-        async function flushSyncQueue() {
-            if (isSyncing) return;
-            const base = getWorkerApiBase();
-            if (!base || syncQueue.length === 0) return;
-            isSyncing = true;
+        function readSyncQueueSafe() {
             try {
-                while (syncQueue.length > 0) {
-                    const item = syncQueue[0];
-                    const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 5000);
-                    try {
-                        const res = await fetch(`${base}/api/sync/${encodeURIComponent(item.tenantId)}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ tenant: item.tenant, actorEmail: item.actorEmail }),
-                            signal: controller.signal
-                        });
-                        clearTimeout(timer);
-                        if (!res.ok) break;
-                        syncQueue.shift();
-                        persistLocalOnly();
-                    } catch (_) {
-                        clearTimeout(timer);
-                        break;
-                    }
-                }
-            } finally {
-                isSyncing = false;
+                const raw = localStorage.getItem(SYNC_QUEUE_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr.slice(-50) : [];
+            } catch (_) {
+                return [];
             }
         }
 
+        function writeSyncQueueSafe(arr) {
+            try {
+                localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify((Array.isArray(arr) ? arr : []).slice(-50)));
+            } catch (_) {}
+        }
+
+        function queueAndSyncTenant(tenantObj) {
+            if (!tenantObj || !tenantObj.id) return;
+            const normalizedTenant = {
+                ...tenantObj,
+                costConfig: {
+                    ...(tenantObj.costConfig || {}),
+                    rentPct: Math.min(7, Math.max(0, Number(tenantObj.costConfig?.rentPct ?? 7)))
+                }
+            };
+            tenantStore[normalizedTenant.id] = normalizedTenant;
+            const currentQueue = readSyncQueueSafe().filter(item => item && item.tenantId !== normalizedTenant.id);
+            currentQueue.push({
+                tenantId: normalizedTenant.id,
+                tenant: normalizedTenant,
+                actorEmail: (sessionState && sessionState.email) || 'cbltec@proton.me',
+                queuedAt: Date.now()
+            });
+            syncQueue = currentQueue;
+            writeSyncQueueSafe(currentQueue);
+            if (typeof persistLocalOnly === 'function') persistLocalOnly();
+            void flushSyncQueue();
+        }
+
+        async function flushSyncQueue() {
+            if (syncInFlight) return;
+            const base = (typeof getWorkerApiBase === 'function') ? String(getWorkerApiBase() || '').trim().replace(/\/+$/, '') : '';
+            let queue = readSyncQueueSafe();
+            if (!base || queue.length === 0) {
+                syncQueue = queue;
+                return;
+            }
+            syncInFlight = true;
+            let steps = 0;
+            const maxSteps = 20;
+            try {
+                while (queue.length > 0 && steps < maxSteps) {
+                    steps += 1;
+                    const head = queue[0];
+                    if (!head || !head.tenantId || !head.tenant) {
+                        queue.shift();
+                        continue;
+                    }
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 4000);
+                    try {
+                        const res = await fetch(`${base}/api/sync/${encodeURIComponent(head.tenantId)}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tenant: head.tenant, actorEmail: head.actorEmail || 'cbltec@proton.me' }),
+                            signal: controller.signal
+                        });
+                        if (!res.ok) break;
+                        queue.shift();
+                    } catch (_) {
+                        break;
+                    } finally {
+                        clearTimeout(timer);
+                    }
+                }
+            } finally {
+                syncQueue = queue;
+                writeSyncQueueSafe(queue);
+                syncInFlight = false;
+            }
+        }
+
+        async function hydrateSalesHistoryFromD1(tenantId, saleDate = '', onAfterMerge = null) {
+            const base = (typeof getWorkerApiBase === 'function') ? String(getWorkerApiBase() || '').trim().replace(/\/+$/, '') : '';
+            if (!base || !tenantId || salesHydrateInFlight || !tenantStore[tenantId]) return;
+            salesHydrateInFlight = true;
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 4000);
+            try {
+                const qs = new URLSearchParams({ tenantId, limit: '200' });
+                if (saleDate) qs.set('date', saleDate);
+                const res = await fetch(`${base}/api/sales/history?${qs.toString()}`, { signal: controller.signal });
+                if (!res.ok) return;
+                const payload = await res.json().catch(() => null);
+                const remoteSales = Array.isArray(payload?.sales) ? payload.sales.slice(0, 200) : [];
+                if (remoteSales.length === 0) return;
+                const t = tenantStore[tenantId];
+                const merged = new Map();
+                (Array.isArray(t.transactions) ? t.transactions : []).forEach(tx => {
+                    if (tx && tx.id) merged.set(String(tx.id), tx);
+                });
+                let mut = false;
+                for (let i = 0; i < remoteSales.length; i++) {
+                    const row = remoteSales[i];
+                    const tx = row && row.ticket && typeof row.ticket === 'object' ? row.ticket : {
+                        id: row.id,
+                        date: row.sale_date,
+                        created_at: row.created_at,
+                        sale_type: row.sale_type || 'sur_place',
+                        is_test: Boolean(row.is_test),
+                        cancelled: Boolean(row.cancelled),
+                        total_ht: Number(row.total_ht || 0),
+                        vat: Number(row.vat || 0),
+                        total_ttc: Number(row.total_ttc || 0),
+                        cogs: Number(row.cogs || 0),
+                        items: []
+                    };
+                    if (!tx || !tx.id) continue;
+                    const key = String(tx.id);
+                    const prev = merged.get(key);
+                    if (!prev) {
+                        merged.set(key, tx);
+                        mut = true;
+                    } else if (Boolean(prev.cancelled) !== Boolean(tx.cancelled) || Number(prev.total_ttc || 0) !== Number(tx.total_ttc || 0)) {
+                        merged.set(key, { ...prev, ...tx });
+                        mut = true;
+                    }
+                }
+                if (mut) {
+                    t.transactions = Array.from(merged.values()).slice(0, 300);
+                    if (typeof persistLocalOnly === 'function') persistLocalOnly();
+                    if (typeof onAfterMerge === 'function') onAfterMerge();
+                }
+            } catch (_) {} finally {
+                clearTimeout(timer);
+                salesHydrateInFlight = false;
+            }
+        }
         async function syncNowManual() {
             const base = getWorkerApiBase();
             if (!base) {
