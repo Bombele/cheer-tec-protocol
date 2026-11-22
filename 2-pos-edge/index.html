@@ -1502,5 +1502,239 @@
   }, 150);
 })();
 </script>
+<script id="LEXWALLET_DYNAMIC_CAISSE_FIX">
+(function() {
+  var MAX_CATALOG_ITEMS = 60;
+  var activeCategory = "ALL";
+  var searchQuery = "";
+
+  var DEFAULT_CATALOG = [
+    { id: "ITM-CLASSIC", name: "Cheer Classic Cheese Burger", category: "Plats & Burgers", desc: "Pain, bœuf, cheddar, sauce, salade", priceTtc: 9.50, cogs: 2.85, stockId: "ING-CHED", recipeUnit: 0.15 },
+    { id: "ITM-TRUFFLE", name: "Cheer Truffle Bacon Burger", category: "Plats & Burgers", desc: "Pain, bœuf, double cheddar, bacon, truffe", priceTtc: 12.50, cogs: 3.75, stockId: "ING-CHED", recipeUnit: 0.20 },
+    { id: "ITM-FRITES", name: "Box Frites & Cheese Emporter", category: "Plats & Burgers", desc: "Frites croustillantes, cheddar fondu, sauce", priceTtc: 8.50, cogs: 2.30, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "ITM-PLATEAU", name: "Plateau de Fromages Affinés", category: "Plats & Burgers", desc: "Sélection du terroir & accompagnements", priceTtc: 14.00, cogs: 4.50, stockId: "ING-CHED", recipeUnit: 0.25 },
+    { id: "ITM-LIMONADE", name: "Boisson Artisanale / Limonade", category: "Boissons", desc: "33cl fraîche", priceTtc: 3.50, cogs: 1.00, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "ITM-JUS", name: "Jus Pressé Maison", category: "Boissons", desc: "25cl pressé minute", priceTtc: 4.20, cogs: 1.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "ITM-VIN", name: "Verre de Vin Sélection", category: "Vins & Spiritueux", desc: "Rouge / Blanc / Rosé", priceTtc: 6.00, cogs: 2.00, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "ITM-SPIRIT", name: "Spiritueux Signature (4cl)", category: "Vins & Spiritueux", desc: "Service bar", priceTtc: 8.50, cogs: 2.60, stockId: "BOIS-VIN", recipeUnit: 1 }
+  ];
+
+  function isCaisseRoute() {
+    var h = String(window.location.hash || "");
+    if (h.indexOf("/POS/caisse") !== -1) return true;
+    if (typeof sessionState === "object" && sessionState && sessionState.activeRoute === "/POS/caisse") return true;
+    var caisseSec = document.getElementById("view-caisse");
+    return !!(caisseSec && !caisseSec.classList.contains("hidden"));
+  }
+
+  function ensureCatalogSeeded() {
+    if (typeof getActiveTenant !== "function") return DEFAULT_CATALOG;
+    var t = getActiveTenant();
+    if (!t) return DEFAULT_CATALOG;
+    if (!Array.isArray(t.catalog) || t.catalog.length < 4) {
+      t.catalog = DEFAULT_CATALOG.slice();
+      if (typeof persistLocalOnly === "function") persistLocalOnly();
+    }
+    return t.catalog;
+  }
+
+  function syncChromeForCaisse() {
+    var onCaisse = isCaisseRoute();
+    var subnav = document.getElementById("pos-subnav");
+    var header = document.querySelector("header");
+    var topBar = document.getElementById("lex-caisse-focus-bar");
+
+    if (onCaisse) {
+      if (subnav) subnav.classList.add("hidden");
+      if (header) header.classList.add("hidden");
+      if (!topBar) {
+        topBar = document.createElement("div");
+        topBar.id = "lex-caisse-focus-bar";
+        topBar.className = "sticky top-0 z-30 flex items-center justify-between gap-2 bg-slate-900/95 backdrop-blur border border-slate-800 px-4 py-3 rounded-2xl font-mono text-xs shadow-lg";
+        topBar.innerHTML =
+          "<button type=\"button\" id=\"caisse-exit-menu-btn\" class=\"px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 font-bold\">← Menu</button>" +
+          "<span class=\"font-bold text-emerald-400 tracking-wide\">CAISSE</span>" +
+          "<button type=\"button\" id=\"caisse-jump-cart-btn\" class=\"px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold\">Panier (<span id=\"caisse-topbar-count\">0</span>)</button>";
+        var mainBox = document.querySelector(".max-w-6xl") || document.body;
+        mainBox.insertBefore(topBar, mainBox.firstChild);
+        document.getElementById("caisse-exit-menu-btn").addEventListener("click", function() {
+          if (typeof navigateRoute === "function") navigateRoute("/POS");
+          else window.location.hash = "#/POS";
+          setTimeout(syncChromeForCaisse, 60);
+        });
+        document.getElementById("caisse-jump-cart-btn").addEventListener("click", function() {
+          var cartEl = document.getElementById("cart-items-list");
+          if (cartEl && typeof cartEl.scrollIntoView === "function") {
+            cartEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        });
+      }
+      topBar.classList.remove("hidden");
+      renderDynamicCaisse();
+    } else {
+      if (topBar) topBar.classList.add("hidden");
+      var isAuthed = !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
+      if (header && isAuthed) header.classList.remove("hidden");
+    }
+  }
+
+  function ensureDynamicControls() {
+    var caisseSec = document.getElementById("view-caisse");
+    if (!caisseSec || document.getElementById("caisse-dynamic-toolbar")) return;
+    var catGrid = document.getElementById("pos-catalog-grid");
+    if (!catGrid || !catGrid.parentElement) return;
+
+    var bar = document.createElement("div");
+    bar.id = "caisse-dynamic-toolbar";
+    bar.className = "flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center bg-slate-950 border border-slate-800 p-3 rounded-xl";
+    bar.innerHTML =
+      "<div id=\"caisse-cat-tabs\" class=\"flex flex-wrap gap-1.5\"></div>" +
+      "<input type=\"search\" id=\"caisse-search-input\" placeholder=\"Filtrer article...\" class=\"bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none px-3 py-1.5 rounded-lg text-xs text-white sm:w-44\"/>";
+    catGrid.parentElement.insertBefore(bar, catGrid);
+
+    var cats = ["ALL", "Plats & Burgers", "Boissons", "Vins & Spiritueux"];
+    var labels = { "ALL": "Tout", "Plats & Burgers": "Plats", "Boissons": "Boissons", "Vins & Spiritueux": "Vins & Bar" };
+    var tabsEl = document.getElementById("caisse-cat-tabs");
+    for (var i = 0; i < cats.length; i++) {
+      (function(cKey) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.dataset.cat = cKey;
+        b.textContent = labels[cKey] || cKey;
+        b.className = "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
+        b.addEventListener("click", function() {
+          activeCategory = cKey;
+          renderDynamicCaisse();
+        });
+        tabsEl.appendChild(b);
+      })(cats[i]);
+    }
+
+    var searchInp = document.getElementById("caisse-search-input");
+    if (searchInp) {
+      searchInp.addEventListener("input", function() {
+        searchQuery = String(searchInp.value || "").trim().toLowerCase();
+        renderDynamicCaisse();
+      });
+    }
+  }
+
+  window.adjustCartQty = function(itemId, delta) {
+    if (typeof cartState !== "object" || !Array.isArray(cartState.items)) return;
+    for (var i = 0; i < cartState.items.length; i++) {
+      if (cartState.items[i].id === itemId) {
+        cartState.items[i].qty = Number(cartState.items[i].qty || 0) + Number(delta || 0);
+        if (cartState.items[i].qty <= 0) {
+          cartState.items.splice(i, 1);
+        }
+        break;
+      }
+    }
+    renderDynamicCaisse();
+  };
+
+  function renderDynamicCaisse() {
+    if (!isCaisseRoute()) return;
+    ensureDynamicControls();
+    var catalog = ensureCatalogSeeded();
+    var grid = document.getElementById("pos-catalog-grid");
+
+    var tabs = document.querySelectorAll("#caisse-cat-tabs button");
+    for (var tIdx = 0; tIdx < tabs.length; tIdx++) {
+      var isAct = tabs[tIdx].dataset.cat === activeCategory;
+      tabs[tIdx].className = isAct
+        ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
+        : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
+    }
+
+    if (grid) {
+      grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
+      var filtered = [];
+      for (var i = 0; i < catalog.length && filtered.length < MAX_CATALOG_ITEMS; i++) {
+        var it = catalog[i];
+        if (activeCategory !== "ALL" && it.category !== activeCategory) continue;
+        if (searchQuery) {
+          var hay = (String(it.name || "") + " " + String(it.category || "")).toLowerCase();
+          if (hay.indexOf(searchQuery) === -1) continue;
+        }
+        filtered.push(it);
+      }
+      grid.innerHTML = filtered.map(function(item) {
+        var inCart = 0;
+        if (typeof cartState === "object" && Array.isArray(cartState.items)) {
+          for (var c = 0; c < cartState.items.length; c++) {
+            if (cartState.items[c].id === item.id) { inCart = Number(cartState.items[c].qty || 0); break; }
+          }
+        }
+        var badgeHtml = inCart > 0
+          ? "<span class=\"ml-2 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px]\">x" + inCart + "</span>"
+          : "";
+        return (
+          "<div class=\"bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition\">" +
+            "<div class=\"min-w-0\">" +
+              "<div class=\"font-bold text-white truncate\">" + item.name + badgeHtml + "</div>" +
+              "<div class=\"text-[11px] text-slate-400 mt-0.5\">" + Number(item.priceTtc || 0).toFixed(2) + " TTC • " + item.category + "</div>" +
+            "</div>" +
+            "<button type=\"button\" onclick=\"addItemToCart('" + item.id + "'); setTimeout(function(){ window.dispatchEvent(new Event('caisse:refresh')); }, 10);\" class=\"shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs\">+ Ajouter</button>" +
+          "</div>"
+        );
+      }).join("") || "<p class=\"text-slate-500 col-span-2\">Aucun article trouvé.</p>";
+    }
+
+    if (typeof cartState === "object" && Array.isArray(cartState.items)) {
+      var qtySum = 0;
+      for (var k = 0; k < cartState.items.length; k++) qtySum += Number(cartState.items[k].qty || 0);
+      var topCnt = document.getElementById("caisse-topbar-count");
+      if (topCnt) topCnt.textContent = String(qtySum);
+
+      var cartList = document.getElementById("cart-items-list");
+      if (cartList) {
+        if (cartState.items.length === 0) {
+          cartList.innerHTML = "<p class=\"text-slate-500\">Panier vide.</p>";
+        } else {
+          cartList.innerHTML = cartState.items.map(function(row) {
+            var lineTot = (Number(row.qty || 0) * Number(row.priceTtc || 0)).toFixed(2);
+            return (
+              "<div class=\"flex items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 px-2.5 py-1.5 rounded-lg\">" +
+                "<span class=\"truncate font-semibold text-slate-200\">" + row.name + "</span>" +
+                "<div class=\"flex items-center gap-1.5 shrink-0\">" +
+                  "<button type=\"button\" onclick=\"adjustCartQty('" + row.id + "', -1)\" class=\"w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold\">-</button>" +
+                  "<span class=\"w-5 text-center font-bold text-emerald-300\">" + row.qty + "</span>" +
+                  "<button type=\"button\" onclick=\"adjustCartQty('" + row.id + "', 1)\" class=\"w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold\">+</button>" +
+                  "<span class=\"ml-1 text-emerald-400 font-bold\">" + lineTot + "</span>" +
+                "</div>" +
+              "</div>"
+            );
+          }).join("");
+        }
+      }
+
+      var tenant = (typeof getActiveTenant === "function") ? getActiveTenant() : { vatRate: 12 };
+      var rawTtc = 0;
+      for (var m = 0; m < cartState.items.length; m++) {
+        rawTtc += Number(cartState.items[m].qty || 0) * Number(cartState.items[m].priceTtc || 0);
+      }
+      var disc = Number(cartState.discountPct || 0);
+      var netTtc = rawTtc * (1 - disc / 100);
+      var vatRate = Number((tenant && tenant.vatRate) || 12) / 100;
+      var netHt = netTtc / (1 + vatRate);
+      var vatAmt = netTtc - netHt;
+      var badgeEl = document.getElementById("cart-badge");
+      var htEl = document.getElementById("cart-subtotal-ht");
+      var vatEl = document.getElementById("cart-vat-total");
+      var ttcEl = document.getElementById("cart-grand-total");
+      if (badgeEl) badgeEl.textContent = qtySum + " • " + netTtc.toFixed(2);
+      if (htEl) htEl.textContent = netHt.toFixed(2);
+      if (vatEl) vatEl.textContent = vatAmt.toFixed(2);
+      if (ttcEl) ttcEl.textContent = netTtc.toFixed(2);
+    }
+  }
+
+  window.addEventListener("caisse:refresh", renderDynamicCaisse);
+  window.addEventListener("hashchange", function() { setTimeout(syncChromeForCaisse, 40); });
+  window.addEventListener("DOMContentLoaded", function() { setTimeout(syncChromeForCaisse, 80); });
+  document.addEventListener("click", function() { setTimeout(syncChromeForCaisse, 40); });
+})();
+</script>
 </body>
 </html>
