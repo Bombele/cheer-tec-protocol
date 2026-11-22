@@ -1714,14 +1714,13 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_PLATFORM_ROUTER_FIX">
+<script id="LEXWALLET_MODULES_VISIBLE_FIX">
 (function() {
   var MAX_WAIT_MS = 4000;
   var HOLDING_EMAIL = "cbltec@proton.me";
   var HOLDING_PASS = "Holding@2026!";
-  var currentPlatformView = "/POS/holding-kyc";
 
-  function fnvDigest(str) {
+  function fnvHash(str) {
     var h1 = 0x811c9dc5, h2 = 0x01000193, s = String(str || "");
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
@@ -1732,26 +1731,34 @@
     return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
   }
 
-  function findLoginContainer() {
+  function findLoginCard() {
     var btn = document.getElementById("login-submit-btn");
     if (!btn) {
-      var btns = document.querySelectorAll("button");
-      for (var i = 0; i < btns.length; i++) {
-        if ((btns[i].textContent || "").indexOf("Se connecter") !== -1) { btn = btns[i]; break; }
+      var all = document.querySelectorAll("button");
+      for (var i = 0; i < all.length; i++) {
+        if ((all[i].textContent || "").indexOf("Se connecter") !== -1) { btn = all[i]; break; }
       }
     }
-    if (btn && btn.closest) {
-      return btn.closest("form") || btn.closest(".rounded-2xl, .rounded-xl, .card") || btn.parentElement;
+    if (!btn) return null;
+    var cur = btn.parentElement;
+    var depth = 0;
+    while (cur && cur !== document.body && depth < 6) {
+      var t = cur.textContent || "";
+      if (t.indexOf("Adresse e-mail") !== -1 && t.indexOf("Mot de passe") !== -1 && t.length < 1500) {
+        return cur;
+      }
+      cur = cur.parentElement;
+      depth++;
     }
-    return null;
+    return btn.closest("form") || btn.parentElement;
   }
 
-  function showAuthFeedback(msg, isErr) {
-    var box = document.getElementById("lex-login-status");
+  function showLoginFeedback(msg, isErr) {
+    var box = document.getElementById("lex-modules-auth-msg");
     var anchor = document.getElementById("login-submit-btn");
     if (!box && anchor && anchor.parentElement) {
       box = document.createElement("div");
-      box.id = "lex-login-status";
+      box.id = "lex-modules-auth-msg";
       box.style.marginTop = "10px";
       box.style.fontSize = "13px";
       box.style.fontWeight = "600";
@@ -1763,122 +1770,65 @@
     }
   }
 
-  function isolatePlatformSections(activePath, isAuthenticated, showKycOnly) {
-    var loginBox = findLoginContainer();
-    if (loginBox) {
-      loginBox.style.display = isAuthenticated ? "none" : "";
-    }
-    var panels = document.querySelectorAll("section, article, [data-route], .route-view, .page-section");
-    var matchedCount = 0;
-    for (var i = 0; i < panels.length; i++) {
-      var p = panels[i];
-      var txt = p.textContent || "";
-      if (txt.indexOf("Se connecter") !== -1 && txt.indexOf("Mot de passe") !== -1 && txt.length < 700) continue;
-      if (!isAuthenticated && !showKycOnly) {
-        p.style.display = "none";
-      } else if (showKycOnly) {
-        var isKyc = (txt.indexOf("KYC") !== -1 || txt.indexOf("Email de connexion") !== -1 || txt.indexOf("Créer un Compte") !== -1);
-        p.style.display = isKyc ? "" : "none";
-        if (isKyc) matchedCount++;
-      } else {
-        var showAllHub = (activePath === "/POS" || activePath === "/POS/holding-kyc");
-        var matchesPath = false;
-        if (activePath === "/POS/caisse") matchesPath = (txt.indexOf("/POS/caisse") !== -1 || txt.indexOf("Encaissement") !== -1);
-        else if (activePath === "/POS/rapport-pnl-z") matchesPath = (txt.indexOf("/POS/rapport-pnl-z") !== -1 || txt.indexOf("Clôture Z") !== -1);
-        else if (activePath === "/POS/stocks-iot-scanners") matchesPath = (txt.indexOf("/POS/stocks-iot-scanners") !== -1 || txt.indexOf("Stocks Réels") !== -1);
-        else matchesPath = (txt.indexOf("Espace Établissement") !== -1 || txt.indexOf("Sélection de Compte") !== -1);
-        p.style.display = (showAllHub || matchesPath) ? "" : "none";
-        if (showAllHub || matchesPath) matchedCount++;
+  function showAllPlatformModules(user) {
+    var loginCard = findLoginCard();
+    if (loginCard) loginCard.style.display = "none";
+
+    var hiddenEls = document.querySelectorAll("section, article, main, div");
+    for (var i = 0; i < hiddenEls.length; i++) {
+      var el = hiddenEls[i];
+      if (loginCard && (el === loginCard || loginCard.contains(el))) continue;
+      if (el.id === "lex-modules-auth-msg") continue;
+      var txt = el.textContent || "";
+      if (txt.indexOf("Espace Établissement") !== -1 ||
+          txt.indexOf("/POS/caisse") !== -1 ||
+          txt.indexOf("/POS/rapport-pnl-z") !== -1 ||
+          txt.indexOf("/POS/stocks-iot-scanners") !== -1 ||
+          txt.indexOf("KYC") !== -1 ||
+          txt.indexOf("Stocks Réels") !== -1) {
+        if (el.classList && el.classList.contains("hidden")) el.classList.remove("hidden");
+        if (el.style && el.style.display === "none") el.style.display = "";
       }
     }
-    var shell = document.getElementById("lex-platform-shell");
-    if (isAuthenticated && !shell) {
-      var targetHost = document.querySelector("main") || document.body;
-      shell = document.createElement("div");
-      shell.id = "lex-platform-shell";
-      shell.style.maxWidth = "680px";
-      shell.style.margin = "12px auto";
-      shell.style.padding = "12px 14px";
-      shell.style.borderRadius = "12px";
-      shell.style.border = "1px solid #1e293b";
-      shell.style.background = "#0f172a";
-      shell.style.color = "#e2e8f0";
-      shell.style.fontSize = "13px";
-      shell.innerHTML = "<div style=\"display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;\">" +
-        "<div><strong>Plateforme connectée</strong> — <span id=\"lex-shell-user\"></span> (<span id=\"lex-shell-role\"></span>)</div>" +
-        "<button type=\"button\" id=\"lex-shell-logout\" style=\"padding:5px 10px;border-radius:8px;background:#334155;color:#fff;font-size:12px;\">Déconnexion</button></div>" +
-        "<div id=\"lex-shell-nav\" style=\"margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;\"></div>";
-      targetHost.insertBefore(shell, targetHost.firstChild);
-      var navBox = document.getElementById("lex-shell-nav");
-      var items = [
-        { label: "Holding & KYC", path: "/POS/holding-kyc" },
-        { label: "Espace Établissement", path: "/POS" },
-        { label: "Caisse", path: "/POS/caisse" },
-        { label: "Stocks & Lots", path: "/POS/stocks-iot-scanners" },
-        { label: "Rapport P&L / Z", path: "/POS/rapport-pnl-z" }
-      ];
-      for (var k = 0; k < items.length; k++) {
-        (function(it) {
-          var b = document.createElement("button");
-          b.type = "button";
-          b.textContent = it.label;
-          b.style.padding = "6px 10px";
-          b.style.borderRadius = "8px";
-          b.style.background = "#0284c7";
-          b.style.color = "#fff";
-          b.style.fontWeight = "600";
-          b.style.fontSize = "12px";
-          b.addEventListener("click", function() {
-            currentPlatformView = it.path;
-            try { window.location.hash = "#" + it.path; } catch (_) {}
-            try { if (typeof navigateRoute === "function") navigateRoute(it.path); } catch (_) {}
-            isolatePlatformSections(currentPlatformView, true, false);
-          });
-          navBox.appendChild(b);
-        })(items[k]);
-      }
-      var outBtn = document.getElementById("lex-shell-logout");
+
+    var bar = document.getElementById("lex-top-session-bar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "lex-top-session-bar";
+      bar.style.maxWidth = "680px";
+      bar.style.margin = "12px auto";
+      bar.style.padding = "10px 14px";
+      bar.style.borderRadius = "12px";
+      bar.style.border = "1px solid #1e293b";
+      bar.style.background = "#0f172a";
+      bar.style.color = "#e2e8f0";
+      bar.style.fontSize = "13px";
+      bar.style.display = "flex";
+      bar.style.justifyContent = "space-between";
+      bar.style.alignItems = "center";
+      bar.style.flexWrap = "wrap";
+      bar.style.gap = "8px";
+      bar.innerHTML = "<div>Session active : <strong id=\"lex-active-email\"></b> (<span id=\"lex-active-role\"></span>)</div>" +
+        "<button type=\"button\" id=\"lex-logout-btn\" style=\"padding:5px 10px;border-radius:8px;background:#334155;color:#fff;font-size:12px;\">Déconnexion</button>";
+      var targetParent = document.querySelector("main") || document.body;
+      targetParent.insertBefore(bar, targetParent.firstChild);
+      var outBtn = document.getElementById("lex-logout-btn");
       if (outBtn) {
         outBtn.addEventListener("click", function() {
-          try { if (typeof sessionState === "object" && sessionState) { sessionState.authenticated = false; } } catch (_) {}
-          shell.style.display = "none";
-          isolatePlatformSections("/", false, false);
+          try { if (typeof sessionState === "object" && sessionState) sessionState.authenticated = false; } catch (_) {}
+          if (loginCard) loginCard.style.display = "";
+          bar.style.display = "none";
         });
       }
     }
-    if (shell) {
-      shell.style.display = isAuthenticated ? "block" : "none";
-    }
-    if (matchedCount === 0 && isAuthenticated) {
-      for (var m = 0; m < panels.length; m++) {
-        var pt = panels[m].textContent || "";
-        if (pt.indexOf("Se connecter") === -1) panels[m].style.display = "";
-      }
-    }
+    bar.style.display = "flex";
+    var em = document.getElementById("lex-active-email");
+    var rl = document.getElementById("lex-active-role");
+    if (em) em.textContent = user.email;
+    if (rl) rl.textContent = user.role || "holding";
   }
 
-  function enterPlatform(user) {
-    currentPlatformView = (user.role === "holding") ? "/POS/holding-kyc" : "/POS";
-    try {
-      if (typeof sessionState === "object" && sessionState) {
-        sessionState.authenticated = true;
-        sessionState.email = user.email;
-        sessionState.role = user.role || "holding";
-        sessionState.activeTenantId = user.tenantId || "CHEER-FLAGSHIP-01";
-      }
-      if (typeof persistLocalOnly === "function") persistLocalOnly();
-      if (typeof updateHeader === "function") updateHeader();
-      if (typeof navigateRoute === "function") navigateRoute(currentPlatformView);
-    } catch (_) {}
-    try { window.location.hash = "#" + currentPlatformView; } catch (_) {}
-    isolatePlatformSections(currentPlatformView, true, false);
-    var uEl = document.getElementById("lex-shell-user");
-    var rEl = document.getElementById("lex-shell-role");
-    if (uEl) uEl.textContent = user.email;
-    if (rEl) rEl.textContent = user.role || "holding";
-  }
-
-  async function tryWorkerAuth(email, password) {
+  async function checkWorkerCredentials(email, password) {
     if (typeof getWorkerApiBase !== "function") return null;
     var base = String(getWorkerApiBase() || "").trim().replace(/\/+$/, "");
     if (!base) return null;
@@ -1901,17 +1851,17 @@
     }
   }
 
-  async function handlePlatformLogin(ev) {
+  async function runLoginFlow(ev) {
     if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
     var emailInput = document.getElementById("login-email-input") || document.getElementById("login-email") || document.querySelector("input[type=\"email\"]");
     var passInput = document.getElementById("login-password-input") || document.getElementById("login-password") || document.querySelector("input[type=\"password\"]");
     var email = emailInput ? String(emailInput.value || "").trim().toLowerCase() : "";
     var pass = passInput ? String(passInput.value || "") : "";
     if (!email || !pass) {
-      showAuthFeedback("Saisissez l'e-mail et le mot de passe.", true);
+      showLoginFeedback("Saisissez l'adresse e-mail et le mot de passe.", true);
       return false;
     }
-    var hFn = (typeof hashSecret === "function") ? hashSecret : fnvDigest;
+    var hFn = (typeof hashSecret === "function") ? hashSecret : fnvHash;
     var passHash = hFn(pass);
     var holdingHash = hFn(HOLDING_PASS);
     var user = null;
@@ -1928,41 +1878,40 @@
       user = { email: HOLDING_EMAIL, role: "holding", tenantId: "CHEER-FLAGSHIP-01" };
     }
     if (!user) {
-      user = await tryWorkerAuth(email, pass);
+      user = await checkWorkerCredentials(email, pass);
     }
     if (!user) {
-      showAuthFeedback("Identifiants incorrects (holding : cbltec@proton.me / Holding@2026!).", true);
+      showLoginFeedback("Identifiants incorrects (holding : cbltec@proton.me / Holding@2026!).", true);
       return false;
     }
-    showAuthFeedback("Connexion réussie. Ouverture de la plateforme...", false);
-    enterPlatform(user);
+    try {
+      if (typeof sessionState === "object" && sessionState) {
+        sessionState.authenticated = true;
+        sessionState.email = user.email;
+        sessionState.role = user.role || "holding";
+        sessionState.activeTenantId = user.tenantId || "CHEER-FLAGSHIP-01";
+      }
+      if (typeof persistLocalOnly === "function") persistLocalOnly();
+      if (typeof updateHeader === "function") updateHeader();
+    } catch (_) {}
+    showAllPlatformModules(user);
     return false;
   }
 
   document.addEventListener("submit", function(ev) {
     var t = ev.target;
     if (t && (t.textContent || "").indexOf("Se connecter") !== -1) {
-      handlePlatformLogin(ev);
+      runLoginFlow(ev);
     }
   }, true);
 
   document.addEventListener("click", function(ev) {
     var el = ev.target;
-    while (el && el !== document.body && el.tagName !== "BUTTON" && el.tagName !== "A") el = el.parentElement;
-    if (!el) return;
-    var txt = el.textContent || "";
-    if (el.tagName === "BUTTON" && txt.indexOf("Se connecter") !== -1) {
-      handlePlatformLogin(ev);
-    } else if (txt.indexOf("Créer un compte établissement") !== -1) {
-      if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
-      isolatePlatformSections("/POS/holding-kyc", false, true);
+    while (el && el !== document.body && el.tagName !== "BUTTON") el = el.parentElement;
+    if (el && el.tagName === "BUTTON" && (el.textContent || "").indexOf("Se connecter") !== -1) {
+      runLoginFlow(ev);
     }
   }, true);
-
-  window.addEventListener("DOMContentLoaded", function() {
-    var authed = !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
-    isolatePlatformSections(currentPlatformView, authed, false);
-  });
 })();
 </script>
 </body>
