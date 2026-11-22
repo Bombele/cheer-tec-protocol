@@ -1736,5 +1736,226 @@
   document.addEventListener("click", function() { setTimeout(syncChromeForCaisse, 40); });
 })();
 </script>
+<script id="LEXWALLET_HOLDING_KYC_CLEAN_FIX">
+(function() {
+  var MAX_STORES = 50;
+  var MOCK_NAMES = {
+    "cheer flagship bruxelles": 1,
+    "franchise cheer lyon part-dieu": 1,
+    "franchise cheer barcelona gràcia": 1,
+    "franchise cheer barcelona gracia": 1,
+    "restaurant cheer litoral / caracas": 1,
+    "cheer flagship 01": 1,
+    "cheer cheese franchise 02": 1
+  };
+  var MOCK_IDS = {
+    "cheer-flagship-01": 1,
+    "cheer-fr-lyon-02": 1,
+    "cheer-es-bcn-03": 1,
+    "cheer-ve-ccs-04": 1,
+    "cheer-franchise-02": 1
+  };
+
+  function isHoldingRoute() {
+    var h = String(window.location.hash || "");
+    if (h.indexOf("/POS/holding-kyc") !== -1) return true;
+    if (typeof sessionState === "object" && sessionState && sessionState.activeRoute === "/POS/holding-kyc") return true;
+    var sec = document.getElementById("view-holding");
+    return !!(sec && !sec.classList.contains("hidden"));
+  }
+
+  function isMockTenant(id, tenant) {
+    var lowId = String(id || "").trim().toLowerCase();
+    var lowName = String((tenant && tenant.name) || "").trim().toLowerCase();
+    if (MOCK_IDS[lowId] || MOCK_NAMES[lowName]) return true;
+    if (tenant && !tenant.userCreated && (!tenant.transactions || tenant.transactions.length === 0) && lowId.indexOf("cheer-") === 0 && lowId.length <= 20) {
+      return true;
+    }
+    return false;
+  }
+
+  function purgeSimulatedTenantsOnce() {
+    if (typeof tenantStore !== "object" || !tenantStore) return;
+    var changed = false;
+    var keys = Object.keys(tenantStore);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (isMockTenant(k, tenantStore[k])) {
+        delete tenantStore[k];
+        changed = true;
+      }
+    }
+    if (typeof sessionState === "object" && sessionState) {
+      if (MOCK_IDS[String(sessionState.activeTenantId || "").toLowerCase()]) {
+        var rem = Object.keys(tenantStore);
+        sessionState.activeTenantId = rem.length > 0 ? rem[0] : "";
+        changed = true;
+      }
+    }
+    if (changed && typeof persistLocalOnly === "function") {
+      persistLocalOnly();
+    }
+  }
+
+  function ensureHoldingTopBar() {
+    var onHolding = isHoldingRoute();
+    var subnav = document.getElementById("pos-subnav");
+    var header = document.querySelector("header");
+    var bar = document.getElementById("lex-holding-focus-bar");
+
+    if (onHolding) {
+      if (subnav) subnav.classList.add("hidden");
+      if (header) header.classList.add("hidden");
+      if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "lex-holding-focus-bar";
+        bar.className = "sticky top-0 z-30 flex items-center justify-between gap-2 bg-slate-900/95 backdrop-blur border border-slate-800 px-4 py-3 rounded-2xl font-mono text-xs shadow-lg";
+        bar.innerHTML =
+          "<button type=\"button\" id=\"holding-back-menu-btn\" class=\"px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 font-bold\">← Menu</button>" +
+          "<span class=\"font-bold text-amber-400 tracking-wide\">HOLDING & KYC</span>" +
+          "<button type=\"button\" id=\"holding-focus-kyc-btn\" class=\"px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold\">+ Nouveau KYC</button>";
+        var mainBox = document.querySelector(".max-w-6xl") || document.body;
+        mainBox.insertBefore(bar, mainBox.firstChild);
+        document.getElementById("holding-back-menu-btn").addEventListener("click", function() {
+          if (typeof navigateRoute === "function") navigateRoute("/POS");
+          else window.location.hash = "#/POS";
+          setTimeout(syncHoldingView, 60);
+        });
+        document.getElementById("holding-focus-kyc-btn").addEventListener("click", function() {
+          var codeInp = document.getElementById("h-new-id");
+          if (codeInp && typeof codeInp.scrollIntoView === "function") {
+            codeInp.scrollIntoView({ behavior: "smooth", block: "center" });
+            codeInp.focus();
+          }
+        });
+      }
+      bar.classList.remove("hidden");
+    } else {
+      if (bar) bar.classList.add("hidden");
+      var onCaisse = String(window.location.hash || "").indexOf("/POS/caisse") !== -1;
+      var isAuthed = !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
+      if (header && isAuthed && !onCaisse) header.classList.remove("hidden");
+    }
+  }
+
+  function getRegisteredTenants() {
+    if (typeof tenantStore !== "object" || !tenantStore) return [];
+    var list = [];
+    var keys = Object.keys(tenantStore);
+    for (var i = 0; i < keys.length && list.length < MAX_STORES; i++) {
+      var id = keys[i];
+      var t = tenantStore[id];
+      if (!t || isMockTenant(id, t)) continue;
+      list.push({ id: id, data: t });
+    }
+    return list;
+  }
+
+  function enhanceKycForm() {
+    var sec = document.getElementById("view-holding");
+    if (!sec) return;
+    var headerBlock = sec.firstElementChild;
+    if (headerBlock) {
+      headerBlock.innerHTML = "<p class=\"text-[11px] text-amber-400\">Holding • Dossier KYC</p><h2 class=\"text-base font-bold text-white\">Comptes Enregistrés & Création KYC</h2>";
+    }
+    var idInp = document.getElementById("h-new-id");
+    var nameInp = document.getElementById("h-new-name");
+    var emailInp = document.getElementById("h-new-email");
+    var passInp = document.getElementById("h-new-pass");
+    var legalInp = document.getElementById("h-new-legal");
+    var kycInp = document.getElementById("h-new-kyc-doc");
+    if (idInp) idInp.placeholder = "Code établissement (ex: CHEER-BRU-01)";
+    if (nameInp) nameInp.placeholder = "Nom officiel de l'établissement";
+    if (emailInp) emailInp.placeholder = "E-mail gestionnaire";
+    if (passInp) passInp.placeholder = "Mot de passe accès";
+    if (legalInp) legalInp.placeholder = "N° TVA / Registre légal (KYC)";
+    if (kycInp) kycInp.placeholder = "Représentant légal & pièce KYC";
+  }
+
+  function renderCleanHoldingList() {
+    if (!isHoldingRoute()) return;
+    purgeSimulatedTenantsOnce();
+    enhanceKycForm();
+    var grid = document.getElementById("holding-tenants-grid");
+    if (!grid) return;
+    var registered = getRegisteredTenants();
+
+    if (registered.length === 0) {
+      grid.className = "bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300";
+      grid.innerHTML =
+        "<div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2\">" +
+          "<div><p class=\"font-bold text-white\">Aucun restaurant enregistré</p><p class=\"text-[11px] text-slate-400 mt-0.5\">Remplissez le formulaire KYC ci-dessous pour enregistrer un établissement réel.</p></div>" +
+          "<span class=\"px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-800/60 text-amber-300 text-[11px] font-bold self-start\">KYC requis</span>" +
+        "</div>";
+      return;
+    }
+
+    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
+    grid.innerHTML = registered.map(function(entry) {
+      var t = entry.data;
+      var activeId = (typeof sessionState === "object" && sessionState) ? sessionState.activeTenantId : "";
+      var isAct = entry.id === activeId;
+      var caTotal = 0;
+      if (Array.isArray(t.transactions)) {
+        for (var j = 0; j < t.transactions.length; j++) {
+          var tx = t.transactions[j];
+          if (tx && !tx.cancelled && !tx.is_test) caTotal += Number(tx.total_ttc || 0);
+        }
+      }
+      return (
+        "<div class=\"bg-slate-950 border " + (isAct ? "border-amber-500" : "border-slate-800") + " p-4 rounded-xl space-y-2.5\">" +
+          "<div class=\"flex items-start justify-between gap-2\">" +
+            "<div><p class=\"font-bold text-white\">" + (t.name || entry.id) + "</p><p class=\"text-[11px] text-sky-400\">" + entry.id + " • " + (t.country || "") + "</p></div>" +
+            "<span class=\"px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 text-[11px]\">KYC OK</span>" +
+          "</div>" +
+          "<div class=\"text-[11px] text-slate-400\">Réf. légale : <span class=\"text-slate-200\">" + (t.legalId || "-") + "</span> • CA : <span class=\"text-emerald-400 font-bold\">" + caTotal.toFixed(2) + "</span></div>" +
+          "<div class=\"flex gap-2 pt-1\">" +
+            "<button type=\"button\" onclick=\"selectTenantForHolding('" + entry.id + "')\" class=\"px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold\">Ouvrir</button>" +
+            "<button type=\"button\" onclick=\"deleteRegisteredTenant('" + entry.id + "')\" class=\"px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-rose-950 border border-slate-700 hover:border-rose-800 text-slate-300 hover:text-rose-300\">Supprimer</button>" +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  window.deleteRegisteredTenant = function(tenantId) {
+    if (typeof tenantStore !== "object" || !tenantStore || !tenantStore[tenantId]) return;
+    delete tenantStore[tenantId];
+    if (typeof sessionState === "object" && sessionState && sessionState.activeTenantId === tenantId) {
+      var rem = Object.keys(tenantStore);
+      sessionState.activeTenantId = rem.length > 0 ? rem[0] : "";
+    }
+    if (typeof persistLocalOnly === "function") persistLocalOnly();
+    renderCleanHoldingList();
+    if (typeof showToast === "function") showToast("Établissement " + tenantId + " retiré.");
+  };
+
+  function syncHoldingView() {
+    ensureHoldingTopBar();
+    if (isHoldingRoute()) {
+      renderCleanHoldingList();
+    }
+  }
+
+  document.addEventListener("click", function(ev) {
+    var t = ev.target;
+    while (t && t !== document.body && t.tagName !== "BUTTON") t = t.parentElement;
+    if (t && (t.textContent || "").indexOf("Enregistrer Compte & KYC") !== -1) {
+      setTimeout(function() {
+        if (typeof tenantStore === "object" && tenantStore) {
+          var codeVal = String((document.getElementById("h-new-id") && document.getElementById("h-new-id").value) || "").trim().toUpperCase();
+          if (codeVal && tenantStore[codeVal]) tenantStore[codeVal].userCreated = true;
+          if (typeof persistLocalOnly === "function") persistLocalOnly();
+        }
+        renderCleanHoldingList();
+      }, 50);
+    }
+    setTimeout(syncHoldingView, 40);
+  }, true);
+
+  window.addEventListener("hashchange", function() { setTimeout(syncHoldingView, 40); });
+  window.addEventListener("DOMContentLoaded", function() { setTimeout(syncHoldingView, 80); });
+})();
+</script>
 </body>
 </html>
