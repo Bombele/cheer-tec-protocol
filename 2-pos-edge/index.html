@@ -1438,5 +1438,69 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
+<script id="LEXWALLET_SOBRIETY_MENU_FIX">
+(function() {
+  var MENU_ITEMS = [
+    { label: "Caisse", route: "/POS/caisse" },
+    { label: "Rapport P&L / Z", route: "/POS/rapport-pnl-z" },
+    { label: "Coûts & Trésorerie", route: "/POS/couts-tresorerie" },
+    { label: "Factures", route: "/POS/factures-precompta" },
+    { label: "RH & Paie", route: "/POS/rh-paie" },
+    { label: "Stocks & Lots", route: "/POS/stocks-iot-scanners" },
+    { label: "Fournisseurs", route: "/POS/fournisseurs-recettes" },
+    { label: "Tickets & QR", route: "/POS/historique-qr" },
+    { label: "Fiscalité & API", route: "/POS/parametres-fiscaux" },
+    { label: "Holding & KYC", route: "/POS/holding-kyc" }
+  ];
+
+  function simplifyPosHub() {
+    var hub = document.getElementById("view-pos-hub");
+    if (!hub) return;
+    var grid = hub.querySelector(".grid");
+    if (!grid) return;
+    grid.className = "grid grid-cols-2 sm:grid-cols-3 gap-2.5";
+    grid.innerHTML = "";
+    for (var i = 0; i < MENU_ITEMS.length; i++) {
+      (function(item) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "text-left bg-slate-950 hover:border-sky-500 border border-slate-800 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-100 transition";
+        btn.textContent = item.label;
+        btn.addEventListener("click", function() {
+          if (typeof navigateRoute === "function") {
+            navigateRoute(item.route);
+          } else {
+            window.location.hash = "#" + item.route;
+          }
+        });
+        grid.appendChild(btn);
+      })(MENU_ITEMS[i]);
+    }
+    var sub = document.getElementById("pos-hub-subtitle");
+    if (sub) sub.textContent = "";
+  }
+
+  function compactHeaderLines() {
+    var ctx = document.getElementById("header-context-label");
+    if (ctx && ctx.textContent && ctx.textContent.indexOf("•") !== -1) {
+      var parts = ctx.textContent.split("•");
+      ctx.textContent = (parts[parts.length - 1] || "").trim();
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function() {
+    simplifyPosHub();
+    compactHeaderLines();
+  });
+  window.addEventListener("hashchange", function() {
+    simplifyPosHub();
+    compactHeaderLines();
+  });
+  setTimeout(function() {
+    simplifyPosHub();
+    compactHeaderLines();
+  }, 150);
+})();
+</script>
 </body>
 </html>
