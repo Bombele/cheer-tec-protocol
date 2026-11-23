@@ -1957,5 +1957,200 @@
   window.addEventListener("DOMContentLoaded", function() { setTimeout(syncHoldingView, 80); });
 })();
 </script>
+<script id="LEXWALLET_BYBIT_DRAWER_FIX">
+(function() {
+  var PRIMARY_SHORTCUTS = [
+    { label: "Caisse", route: "/POS/caisse" },
+    { label: "Stocks & Lots", route: "/POS/stocks-iot-scanners" },
+    { label: "Rapport P&L / Z", route: "/POS/rapport-pnl-z" },
+    { label: "Coûts & Trésorerie", route: "/POS/couts-tresorerie" },
+    { label: "Factures", route: "/POS/factures-precompta" }
+  ];
+
+  var MORE_SHORTCUTS = [
+    { label: "RH & Paie", route: "/POS/rh-paie" },
+    { label: "Fournisseurs", route: "/POS/fournisseurs-recettes" },
+    { label: "Tickets & QR", route: "/POS/historique-qr" },
+    { label: "Fiscalité & API", route: "/POS/parametres-fiscaux" },
+    { label: "Holding & KYC", route: "/POS/holding-kyc" }
+  ];
+
+  var drawerOpen = false;
+  var moreExpanded = false;
+
+  function isAuthenticatedSession() {
+    return !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
+  }
+
+  function goRoute(routePath) {
+    drawerOpen = false;
+    syncDrawerDom();
+    if (typeof navigateRoute === "function") {
+      navigateRoute(routePath);
+    } else {
+      window.location.hash = "#" + routePath;
+    }
+    setTimeout(refreshBybitMenuLayout, 50);
+  }
+
+  function ensureDrawerDom() {
+    if (document.getElementById("lex-side-drawer")) return;
+
+    var backdrop = document.createElement("div");
+    backdrop.id = "lex-drawer-backdrop";
+    backdrop.className = "hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-[1px]";
+    backdrop.addEventListener("click", function() {
+      drawerOpen = false;
+      syncDrawerDom();
+    });
+
+    var drawer = document.createElement("aside");
+    drawer.id = "lex-side-drawer";
+    drawer.className = "hidden fixed top-0 left-0 z-50 h-full max-h-screen w-72 max-w-[85vw] overflow-y-auto bg-slate-900 border-r border-slate-800 p-4 font-mono text-xs space-y-3 shadow-2xl";
+
+    var topRow = document.createElement("div");
+    topRow.className = "flex items-center justify-between border-b border-slate-800 pb-3";
+    topRow.innerHTML = "<span class=\"font-bold text-sky-400\">MENU</span><button type=\"button\" id=\"lex-drawer-close\" class=\"px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold\">✕</button>";
+    drawer.appendChild(topRow);
+
+    var listWrap = document.createElement("div");
+    listWrap.id = "lex-drawer-items";
+    listWrap.className = "flex flex-col gap-1.5";
+
+    var allItems = [{ label: "Accueil /POS", route: "/POS" }].concat(PRIMARY_SHORTCUTS).concat(MORE_SHORTCUTS);
+    for (var i = 0; i < allItems.length; i++) {
+      (function(item) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "w-full text-left px-3 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-slate-100 font-bold transition";
+        btn.textContent = item.label;
+        btn.addEventListener("click", function() { goRoute(item.route); });
+        listWrap.appendChild(btn);
+      })(allItems[i]);
+    }
+    drawer.appendChild(listWrap);
+
+    var footWrap = document.createElement("div");
+    footWrap.className = "pt-2 border-t border-slate-800 flex flex-col gap-1.5";
+    var syncBtn = document.createElement("button");
+    syncBtn.type = "button";
+    syncBtn.className = "w-full text-left px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-sky-300 font-bold";
+    syncBtn.textContent = "Sync Cloud";
+    syncBtn.addEventListener("click", function() {
+      drawerOpen = false; syncDrawerDom();
+      if (typeof syncNowManual === "function") syncNowManual();
+    });
+    var outBtn = document.createElement("button");
+    outBtn.type = "button";
+    outBtn.className = "w-full text-left px-3 py-2 rounded-xl bg-slate-950 hover:bg-rose-950 text-rose-300 font-bold";
+    outBtn.textContent = "Déconnexion";
+    outBtn.addEventListener("click", function() {
+      drawerOpen = false; syncDrawerDom();
+      if (typeof logoutSession === "function") logoutSession();
+    });
+    footWrap.appendChild(syncBtn);
+    footWrap.appendChild(outBtn);
+    drawer.appendChild(footWrap);
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(drawer);
+
+    document.getElementById("lex-drawer-close").addEventListener("click", function() {
+      drawerOpen = false;
+      syncDrawerDom();
+    });
+  }
+
+  function syncDrawerDom() {
+    ensureDrawerDom();
+    var backdrop = document.getElementById("lex-drawer-backdrop");
+    var drawer = document.getElementById("lex-side-drawer");
+    if (!isAuthenticatedSession()) drawerOpen = false;
+    if (backdrop) backdrop.classList.toggle("hidden", !drawerOpen);
+    if (drawer) drawer.classList.toggle("hidden", !drawerOpen);
+  }
+
+  function ensureBurgerTrigger() {
+    if (!isAuthenticatedSession()) return;
+    var targetBar = null;
+    var caisseBar = document.getElementById("lex-caisse-focus-bar");
+    var holdingBar = document.getElementById("lex-holding-focus-bar");
+    var header = document.querySelector("header");
+
+    if (caisseBar && !caisseBar.classList.contains("hidden")) targetBar = caisseBar;
+    else if (holdingBar && !holdingBar.classList.contains("hidden")) targetBar = holdingBar;
+    else if (header && !header.classList.contains("hidden")) targetBar = header;
+
+    if (!targetBar || document.getElementById("lex-burger-btn")) return;
+    var burger = document.createElement("button");
+    burger.id = "lex-burger-btn";
+    burger.type = "button";
+    burger.setAttribute("aria-label", "Ouvrir le menu");
+    burger.className = "px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs";
+    burger.textContent = "☰";
+    burger.addEventListener("click", function(e) {
+      e.stopPropagation();
+      drawerOpen = !drawerOpen;
+      syncDrawerDom();
+    });
+    targetBar.insertBefore(burger, targetBar.firstChild);
+  }
+
+  function renderBybitPosHub() {
+    var hub = document.getElementById("view-pos-hub");
+    if (!hub || hub.classList.contains("hidden")) return;
+    var grid = hub.querySelector(".grid");
+    if (!grid) return;
+
+    grid.className = "grid grid-cols-2 sm:grid-cols-3 gap-2.5";
+    grid.innerHTML = "";
+
+    for (var i = 0; i < PRIMARY_SHORTCUTS.length; i++) {
+      (function(item) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "text-left bg-slate-950 hover:border-sky-500 border border-slate-800 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-100 transition";
+        btn.textContent = item.label;
+        btn.addEventListener("click", function() { goRoute(item.route); });
+        grid.appendChild(btn);
+      })(PRIMARY_SHORTCUTS[i]);
+    }
+
+    var moreBtn = document.createElement("button");
+    moreBtn.type = "button";
+    moreBtn.className = "text-left bg-slate-800 hover:bg-slate-700 border border-sky-700/70 px-3.5 py-3 rounded-xl font-bold text-xs text-sky-300 transition";
+    moreBtn.textContent = moreExpanded ? "Moins −" : "Plus +";
+    moreBtn.addEventListener("click", function() {
+      moreExpanded = !moreExpanded;
+      renderBybitPosHub();
+    });
+    grid.appendChild(moreBtn);
+
+    if (moreExpanded) {
+      for (var j = 0; j < MORE_SHORTCUTS.length; j++) {
+        (function(sub) {
+          var sBtn = document.createElement("button");
+          sBtn.type = "button";
+          sBtn.className = "text-left bg-slate-950/80 hover:border-amber-500/70 border border-slate-800 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-300 transition";
+          sBtn.textContent = sub.label;
+          sBtn.addEventListener("click", function() { goRoute(sub.route); });
+          grid.appendChild(sBtn);
+        })(MORE_SHORTCUTS[j]);
+      }
+    }
+  }
+
+  function refreshBybitMenuLayout() {
+    ensureDrawerDom();
+    ensureBurgerTrigger();
+    syncDrawerDom();
+    renderBybitPosHub();
+  }
+
+  window.addEventListener("DOMContentLoaded", function() { setTimeout(refreshBybitMenuLayout, 90); });
+  window.addEventListener("hashchange", function() { setTimeout(refreshBybitMenuLayout, 50); });
+  document.addEventListener("click", function() { setTimeout(refreshBybitMenuLayout, 50); });
+})();
+</script>
 </body>
 </html>
