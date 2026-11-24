@@ -2152,5 +2152,77 @@
   document.addEventListener("click", function() { setTimeout(refreshBybitMenuLayout, 50); });
 })();
 </script>
+<script id="LEXWALLET_SYNC_CLOUD_GUARD">
+(function() {
+  var SYNC_TIMEOUT_MS = 5000;
+  var syncInFlight = false;
+
+  function notifyUser(msg) {
+    if (typeof showToast === "function") {
+      showToast(msg);
+    } else {
+      console.info("[SyncCloud]", msg);
+    }
+  }
+
+  function getWorkerUrl() {
+    var inp = document.getElementById("tax-worker-url");
+    if (inp && String(inp.value || "").trim()) return String(inp.value).trim();
+    if (typeof getActiveTenant === "function") {
+      var t = getActiveTenant();
+      if (t && t.workerUrl) return String(t.workerUrl).trim();
+    }
+    return "";
+  }
+
+  window.syncNowManual = function() {
+    if (syncInFlight) {
+      notifyUser("Synchronisation déjà en cours.");
+      return;
+    }
+    var endpoint = getWorkerUrl();
+    if (!endpoint) {
+      notifyUser("Mode local actif (aucun endpoint Worker configuré).");
+      return;
+    }
+    if (typeof fetch !== "function" || typeof AbortController !== "function") {
+      notifyUser("Environnement sans support réseau fetch/AbortController.");
+      return;
+    }
+
+    syncInFlight = true;
+    var controller = new AbortController();
+    var timerId = setTimeout(function() {
+      controller.abort();
+    }, SYNC_TIMEOUT_MS);
+
+    var payload = {
+      ts: new Date().toISOString(),
+      tenantId: (typeof sessionState === "object" && sessionState && sessionState.activeTenantId) || "",
+      store: (typeof tenantStore === "object" && tenantStore) || {}
+    };
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    })
+      .then(function(res) {
+        clearTimeout(timerId);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        notifyUser("Synchronisation cloud effectuée.");
+      })
+      .catch(function(err) {
+        clearTimeout(timerId);
+        var reason = (err && err.name === "AbortError") ? "timeout (5s)" : "endpoint injoignable";
+0
+      })
+      .finally(function() {
+        syncInFlight = false;
+      });
+  };
+})();
+</script>
 </body>
 </html>
