@@ -2152,76 +2152,212 @@
   document.addEventListener("click", function() { setTimeout(refreshBybitMenuLayout, 50); });
 })();
 </script>
-<script id="LEXWALLET_SYNC_CLOUD_GUARD">
+<script id="LEXWALLET_LOCAL_EXPORT_SUITE">
 (function() {
-  var SYNC_TIMEOUT_MS = 5000;
-  var syncInFlight = false;
+  var MAX_EXPORT_ROWS = 5000;
 
-  function notifyUser(msg) {
-    if (typeof showToast === "function") {
-      showToast(msg);
-    } else {
-      console.info("[SyncCloud]", msg);
-    }
-  }
-
-  function getWorkerUrl() {
-    var inp = document.getElementById("tax-worker-url");
-    if (inp && String(inp.value || "").trim()) return String(inp.value).trim();
+  function getCurrentTenantSafe() {
     if (typeof getActiveTenant === "function") {
       var t = getActiveTenant();
-      if (t && t.workerUrl) return String(t.workerUrl).trim();
+      if (t) return t;
     }
-    return "";
+    if (typeof tenantStore === "object" && tenantStore) {
+      var keys = Object.keys(tenantStore);
+      if (keys.length > 0) return tenantStore[keys[0]];
+    }
+    return null;
   }
 
-  window.syncNowManual = function() {
-    if (syncInFlight) {
-      notifyUser("Synchronisation déjà en cours.");
-      return;
+  function getActiveTenantIdSafe() {
+    if (typeof sessionState === "object" && sessionState && sessionState.activeTenantId) {
+      return String(sessionState.activeTenantId);
     }
-    var endpoint = getWorkerUrl();
-    if (!endpoint) {
-      notifyUser("Mode local actif (aucun endpoint Worker configuré).");
-      return;
+    if (typeof tenantStore === "object" && tenantStore) {
+      var keys = Object.keys(tenantStore);
+      if (keys.length > 0) return String(keys[0]);
     }
-    if (typeof fetch !== "function" || typeof AbortController !== "function") {
-      notifyUser("Environnement sans support réseau fetch/AbortController.");
-      return;
+    return "LOCAL-POS";
+  }
+
+  function escapeCsvCell(val) {
+    var s = String(val === undefined || val === null ? "" : val);
+    if (s.indexOf(";") !== -1 || s.indexOf("\"") !== -1 || s.indexOf("\n") !== -1) {
+      return "\"" + s.replace(/"/g, "\"\"") + "\"";
+    }
+    return s;
+  }
+
+  function triggerDownloadBlob(filename, content, mimeType) {
+    var blob = new Blob([content], { type: mimeType });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function() {
+      if (a.parentNode) a.parentNode.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+
+  function exportExcelCsv() {
+    var tenant = getCurrentTenantSafe();
+    var tId = getActiveTenantIdSafe();
+    var txs = (tenant && Array.isArray(tenant.transactions)) ? tenant.transactions : [];
+    var lines = [];
+    lines.push(["Etablissement", "ID_Ticket", "Date_Heure", "Mode", "Sous_Total_HT", "TVA", "Total_TTC", "COGS", "Statut"].join(";"));
+
+    var count = 0;
+    for (var i = 0; i < txs.length && count < MAX_EXPORT_ROWS; i++) {
+      var tx = txs[i];
+      if (!tx || tx.is_test) continue;
+      var status = tx.cancelled ? "ANNULE" : "VALIDE";
+      lines.push([
+        escapeCsvCell((tenant && tenant.name) || tId),
+        escapeCsvCell(tx.id || ("TX-" + (i + 1))),
+        escapeCsvCell(tx.timestamp || tx.date || ""),
+        escapeCsvCell(tx.mode || "Sur Place"),
+        escapeCsvCell(Number(tx.subtotal_ht || 0).toFixed(2)),
+        escapeCsvCell(Number(tx.vat_amount || 0).toFixed(2)),
+        escapeCsvCell(Number(tx.total_ttc || 0).toFixed(2)),
+        escapeCsvCell(Number(tx.cogs_total || 0).toFixed(2)),
+        escapeCsvCell(status)
+      ].join(";"));
+      count++;
     }
 
-    syncInFlight = true;
-    var controller = new AbortController();
-    var timerId = setTimeout(function() {
-      controller.abort();
-    }, SYNC_TIMEOUT_MS);
+    lines.push("");
+    lines.push(["STOCK_ID", "Article", "Quantite", "Unite", "Cout_Unitaire"].join(";"));
+    var stocks = (tenant && Array.isArray(tenant.inventory)) ? tenant.inventory : [];
+    for (var j = 0; j < stocks.length && j < MAX_EXPORT_ROWS; j++) {
+      var st = stocks[j];
+      if (!st) continue;
+      lines.push([
+        escapeCsvCell(st.id || ""),
+        escapeCsvCell(st.name || ""),
+        escapeCsvCell(Number(st.qty || 0).toFixed(2)),
+        escapeCsvCell(st.unit || "u"),
+        escapeCsvCell(Number(st.unitCost || 0).toFixed(2))
+      ].join(";"));
+    }
 
+    var bom = "\uFEFF";
+    var stamp = new Date().toISOString().slice(0, 10);
+    triggerDownloadBlob("export_" + tId + "_" + stamp + ".csv", bom + lines.join("\r\n"), "text/csv;charset=utf-8;");
+    closeExportModal();
+  }
+
+  function exportJsonBackup() {
+    var tId = getActiveTenantIdSafe();
+    var stamp = new Date().toISOString().slice(0, 10);
     var payload = {
-      ts: new Date().toISOString(),
-      tenantId: (typeof sessionState === "object" && sessionState && sessionState.activeTenantId) || "",
-      store: (typeof tenantStore === "object" && tenantStore) || {}
+      exportedAt: new Date().toISOString(),
+      activeTenantId: tId,
+      tenants: (typeof tenantStore === "object" && tenantStore) || {}
     };
+    triggerDownloadBlob("backup_" + tId + "_" + stamp + ".json", JSON.stringify(payload, null, 2), "application/json;charset=utf-8;");
+    closeExportModal();
+  }
 
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    })
-      .then(function(res) {
-        clearTimeout(timerId);
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        notifyUser("Synchronisation cloud effectuée.");
-      })
-      .catch(function(err) {
-        clearTimeout(timerId);
-        var reason = (err && err.name === "AbortError") ? "timeout (5s)" : "endpoint injoignable";
-0
-      })
-      .finally(function() {
-        syncInFlight = false;
-      });
-  };
+  function exportPdfPrint() {
+    var tenant = getCurrentTenantSafe();
+    var tId = getActiveTenantIdSafe();
+    var txs = (tenant && Array.isArray(tenant.transactions)) ? tenant.transactions : [];
+    var caTtc = 0, caHt = 0, tvaTot = 0, cogsTot = 0, validCount = 0;
+    var rowsHtml = "";
+    for (var i = 0; i < txs.length && i < MAX_EXPORT_ROWS; i++) {
+      var tx = txs[i];
+      if (!tx || tx.is_test || tx.cancelled) continue;
+      validCount++;
+      caTtc += Number(tx.total_ttc || 0);
+      caHt += Number(tx.subtotal_ht || 0);
+      tvaTot += Number(tx.vat_amount || 0);
+      cogsTot += Number(tx.cogs_total || 0);
+      rowsHtml += "<tr><td>" + (tx.id || validCount) + "</td><td>" + (tx.timestamp || "-") + "</td><td>" + Number(tx.subtotal_ht || 0).toFixed(2) + "</td><td>" + Number(tx.vat_amount || 0).toFixed(2) + "</td><td>" + Number(tx.total_ttc || 0).toFixed(2) + "</td></tr>";
+    }
+    var rentCap = caHt * 0.07;
+    var w = window.open("", "_blank", "width=900,height=700");
+    if (!w) {
+      window.print();
+      closeExportModal();
+      return;
+    }
+    var html = "<!doctype html><html><head><meta charset=\"utf-8\"><title>Rapport " + tId + "</title>" +
+      "<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px;margin-bottom:4px}p{font-size:12px;color:#444}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f3f4f6}.kpi{display:flex;gap:16px;margin-top:12px;font-size:12px}.box{border:1px solid #ddd;padding:8px 12px;border-radius:6px}</style></head><body>" +
+      "<h1>Rapport Comptable & POS — " + ((tenant && tenant.name) || tId) + "</h1>" +
+      "<p>Code : " + tId + " • Réf. légale : " + ((tenant && tenant.legalId) || "-") + " • Date : " + new Date().toLocaleString() + "</p>" +
+      "<div class=\"kpi\">" +
+        "<div class=\"box\"><strong>Tickets valides :</strong> " + validCount + "</div>" +
+        "<div class=\"box\"><strong>CA HT :</strong> " + caHt.toFixed(2) + "</div>" +
+        "<div class=\"box\"><strong>TVA :</strong> " + tvaTot.toFixed(2) + "</div>" +
+        "<div class=\"box\"><strong>CA TTC :</strong> " + caTtc.toFixed(2) + "</div>" +
+        "<div class=\"box\"><strong>Plafond Loyer (7% HT) :</strong> " + rentCap.toFixed(2) + "</div>" +
+      "</div>" +
+      "<table><thead><tr><th>Ticket</th><th>Horodatage</th><th>HT</th><th>TVA</th><th>TTC</th></tr></thead><tbody>" +
+      (rowsHtml || "<tr><td colspan=\"5\">Aucune transaction validée.</td></tr>") +
+      "</tbody></table></body></html>";
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(function() { w.print(); }, 250);
+    closeExportModal();
+  }
+
+  function closeExportModal() {
+    var modal = document.getElementById("lex-export-modal");
+    if (modal) modal.classList.add("hidden");
+  }
+
+  function openExportModal() {
+    var modal = document.getElementById("lex-export-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "lex-export-modal";
+      modal.className = "fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 font-mono text-xs";
+      modal.innerHTML =
+        "<div class=\"w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-4 space-y-3 shadow-2xl\">" +
+          "<div class=\"flex items-center justify-between border-b border-slate-800 pb-2.5\">" +
+            "<span class=\"font-bold text-sky-400\">EXPORTER LES DONNÉES</span>" +
+            "<button type=\"button\" id=\"lex-exp-close\" class=\"px-2 py-1 rounded bg-slate-800 text-slate-200 font-bold\">✕</button>" +
+          "</div>" +
+          "<div class=\"flex flex-col gap-2\">" +
+            "<button type=\"button\" id=\"lex-exp-csv\" class=\"w-full text-left px-3.5 py-3 rounded-xl bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/70 text-emerald-200 font-bold\">Tableau Excel (.CSV)</button>" +
+            "<button type=\"button\" id=\"lex-exp-pdf\" class=\"w-full text-left px-3.5 py-3 rounded-xl bg-sky-950/70 hover:bg-sky-900 border border-sky-700/70 text-sky-200 font-bold\">Rapport PDF / Impression</button>" +
+            "<button type=\"button\" id=\"lex-exp-json\" class=\"w-full text-left px-3.5 py-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold\">Sauvegarde JSON</button>" +
+          "</div>" +
+        "</div>";
+      document.body.appendChild(modal);
+      modal.addEventListener("click", function(e) { if (e.target === modal) closeExportModal(); });
+      document.getElementById("lex-exp-close").addEventListener("click", closeExportModal);
+      document.getElementById("lex-exp-csv").addEventListener("click", exportExcelCsv);
+      document.getElementById("lex-exp-pdf").addEventListener("click", exportPdfPrint);
+      document.getElementById("lex-exp-json").addEventListener("click", exportJsonBackup);
+    }
+    modal.classList.remove("hidden");
+  }
+
+  window.syncNowManual = openExportModal;
+
+  function replaceSyncButtonsWithExport() {
+    var btns = document.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+      var b = btns[i];
+      var txt = String(b.textContent || "").trim();
+      if (txt === "Sync Cloud") {
+        b.textContent = "Exporter";
+        b.onclick = function(ev) {
+          if (ev && ev.preventDefault) ev.preventDefault();
+          openExportModal();
+        };
+      }
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function() { setTimeout(replaceSyncButtonsWithExport, 120); });
+  window.addEventListener("hashchange", function() { setTimeout(replaceSyncButtonsWithExport, 60); });
+  document.addEventListener("click", function() { setTimeout(replaceSyncButtonsWithExport, 60); });
 })();
 </script>
 </body>
