@@ -1438,7 +1438,7 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_CAISSE_MENU_V4">
+<script id="LEXWALLET_CAISSE_CLEAN_V5">
 (function() {
   var MAX_ITEMS = 100;
   var MENU = [
@@ -1502,6 +1502,20 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
+  function hideLegacyDuplicateMenuSections() {
+    var caisseView = document.getElementById("view-caisse");
+    if (!caisseView) return;
+    var host = document.getElementById("cheer-menu-v4-host");
+    var kids = caisseView.children;
+    for (var i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (!el || el === host || el.contains(document.getElementById("pos-catalog-grid"))) continue;
+      var txt = String(el.textContent || "");
+      if (txt.indexOf("Cheer Classic Cheese Burger") !== -1 || txt.indexOf("Cheer Truffle Bacon Burger") !== -1 || txt.indexOf("Plats & Burgers") !== -1 || txt.indexOf("Boissons Normal / Soft") !== -1 || txt.indexOf("Vins, Alcools & Spiritueux") !== -1) {
+        el.style.display = "none";
+      }
+    }
+  }
   function findOrCreateGridTarget() {
     var grid = document.getElementById("pos-catalog-grid");
     if (grid) return grid;
@@ -1530,8 +1544,9 @@
     }
     return document.getElementById("pos-catalog-grid");
   }
-  function renderMenuV4() {
+  function renderMenuV5() {
     syncTenants();
+    hideLegacyDuplicateMenuSections();
     var grid = findOrCreateGridTarget();
     if (!grid) return;
     var tabsEl = document.getElementById("caisse-cat-tabs");
@@ -1555,15 +1570,15 @@
           b.className = activeCat === c.k
             ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
             : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-950 text-slate-300 border border-slate-800";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV4(); });
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV5(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v4) {
-      inp.dataset.v4 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV4(); });
+    if (inp && !inp.dataset.v5) {
+      inp.dataset.v5 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV5(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1599,23 +1614,21 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV4;
-  function bootV4() { renderMenuV4(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV4(); setTimeout(bootV4, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV4, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV4, 100); });
+  window.renderPosCatalog = renderMenuV5;
+  function bootV5() { renderMenuV5(); }
+  window.addEventListener("DOMContentLoaded", function() { bootV5(); setTimeout(bootV5, 250); });
+  window.addEventListener("hashchange", function() { setTimeout(bootV5, 80); });
+  document.addEventListener("click", function() { setTimeout(bootV5, 100); });
 })();
 </script>
       "</body></html>";
     w.focus();
   }
 
-      if (!tx || tx.cancelled || tx.is_test) continue;
       n++;
     }
   }
 
-      if (!tx || tx.cancelled || tx.is_test) continue;
       ht += rHt; vat += rVat; ttc += rTtc;
       rows.push([tx.id || "-", tx.date || "-", rHt.toFixed(2), rVat.toFixed(2), rTtc.toFixed(2)]);
     }
