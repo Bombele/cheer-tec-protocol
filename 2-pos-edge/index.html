@@ -2209,6 +2209,154 @@
       "<h1>" + title + "</h1><p>" + subtitle + "</p>" +
       "<div class=\"summary\">" + summaryHtml + "</div>" +
       "<table><thead><tr>" + thHtml + "</tr></thead><tbody>" + (trHtml || "<tr><td colspan=\"" + headers.length + "\">Aucune donnée.</td></tr>") + "</tbody></table>" +
+<script id="LEXWALLET_FULL_MENU_CATALOG">
+(function() {
+  var FULL_CHEER_CATALOG = [
+    /* 1) Hamburgers & Variantes Fromages (Boeuf, Poulet, Poisson) */
+    { id: "BUR-BBQ-BOEUF", name: "Burger BBQ Smokey (Bœuf / Cheddar)", category: "Hamburgers", desc: "Bœuf, cheddar, sauce BBQ fumée, oignons frits", priceTtc: 11.50, cogs: 3.30, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-TRUFFE-POULET", name: "Burger Truffe & Gouda (Poulet / Gouda)", category: "Hamburgers", desc: "Poulet crispy, gouda maturé, crème truffe, champignons", priceTtc: 12.50, cogs: 3.60, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-RACLETTE-BOEUF", name: "Burger Raclette & Bœuf (Bœuf / Raclette)", category: "Hamburgers", desc: "Bœuf, fromage à raclette fondant, oignons confits", priceTtc: 13.00, cogs: 3.80, stockId: "ING-CHED", recipeUnit: 0.20 },
+    { id: "BUR-JALAPENO-POULET", name: "Burger Honey-Mustard Jalapeño (Poulet / Cheddar Blanc)", category: "Hamburgers", desc: "Poulet, cheddar blanc, miel-moutarde, jalapeños", priceTtc: 12.00, cogs: 3.40, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-BUFFALO-POULET", name: "Burger Spicy Buffalo Cajun (Poulet / Mozza-Cheddar)", category: "Hamburgers", desc: "Poulet épicé cajun, mozzarella & cheddar, sauce buffalo", priceTtc: 12.00, cogs: 3.45, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-SWEET-FISH", name: "Burger Sweet Chili & Ail (Poisson / Cheese Blend)", category: "Hamburgers", desc: "Poisson pané, cheese blend, sauce sweet chili & ail-persil", priceTtc: 12.00, cogs: 3.50, stockId: "ING-CHED", recipeUnit: 0.18 },
+
+    /* 2) Cheesecake */
+    { id: "DES-CHEESECAKE", name: "Cheesecake Maison", category: "Desserts & Café", desc: "Part de cheesecake crémeux sur biscuit", priceTtc: 5.50, cogs: 1.50, stockId: "ING-CHED", recipeUnit: 0.12 },
+
+    /* 3) Café Gourmet Cheese Cream */
+    { id: "CAF-CHEESE-CREAM", name: "Café Gourmet Cheese Cream", category: "Desserts & Café", desc: "Café expresso/filtre surmonté d'une crème cheese onctueuse", priceTtc: 4.80, cogs: 1.15, stockId: "ING-CHED", recipeUnit: 0.08 },
+
+    /* 4) Cheer Limonade Craft */
+    { id: "BOI-LIMONADE-CRAFT", name: "Cheer Limonade Craft", category: "Boissons", desc: "Limonade artisanale fraîche citron & infusion maison", priceTtc: 4.00, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
+
+    /* 5) Cheer Ice Tea */
+    { id: "BOI-ICE-TEA", name: "Cheer Ice Tea", category: "Boissons", desc: "Thé glacé maison infusé à froid", priceTtc: 4.00, cogs: 0.90, stockId: "BOIS-EAU", recipeUnit: 1 },
+
+    /* 6) Sélection de Vins (Rouge, Blanc, Rosé) & Offre Soirée */
+    { id: "VIN-ROUGE", name: "Vin Rouge Sélection (Verre)", category: "Vins & Soirée", desc: "Verre de vin rouge au service vitrine", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "VIN-BLANC", name: "Vin Blanc Sélection (Verre)", category: "Vins & Soirée", desc: "Verre de vin blanc au service vitrine", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "VIN-ROSE", name: "Vin Rosé Sélection (Verre)", category: "Vins & Soirée", desc: "Verre de vin rosé au service vitrine", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "SOI-PLATEAU-VIN-FROMAGE", name: "Planche Soirée Fromages & Vin", category: "Vins & Soirée", desc: "Assortiment fromages affinés & accompagnements soirée", priceTtc: 16.00, cogs: 3.60, stockId: "ING-CHED", recipeUnit: 0.25 },
+
+    /* 7) Garlic Melt */
+    { id: "MELT-GARLIC", name: "Garlic Melt", category: "Melts & Street", desc: "Pain grillé à l'ail & persil, double fromage fondu", priceTtc: 8.50, cogs: 2.20, stockId: "ING-PAIN", recipeUnit: 1 },
+
+    /* 8) Pepito */
+    { id: "STR-PEPITO", name: "Pepito", category: "Melts & Street", desc: "Sandwich grillé garni viande, fromage fondant & sauce", priceTtc: 9.50, cogs: 2.65, stockId: "ING-PAIN", recipeUnit: 1 },
+
+    /* 9) Salchipapa */
+    { id: "STR-SALCHIPAPA", name: "Salchipapa", category: "Melts & Street", desc: "Frites croustillantes, saucisses grillées, fromage & sauces", priceTtc: 8.50, cogs: 2.25, stockId: "ING-PAIN", recipeUnit: 1 },
+
+    /* 10) Les Sauces */
+    { id: "SAU-BBQ-SMOKEY", name: "Sauce BBQ Smokey", category: "Sauces", desc: "Pot / dose sauce fumée", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-TRUFFE-MAYO", name: "Sauce Truffe & Herbes", category: "Sauces", desc: "Pot / dose saveur truffe", priceTtc: 1.50, cogs: 0.35, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-HONEY-MUSTARD", name: "Sauce Honey-Mustard", category: "Sauces", desc: "Pot / dose miel & moutarde", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-BUFFALO-CAJUN", name: "Sauce Spicy Buffalo Cajun", category: "Sauces", desc: "Pot / dose épicée", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-SWEET-CHILI", name: "Sauce Sweet Chili & Ail", category: "Sauces", desc: "Pot / dose sucrée-piquante à l'ail", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+
+    /* 11) Les Accompagnements */
+    { id: "ACC-FRITES", name: "Frites", category: "Accompagnements", desc: "Portion de frites croustillantes", priceTtc: 3.50, cogs: 0.85, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "ACC-SALADE", name: "Salade", category: "Accompagnements", desc: "Salade fraîche composée", priceTtc: 3.80, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "ACC-ONION-RINGS", name: "Onion Rings", category: "Accompagnements", desc: "Rondelles d'oignons panées croustillantes", priceTtc: 4.20, cogs: 1.05, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "ACC-CHICKEN-BUCKET", name: "Chicken Bucket", category: "Accompagnements", desc: "Seau de pièces de poulet croustillant à partager", priceTtc: 14.50, cogs: 4.10, stockId: "ING-CHED", recipeUnit: 0.20 },
+    { id: "ACC-CHEESE-STICK", name: "Cheese Stick", category: "Accompagnements", desc: "Bâtonnets de fromage panés fondants", priceTtc: 4.80, cogs: 1.25, stockId: "ING-CHED", recipeUnit: 0.14 }
+  ];
+
+  function syncCatalogToTenants() {
+    if (typeof tenantStore !== "object" || !tenantStore) return;
+    var keys = Object.keys(tenantStore);
+    for (var i = 0; i < keys.length; i++) {
+      var t = tenantStore[keys[i]];
+      if (t) {
+        t.catalog = FULL_CHEER_CATALOG.map(function(it) {
+          return Object.assign({}, it);
+        });
+      }
+    }
+    if (typeof persistLocalOnly === "function") persistLocalOnly();
+  }
+
+  function rebuildCategoryFilterTabs() {
+    var tabsEl = document.getElementById("caisse-cat-tabs");
+    if (!tabsEl || tabsEl.dataset.cheerCatsBuilt === "1") return;
+    tabsEl.dataset.cheerCatsBuilt = "1";
+    var cats = [
+      "ALL",
+      "Hamburgers",
+      "Melts & Street",
+      "Accompagnements",
+      "Sauces",
+      "Boissons",
+      "Vins & Soirée",
+      "Desserts & Café"
+    ];
+    var labels = {
+      "ALL": "Tout",
+      "Hamburgers": "Burgers",
+      "Melts & Street": "Melts & Street",
+      "Accompagnements": "Sides",
+      "Sauces": "Sauces",
+      "Boissons": "Boissons",
+      "Vins & Soirée": "Vins",
+      "Desserts & Café": "Café & Cake"
+    };
+    tabsEl.innerHTML = "";
+    for (var i = 0; i < cats.length; i++) {
+      (function(cKey) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.dataset.cat = cKey;
+        btn.textContent = labels[cKey] || cKey;
+        btn.className = "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
+        btn.addEventListener("click", function() {
+          var searchInp = document.getElementById("caisse-search-input");
+          if (searchInp) searchInp.value = "";
+          var grid = document.getElementById("pos-catalog-grid");
+          if (grid) {
+            var list = FULL_CHEER_CATALOG.filter(function(it) {
+              return cKey === "ALL" || it.category === cKey;
+            });
+            grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
+            grid.innerHTML = list.map(function(item) {
+              return (
+                "<div class=\"bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition\">" +
+                  "<div class=\"min-w-0\">" +
+                    "<div class=\"font-bold text-white truncate\">" + item.name + "</div>" +
+                    "<div class=\"text-[11px] text-slate-400 mt-0.5\">" + Number(item.priceTtc || 0).toFixed(2) + " TTC • " + item.category + "</div>" +
+                  "</div>" +
+                  "<button type=\"button\" onclick=\"addItemToCart('" + item.id + "'); setTimeout(function(){ window.dispatchEvent(new Event('caisse:refresh')); }, 15);\" class=\"shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs\">+ Ajouter</button>" +
+                "</div>"
+              );
+            }).join("");
+          }
+          var allBtns = tabsEl.querySelectorAll("button");
+          for (var k = 0; k < allBtns.length; k++) {
+            var act = allBtns[k].dataset.cat === cKey;
+            allBtns[k].className = act
+              ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
+              : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
+          }
+        });
+        tabsEl.appendChild(btn);
+      })(cats[i]);
+    }
+  }
+
+  function initFullCatalog() {
+    syncCatalogToTenants();
+    rebuildCategoryFilterTabs();
+    var grid = document.getElementById("pos-catalog-grid");
+    if (grid && grid.children.length === 0) {
+      var allTab = document.querySelector("#caisse-cat-tabs button[data-cat='ALL']");
+      if (allTab) allTab.click();
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", function() { setTimeout(initFullCatalog, 140); });
+  window.addEventListener("hashchange", function() { setTimeout(initFullCatalog, 80); });
+  document.addEventListener("click", function() { setTimeout(initFullCatalog, 80); });
+})();
+</script>
       "</body></html>";
     var w = window.open("", "_blank", "width=900,height=700");
     if (!w) { window.print(); return; }
