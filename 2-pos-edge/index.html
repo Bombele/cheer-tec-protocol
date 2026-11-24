@@ -1438,929 +1438,10 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_SOBRIETY_MENU_FIX">
+<script id="LEXWALLET_COMPLETE_CASH_MENU_V2">
 (function() {
+  var MAX_RENDER = 100;
   var MENU_ITEMS = [
-    { label: "Caisse", route: "/POS/caisse" },
-    { label: "Rapport P&L / Z", route: "/POS/rapport-pnl-z" },
-    { label: "Coûts & Trésorerie", route: "/POS/couts-tresorerie" },
-    { label: "Factures", route: "/POS/factures-precompta" },
-    { label: "RH & Paie", route: "/POS/rh-paie" },
-    { label: "Stocks & Lots", route: "/POS/stocks-iot-scanners" },
-    { label: "Fournisseurs", route: "/POS/fournisseurs-recettes" },
-    { label: "Tickets & QR", route: "/POS/historique-qr" },
-    { label: "Fiscalité & API", route: "/POS/parametres-fiscaux" },
-    { label: "Holding & KYC", route: "/POS/holding-kyc" }
-  ];
-
-  function simplifyPosHub() {
-    var hub = document.getElementById("view-pos-hub");
-    if (!hub) return;
-    var grid = hub.querySelector(".grid");
-    if (!grid) return;
-    grid.className = "grid grid-cols-2 sm:grid-cols-3 gap-2.5";
-    grid.innerHTML = "";
-    for (var i = 0; i < MENU_ITEMS.length; i++) {
-      (function(item) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "text-left bg-slate-950 hover:border-sky-500 border border-slate-800 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-100 transition";
-        btn.textContent = item.label;
-        btn.addEventListener("click", function() {
-          if (typeof navigateRoute === "function") {
-            navigateRoute(item.route);
-          } else {
-            window.location.hash = "#" + item.route;
-          }
-        });
-        grid.appendChild(btn);
-      })(MENU_ITEMS[i]);
-    }
-    var sub = document.getElementById("pos-hub-subtitle");
-    if (sub) sub.textContent = "";
-  }
-
-  function compactHeaderLines() {
-    var ctx = document.getElementById("header-context-label");
-    if (ctx && ctx.textContent && ctx.textContent.indexOf("•") !== -1) {
-      var parts = ctx.textContent.split("•");
-      ctx.textContent = (parts[parts.length - 1] || "").trim();
-    }
-  }
-
-  window.addEventListener("DOMContentLoaded", function() {
-    simplifyPosHub();
-    compactHeaderLines();
-  });
-  window.addEventListener("hashchange", function() {
-    simplifyPosHub();
-    compactHeaderLines();
-  });
-  setTimeout(function() {
-    simplifyPosHub();
-    compactHeaderLines();
-  }, 150);
-})();
-</script>
-<script id="LEXWALLET_DYNAMIC_CAISSE_FIX">
-(function() {
-  var MAX_CATALOG_ITEMS = 60;
-  var activeCategory = "ALL";
-  var searchQuery = "";
-
-  var DEFAULT_CATALOG = [
-    { id: "ITM-CLASSIC", name: "Cheer Classic Cheese Burger", category: "Plats & Burgers", desc: "Pain, bœuf, cheddar, sauce, salade", priceTtc: 9.50, cogs: 2.85, stockId: "ING-CHED", recipeUnit: 0.15 },
-    { id: "ITM-TRUFFLE", name: "Cheer Truffle Bacon Burger", category: "Plats & Burgers", desc: "Pain, bœuf, double cheddar, bacon, truffe", priceTtc: 12.50, cogs: 3.75, stockId: "ING-CHED", recipeUnit: 0.20 },
-    { id: "ITM-FRITES", name: "Box Frites & Cheese Emporter", category: "Plats & Burgers", desc: "Frites croustillantes, cheddar fondu, sauce", priceTtc: 8.50, cogs: 2.30, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "ITM-PLATEAU", name: "Plateau de Fromages Affinés", category: "Plats & Burgers", desc: "Sélection du terroir & accompagnements", priceTtc: 14.00, cogs: 4.50, stockId: "ING-CHED", recipeUnit: 0.25 },
-    { id: "ITM-LIMONADE", name: "Boisson Artisanale / Limonade", category: "Boissons", desc: "33cl fraîche", priceTtc: 3.50, cogs: 1.00, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "ITM-JUS", name: "Jus Pressé Maison", category: "Boissons", desc: "25cl pressé minute", priceTtc: 4.20, cogs: 1.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "ITM-VIN", name: "Verre de Vin Sélection", category: "Vins & Spiritueux", desc: "Rouge / Blanc / Rosé", priceTtc: 6.00, cogs: 2.00, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "ITM-SPIRIT", name: "Spiritueux Signature (4cl)", category: "Vins & Spiritueux", desc: "Service bar", priceTtc: 8.50, cogs: 2.60, stockId: "BOIS-VIN", recipeUnit: 1 }
-  ];
-
-  function isCaisseRoute() {
-    var h = String(window.location.hash || "");
-    if (h.indexOf("/POS/caisse") !== -1) return true;
-    if (typeof sessionState === "object" && sessionState && sessionState.activeRoute === "/POS/caisse") return true;
-    var caisseSec = document.getElementById("view-caisse");
-    return !!(caisseSec && !caisseSec.classList.contains("hidden"));
-  }
-
-  function ensureCatalogSeeded() {
-    if (typeof getActiveTenant !== "function") return DEFAULT_CATALOG;
-    var t = getActiveTenant();
-    if (!t) return DEFAULT_CATALOG;
-    if (!Array.isArray(t.catalog) || t.catalog.length < 4) {
-      t.catalog = DEFAULT_CATALOG.slice();
-      if (typeof persistLocalOnly === "function") persistLocalOnly();
-    }
-    return t.catalog;
-  }
-
-  function syncChromeForCaisse() {
-    var onCaisse = isCaisseRoute();
-    var subnav = document.getElementById("pos-subnav");
-    var header = document.querySelector("header");
-    var topBar = document.getElementById("lex-caisse-focus-bar");
-
-    if (onCaisse) {
-      if (subnav) subnav.classList.add("hidden");
-      if (header) header.classList.add("hidden");
-      if (!topBar) {
-        topBar = document.createElement("div");
-        topBar.id = "lex-caisse-focus-bar";
-        topBar.className = "sticky top-0 z-30 flex items-center justify-between gap-2 bg-slate-900/95 backdrop-blur border border-slate-800 px-4 py-3 rounded-2xl font-mono text-xs shadow-lg";
-        topBar.innerHTML =
-          "<button type=\"button\" id=\"caisse-exit-menu-btn\" class=\"px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 font-bold\">← Menu</button>" +
-          "<span class=\"font-bold text-emerald-400 tracking-wide\">CAISSE</span>" +
-          "<button type=\"button\" id=\"caisse-jump-cart-btn\" class=\"px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold\">Panier (<span id=\"caisse-topbar-count\">0</span>)</button>";
-        var mainBox = document.querySelector(".max-w-6xl") || document.body;
-        mainBox.insertBefore(topBar, mainBox.firstChild);
-        document.getElementById("caisse-exit-menu-btn").addEventListener("click", function() {
-          if (typeof navigateRoute === "function") navigateRoute("/POS");
-          else window.location.hash = "#/POS";
-          setTimeout(syncChromeForCaisse, 60);
-        });
-        document.getElementById("caisse-jump-cart-btn").addEventListener("click", function() {
-          var cartEl = document.getElementById("cart-items-list");
-          if (cartEl && typeof cartEl.scrollIntoView === "function") {
-            cartEl.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
-        });
-      }
-      topBar.classList.remove("hidden");
-      renderDynamicCaisse();
-    } else {
-      if (topBar) topBar.classList.add("hidden");
-      var isAuthed = !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
-      if (header && isAuthed) header.classList.remove("hidden");
-    }
-  }
-
-  function ensureDynamicControls() {
-    var caisseSec = document.getElementById("view-caisse");
-    if (!caisseSec || document.getElementById("caisse-dynamic-toolbar")) return;
-    var catGrid = document.getElementById("pos-catalog-grid");
-    if (!catGrid || !catGrid.parentElement) return;
-
-    var bar = document.createElement("div");
-    bar.id = "caisse-dynamic-toolbar";
-    bar.className = "flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center bg-slate-950 border border-slate-800 p-3 rounded-xl";
-    bar.innerHTML =
-      "<div id=\"caisse-cat-tabs\" class=\"flex flex-wrap gap-1.5\"></div>" +
-      "<input type=\"search\" id=\"caisse-search-input\" placeholder=\"Filtrer article...\" class=\"bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none px-3 py-1.5 rounded-lg text-xs text-white sm:w-44\"/>";
-    catGrid.parentElement.insertBefore(bar, catGrid);
-
-    var cats = ["ALL", "Plats & Burgers", "Boissons", "Vins & Spiritueux"];
-    var labels = { "ALL": "Tout", "Plats & Burgers": "Plats", "Boissons": "Boissons", "Vins & Spiritueux": "Vins & Bar" };
-    var tabsEl = document.getElementById("caisse-cat-tabs");
-    for (var i = 0; i < cats.length; i++) {
-      (function(cKey) {
-        var b = document.createElement("button");
-        b.type = "button";
-        b.dataset.cat = cKey;
-        b.textContent = labels[cKey] || cKey;
-        b.className = "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
-        b.addEventListener("click", function() {
-          activeCategory = cKey;
-          renderDynamicCaisse();
-        });
-        tabsEl.appendChild(b);
-      })(cats[i]);
-    }
-
-    var searchInp = document.getElementById("caisse-search-input");
-    if (searchInp) {
-      searchInp.addEventListener("input", function() {
-        searchQuery = String(searchInp.value || "").trim().toLowerCase();
-        renderDynamicCaisse();
-      });
-    }
-  }
-
-  window.adjustCartQty = function(itemId, delta) {
-    if (typeof cartState !== "object" || !Array.isArray(cartState.items)) return;
-    for (var i = 0; i < cartState.items.length; i++) {
-      if (cartState.items[i].id === itemId) {
-        cartState.items[i].qty = Number(cartState.items[i].qty || 0) + Number(delta || 0);
-        if (cartState.items[i].qty <= 0) {
-          cartState.items.splice(i, 1);
-        }
-        break;
-      }
-    }
-    renderDynamicCaisse();
-  };
-
-  function renderDynamicCaisse() {
-    if (!isCaisseRoute()) return;
-    ensureDynamicControls();
-    var catalog = ensureCatalogSeeded();
-    var grid = document.getElementById("pos-catalog-grid");
-
-    var tabs = document.querySelectorAll("#caisse-cat-tabs button");
-    for (var tIdx = 0; tIdx < tabs.length; tIdx++) {
-      var isAct = tabs[tIdx].dataset.cat === activeCategory;
-      tabs[tIdx].className = isAct
-        ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
-        : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
-    }
-
-    if (grid) {
-      grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
-      var filtered = [];
-      for (var i = 0; i < catalog.length && filtered.length < MAX_CATALOG_ITEMS; i++) {
-        var it = catalog[i];
-        if (activeCategory !== "ALL" && it.category !== activeCategory) continue;
-        if (searchQuery) {
-          var hay = (String(it.name || "") + " " + String(it.category || "")).toLowerCase();
-          if (hay.indexOf(searchQuery) === -1) continue;
-        }
-        filtered.push(it);
-      }
-      grid.innerHTML = filtered.map(function(item) {
-        var inCart = 0;
-        if (typeof cartState === "object" && Array.isArray(cartState.items)) {
-          for (var c = 0; c < cartState.items.length; c++) {
-            if (cartState.items[c].id === item.id) { inCart = Number(cartState.items[c].qty || 0); break; }
-          }
-        }
-        var badgeHtml = inCart > 0
-          ? "<span class=\"ml-2 px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px]\">x" + inCart + "</span>"
-          : "";
-        return (
-          "<div class=\"bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition\">" +
-            "<div class=\"min-w-0\">" +
-              "<div class=\"font-bold text-white truncate\">" + item.name + badgeHtml + "</div>" +
-              "<div class=\"text-[11px] text-slate-400 mt-0.5\">" + Number(item.priceTtc || 0).toFixed(2) + " TTC • " + item.category + "</div>" +
-            "</div>" +
-            "<button type=\"button\" onclick=\"addItemToCart('" + item.id + "'); setTimeout(function(){ window.dispatchEvent(new Event('caisse:refresh')); }, 10);\" class=\"shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs\">+ Ajouter</button>" +
-          "</div>"
-        );
-      }).join("") || "<p class=\"text-slate-500 col-span-2\">Aucun article trouvé.</p>";
-    }
-
-    if (typeof cartState === "object" && Array.isArray(cartState.items)) {
-      var qtySum = 0;
-      for (var k = 0; k < cartState.items.length; k++) qtySum += Number(cartState.items[k].qty || 0);
-      var topCnt = document.getElementById("caisse-topbar-count");
-      if (topCnt) topCnt.textContent = String(qtySum);
-
-      var cartList = document.getElementById("cart-items-list");
-      if (cartList) {
-        if (cartState.items.length === 0) {
-          cartList.innerHTML = "<p class=\"text-slate-500\">Panier vide.</p>";
-        } else {
-          cartList.innerHTML = cartState.items.map(function(row) {
-            var lineTot = (Number(row.qty || 0) * Number(row.priceTtc || 0)).toFixed(2);
-            return (
-              "<div class=\"flex items-center justify-between gap-2 bg-slate-900/80 border border-slate-800 px-2.5 py-1.5 rounded-lg\">" +
-                "<span class=\"truncate font-semibold text-slate-200\">" + row.name + "</span>" +
-                "<div class=\"flex items-center gap-1.5 shrink-0\">" +
-                  "<button type=\"button\" onclick=\"adjustCartQty('" + row.id + "', -1)\" class=\"w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold\">-</button>" +
-                  "<span class=\"w-5 text-center font-bold text-emerald-300\">" + row.qty + "</span>" +
-                  "<button type=\"button\" onclick=\"adjustCartQty('" + row.id + "', 1)\" class=\"w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-white font-bold\">+</button>" +
-                  "<span class=\"ml-1 text-emerald-400 font-bold\">" + lineTot + "</span>" +
-                "</div>" +
-              "</div>"
-            );
-          }).join("");
-        }
-      }
-
-      var tenant = (typeof getActiveTenant === "function") ? getActiveTenant() : { vatRate: 12 };
-      var rawTtc = 0;
-      for (var m = 0; m < cartState.items.length; m++) {
-        rawTtc += Number(cartState.items[m].qty || 0) * Number(cartState.items[m].priceTtc || 0);
-      }
-      var disc = Number(cartState.discountPct || 0);
-      var netTtc = rawTtc * (1 - disc / 100);
-      var vatRate = Number((tenant && tenant.vatRate) || 12) / 100;
-      var netHt = netTtc / (1 + vatRate);
-      var vatAmt = netTtc - netHt;
-      var badgeEl = document.getElementById("cart-badge");
-      var htEl = document.getElementById("cart-subtotal-ht");
-      var vatEl = document.getElementById("cart-vat-total");
-      var ttcEl = document.getElementById("cart-grand-total");
-      if (badgeEl) badgeEl.textContent = qtySum + " • " + netTtc.toFixed(2);
-      if (htEl) htEl.textContent = netHt.toFixed(2);
-      if (vatEl) vatEl.textContent = vatAmt.toFixed(2);
-      if (ttcEl) ttcEl.textContent = netTtc.toFixed(2);
-    }
-  }
-
-  window.addEventListener("caisse:refresh", renderDynamicCaisse);
-  window.addEventListener("hashchange", function() { setTimeout(syncChromeForCaisse, 40); });
-  window.addEventListener("DOMContentLoaded", function() { setTimeout(syncChromeForCaisse, 80); });
-  document.addEventListener("click", function() { setTimeout(syncChromeForCaisse, 40); });
-})();
-</script>
-<script id="LEXWALLET_HOLDING_KYC_CLEAN_FIX">
-(function() {
-  var MAX_STORES = 50;
-  var MOCK_NAMES = {
-    "cheer flagship bruxelles": 1,
-    "franchise cheer lyon part-dieu": 1,
-    "franchise cheer barcelona gràcia": 1,
-    "franchise cheer barcelona gracia": 1,
-    "restaurant cheer litoral / caracas": 1,
-    "cheer flagship 01": 1,
-    "cheer cheese franchise 02": 1
-  };
-  var MOCK_IDS = {
-    "cheer-flagship-01": 1,
-    "cheer-fr-lyon-02": 1,
-    "cheer-es-bcn-03": 1,
-    "cheer-ve-ccs-04": 1,
-    "cheer-franchise-02": 1
-  };
-
-  function isHoldingRoute() {
-    var h = String(window.location.hash || "");
-    if (h.indexOf("/POS/holding-kyc") !== -1) return true;
-    if (typeof sessionState === "object" && sessionState && sessionState.activeRoute === "/POS/holding-kyc") return true;
-    var sec = document.getElementById("view-holding");
-    return !!(sec && !sec.classList.contains("hidden"));
-  }
-
-  function isMockTenant(id, tenant) {
-    var lowId = String(id || "").trim().toLowerCase();
-    var lowName = String((tenant && tenant.name) || "").trim().toLowerCase();
-    if (MOCK_IDS[lowId] || MOCK_NAMES[lowName]) return true;
-    if (tenant && !tenant.userCreated && (!tenant.transactions || tenant.transactions.length === 0) && lowId.indexOf("cheer-") === 0 && lowId.length <= 20) {
-      return true;
-    }
-    return false;
-  }
-
-  function purgeSimulatedTenantsOnce() {
-    if (typeof tenantStore !== "object" || !tenantStore) return;
-    var changed = false;
-    var keys = Object.keys(tenantStore);
-    for (var i = 0; i < keys.length; i++) {
-      var k = keys[i];
-      if (isMockTenant(k, tenantStore[k])) {
-        delete tenantStore[k];
-        changed = true;
-      }
-    }
-    if (typeof sessionState === "object" && sessionState) {
-      if (MOCK_IDS[String(sessionState.activeTenantId || "").toLowerCase()]) {
-        var rem = Object.keys(tenantStore);
-        sessionState.activeTenantId = rem.length > 0 ? rem[0] : "";
-        changed = true;
-      }
-    }
-    if (changed && typeof persistLocalOnly === "function") {
-      persistLocalOnly();
-    }
-  }
-
-  function ensureHoldingTopBar() {
-    var onHolding = isHoldingRoute();
-    var subnav = document.getElementById("pos-subnav");
-    var header = document.querySelector("header");
-    var bar = document.getElementById("lex-holding-focus-bar");
-
-    if (onHolding) {
-      if (subnav) subnav.classList.add("hidden");
-      if (header) header.classList.add("hidden");
-      if (!bar) {
-        bar = document.createElement("div");
-        bar.id = "lex-holding-focus-bar";
-        bar.className = "sticky top-0 z-30 flex items-center justify-between gap-2 bg-slate-900/95 backdrop-blur border border-slate-800 px-4 py-3 rounded-2xl font-mono text-xs shadow-lg";
-        bar.innerHTML =
-          "<button type=\"button\" id=\"holding-back-menu-btn\" class=\"px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 font-bold\">← Menu</button>" +
-          "<span class=\"font-bold text-amber-400 tracking-wide\">HOLDING & KYC</span>" +
-          "<button type=\"button\" id=\"holding-focus-kyc-btn\" class=\"px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold\">+ Nouveau KYC</button>";
-        var mainBox = document.querySelector(".max-w-6xl") || document.body;
-        mainBox.insertBefore(bar, mainBox.firstChild);
-        document.getElementById("holding-back-menu-btn").addEventListener("click", function() {
-          if (typeof navigateRoute === "function") navigateRoute("/POS");
-          else window.location.hash = "#/POS";
-          setTimeout(syncHoldingView, 60);
-        });
-        document.getElementById("holding-focus-kyc-btn").addEventListener("click", function() {
-          var codeInp = document.getElementById("h-new-id");
-          if (codeInp && typeof codeInp.scrollIntoView === "function") {
-            codeInp.scrollIntoView({ behavior: "smooth", block: "center" });
-            codeInp.focus();
-          }
-        });
-      }
-      bar.classList.remove("hidden");
-    } else {
-      if (bar) bar.classList.add("hidden");
-      var onCaisse = String(window.location.hash || "").indexOf("/POS/caisse") !== -1;
-      var isAuthed = !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
-      if (header && isAuthed && !onCaisse) header.classList.remove("hidden");
-    }
-  }
-
-  function getRegisteredTenants() {
-    if (typeof tenantStore !== "object" || !tenantStore) return [];
-    var list = [];
-    var keys = Object.keys(tenantStore);
-    for (var i = 0; i < keys.length && list.length < MAX_STORES; i++) {
-      var id = keys[i];
-      var t = tenantStore[id];
-      if (!t || isMockTenant(id, t)) continue;
-      list.push({ id: id, data: t });
-    }
-    return list;
-  }
-
-  function enhanceKycForm() {
-    var sec = document.getElementById("view-holding");
-    if (!sec) return;
-    var headerBlock = sec.firstElementChild;
-    if (headerBlock) {
-      headerBlock.innerHTML = "<p class=\"text-[11px] text-amber-400\">Holding • Dossier KYC</p><h2 class=\"text-base font-bold text-white\">Comptes Enregistrés & Création KYC</h2>";
-    }
-    var idInp = document.getElementById("h-new-id");
-    var nameInp = document.getElementById("h-new-name");
-    var emailInp = document.getElementById("h-new-email");
-    var passInp = document.getElementById("h-new-pass");
-    var legalInp = document.getElementById("h-new-legal");
-    var kycInp = document.getElementById("h-new-kyc-doc");
-    if (idInp) idInp.placeholder = "Code établissement (ex: CHEER-BRU-01)";
-    if (nameInp) nameInp.placeholder = "Nom officiel de l'établissement";
-    if (emailInp) emailInp.placeholder = "E-mail gestionnaire";
-    if (passInp) passInp.placeholder = "Mot de passe accès";
-    if (legalInp) legalInp.placeholder = "N° TVA / Registre légal (KYC)";
-    if (kycInp) kycInp.placeholder = "Représentant légal & pièce KYC";
-  }
-
-  function renderCleanHoldingList() {
-    if (!isHoldingRoute()) return;
-    purgeSimulatedTenantsOnce();
-    enhanceKycForm();
-    var grid = document.getElementById("holding-tenants-grid");
-    if (!grid) return;
-    var registered = getRegisteredTenants();
-
-    if (registered.length === 0) {
-      grid.className = "bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300";
-      grid.innerHTML =
-        "<div class=\"flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2\">" +
-          "<div><p class=\"font-bold text-white\">Aucun restaurant enregistré</p><p class=\"text-[11px] text-slate-400 mt-0.5\">Remplissez le formulaire KYC ci-dessous pour enregistrer un établissement réel.</p></div>" +
-          "<span class=\"px-2.5 py-1 rounded-lg bg-amber-950/70 border border-amber-800/60 text-amber-300 text-[11px] font-bold self-start\">KYC requis</span>" +
-        "</div>";
-      return;
-    }
-
-    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
-    grid.innerHTML = registered.map(function(entry) {
-      var t = entry.data;
-      var activeId = (typeof sessionState === "object" && sessionState) ? sessionState.activeTenantId : "";
-      var isAct = entry.id === activeId;
-      var caTotal = 0;
-      if (Array.isArray(t.transactions)) {
-        for (var j = 0; j < t.transactions.length; j++) {
-          var tx = t.transactions[j];
-          if (tx && !tx.cancelled && !tx.is_test) caTotal += Number(tx.total_ttc || 0);
-        }
-      }
-      return (
-        "<div class=\"bg-slate-950 border " + (isAct ? "border-amber-500" : "border-slate-800") + " p-4 rounded-xl space-y-2.5\">" +
-          "<div class=\"flex items-start justify-between gap-2\">" +
-            "<div><p class=\"font-bold text-white\">" + (t.name || entry.id) + "</p><p class=\"text-[11px] text-sky-400\">" + entry.id + " • " + (t.country || "") + "</p></div>" +
-            "<span class=\"px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 text-[11px]\">KYC OK</span>" +
-          "</div>" +
-          "<div class=\"text-[11px] text-slate-400\">Réf. légale : <span class=\"text-slate-200\">" + (t.legalId || "-") + "</span> • CA : <span class=\"text-emerald-400 font-bold\">" + caTotal.toFixed(2) + "</span></div>" +
-          "<div class=\"flex gap-2 pt-1\">" +
-            "<button type=\"button\" onclick=\"selectTenantForHolding('" + entry.id + "')\" class=\"px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold\">Ouvrir</button>" +
-            "<button type=\"button\" onclick=\"deleteRegisteredTenant('" + entry.id + "')\" class=\"px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-rose-950 border border-slate-700 hover:border-rose-800 text-slate-300 hover:text-rose-300\">Supprimer</button>" +
-          "</div>" +
-        "</div>"
-      );
-    }).join("");
-  }
-
-  window.deleteRegisteredTenant = function(tenantId) {
-    if (typeof tenantStore !== "object" || !tenantStore || !tenantStore[tenantId]) return;
-    delete tenantStore[tenantId];
-    if (typeof sessionState === "object" && sessionState && sessionState.activeTenantId === tenantId) {
-      var rem = Object.keys(tenantStore);
-      sessionState.activeTenantId = rem.length > 0 ? rem[0] : "";
-    }
-    if (typeof persistLocalOnly === "function") persistLocalOnly();
-    renderCleanHoldingList();
-    if (typeof showToast === "function") showToast("Établissement " + tenantId + " retiré.");
-  };
-
-  function syncHoldingView() {
-    ensureHoldingTopBar();
-    if (isHoldingRoute()) {
-      renderCleanHoldingList();
-    }
-  }
-
-  document.addEventListener("click", function(ev) {
-    var t = ev.target;
-    while (t && t !== document.body && t.tagName !== "BUTTON") t = t.parentElement;
-    if (t && (t.textContent || "").indexOf("Enregistrer Compte & KYC") !== -1) {
-      setTimeout(function() {
-        if (typeof tenantStore === "object" && tenantStore) {
-          var codeVal = String((document.getElementById("h-new-id") && document.getElementById("h-new-id").value) || "").trim().toUpperCase();
-          if (codeVal && tenantStore[codeVal]) tenantStore[codeVal].userCreated = true;
-          if (typeof persistLocalOnly === "function") persistLocalOnly();
-        }
-        renderCleanHoldingList();
-      }, 50);
-    }
-    setTimeout(syncHoldingView, 40);
-  }, true);
-
-  window.addEventListener("hashchange", function() { setTimeout(syncHoldingView, 40); });
-  window.addEventListener("DOMContentLoaded", function() { setTimeout(syncHoldingView, 80); });
-})();
-</script>
-<script id="LEXWALLET_BYBIT_DRAWER_FIX">
-(function() {
-  var PRIMARY_SHORTCUTS = [
-    { label: "Caisse", route: "/POS/caisse" },
-    { label: "Stocks & Lots", route: "/POS/stocks-iot-scanners" },
-    { label: "Rapport P&L / Z", route: "/POS/rapport-pnl-z" },
-    { label: "Coûts & Trésorerie", route: "/POS/couts-tresorerie" },
-    { label: "Factures", route: "/POS/factures-precompta" }
-  ];
-
-  var MORE_SHORTCUTS = [
-    { label: "RH & Paie", route: "/POS/rh-paie" },
-    { label: "Fournisseurs", route: "/POS/fournisseurs-recettes" },
-    { label: "Tickets & QR", route: "/POS/historique-qr" },
-    { label: "Fiscalité & API", route: "/POS/parametres-fiscaux" },
-    { label: "Holding & KYC", route: "/POS/holding-kyc" }
-  ];
-
-  var drawerOpen = false;
-  var moreExpanded = false;
-
-  function isAuthenticatedSession() {
-    return !!(typeof sessionState === "object" && sessionState && sessionState.authenticated && sessionState.email);
-  }
-
-  function goRoute(routePath) {
-    drawerOpen = false;
-    syncDrawerDom();
-    if (typeof navigateRoute === "function") {
-      navigateRoute(routePath);
-    } else {
-      window.location.hash = "#" + routePath;
-    }
-    setTimeout(refreshBybitMenuLayout, 50);
-  }
-
-  function ensureDrawerDom() {
-    if (document.getElementById("lex-side-drawer")) return;
-
-    var backdrop = document.createElement("div");
-    backdrop.id = "lex-drawer-backdrop";
-    backdrop.className = "hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-[1px]";
-    backdrop.addEventListener("click", function() {
-      drawerOpen = false;
-      syncDrawerDom();
-    });
-
-    var drawer = document.createElement("aside");
-    drawer.id = "lex-side-drawer";
-    drawer.className = "hidden fixed top-0 left-0 z-50 h-full max-h-screen w-72 max-w-[85vw] overflow-y-auto bg-slate-900 border-r border-slate-800 p-4 font-mono text-xs space-y-3 shadow-2xl";
-
-    var topRow = document.createElement("div");
-    topRow.className = "flex items-center justify-between border-b border-slate-800 pb-3";
-    topRow.innerHTML = "<span class=\"font-bold text-sky-400\">MENU</span><button type=\"button\" id=\"lex-drawer-close\" class=\"px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold\">✕</button>";
-    drawer.appendChild(topRow);
-
-    var listWrap = document.createElement("div");
-    listWrap.id = "lex-drawer-items";
-    listWrap.className = "flex flex-col gap-1.5";
-
-    var allItems = [{ label: "Accueil /POS", route: "/POS" }].concat(PRIMARY_SHORTCUTS).concat(MORE_SHORTCUTS);
-    for (var i = 0; i < allItems.length; i++) {
-      (function(item) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "w-full text-left px-3 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800/80 text-slate-100 font-bold transition";
-        btn.textContent = item.label;
-        btn.addEventListener("click", function() { goRoute(item.route); });
-        listWrap.appendChild(btn);
-      })(allItems[i]);
-    }
-    drawer.appendChild(listWrap);
-
-    var footWrap = document.createElement("div");
-    footWrap.className = "pt-2 border-t border-slate-800 flex flex-col gap-1.5";
-    var syncBtn = document.createElement("button");
-    syncBtn.type = "button";
-    syncBtn.className = "w-full text-left px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-sky-300 font-bold";
-    syncBtn.textContent = "Sync Cloud";
-    syncBtn.addEventListener("click", function() {
-      drawerOpen = false; syncDrawerDom();
-      if (typeof syncNowManual === "function") syncNowManual();
-    });
-    var outBtn = document.createElement("button");
-    outBtn.type = "button";
-    outBtn.className = "w-full text-left px-3 py-2 rounded-xl bg-slate-950 hover:bg-rose-950 text-rose-300 font-bold";
-    outBtn.textContent = "Déconnexion";
-    outBtn.addEventListener("click", function() {
-      drawerOpen = false; syncDrawerDom();
-      if (typeof logoutSession === "function") logoutSession();
-    });
-    footWrap.appendChild(syncBtn);
-    footWrap.appendChild(outBtn);
-    drawer.appendChild(footWrap);
-
-    document.body.appendChild(backdrop);
-    document.body.appendChild(drawer);
-
-    document.getElementById("lex-drawer-close").addEventListener("click", function() {
-      drawerOpen = false;
-      syncDrawerDom();
-    });
-  }
-
-  function syncDrawerDom() {
-    ensureDrawerDom();
-    var backdrop = document.getElementById("lex-drawer-backdrop");
-    var drawer = document.getElementById("lex-side-drawer");
-    if (!isAuthenticatedSession()) drawerOpen = false;
-    if (backdrop) backdrop.classList.toggle("hidden", !drawerOpen);
-    if (drawer) drawer.classList.toggle("hidden", !drawerOpen);
-  }
-
-  function ensureBurgerTrigger() {
-    if (!isAuthenticatedSession()) return;
-    var targetBar = null;
-    var caisseBar = document.getElementById("lex-caisse-focus-bar");
-    var holdingBar = document.getElementById("lex-holding-focus-bar");
-    var header = document.querySelector("header");
-
-    if (caisseBar && !caisseBar.classList.contains("hidden")) targetBar = caisseBar;
-    else if (holdingBar && !holdingBar.classList.contains("hidden")) targetBar = holdingBar;
-    else if (header && !header.classList.contains("hidden")) targetBar = header;
-
-    if (!targetBar || document.getElementById("lex-burger-btn")) return;
-    var burger = document.createElement("button");
-    burger.id = "lex-burger-btn";
-    burger.type = "button";
-    burger.setAttribute("aria-label", "Ouvrir le menu");
-    burger.className = "px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs";
-    burger.textContent = "☰";
-    burger.addEventListener("click", function(e) {
-      e.stopPropagation();
-      drawerOpen = !drawerOpen;
-      syncDrawerDom();
-    });
-    targetBar.insertBefore(burger, targetBar.firstChild);
-  }
-
-  function renderBybitPosHub() {
-    var hub = document.getElementById("view-pos-hub");
-    if (!hub || hub.classList.contains("hidden")) return;
-    var grid = hub.querySelector(".grid");
-    if (!grid) return;
-
-    grid.className = "grid grid-cols-2 sm:grid-cols-3 gap-2.5";
-    grid.innerHTML = "";
-
-    for (var i = 0; i < PRIMARY_SHORTCUTS.length; i++) {
-      (function(item) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "text-left bg-slate-950 hover:border-sky-500 border border-slate-800 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-100 transition";
-        btn.textContent = item.label;
-        btn.addEventListener("click", function() { goRoute(item.route); });
-        grid.appendChild(btn);
-      })(PRIMARY_SHORTCUTS[i]);
-    }
-
-    var moreBtn = document.createElement("button");
-    moreBtn.type = "button";
-    moreBtn.className = "text-left bg-slate-800 hover:bg-slate-700 border border-sky-700/70 px-3.5 py-3 rounded-xl font-bold text-xs text-sky-300 transition";
-    moreBtn.textContent = moreExpanded ? "Moins −" : "Plus +";
-    moreBtn.addEventListener("click", function() {
-      moreExpanded = !moreExpanded;
-      renderBybitPosHub();
-    });
-    grid.appendChild(moreBtn);
-
-    if (moreExpanded) {
-      for (var j = 0; j < MORE_SHORTCUTS.length; j++) {
-        (function(sub) {
-          var sBtn = document.createElement("button");
-          sBtn.type = "button";
-          sBtn.className = "text-left bg-slate-950/80 hover:border-amber-500/70 border border-slate-800 px-3.5 py-3 rounded-xl font-bold text-xs text-slate-300 transition";
-          sBtn.textContent = sub.label;
-          sBtn.addEventListener("click", function() { goRoute(sub.route); });
-          grid.appendChild(sBtn);
-        })(MORE_SHORTCUTS[j]);
-      }
-    }
-  }
-
-  function refreshBybitMenuLayout() {
-    ensureDrawerDom();
-    ensureBurgerTrigger();
-    syncDrawerDom();
-    renderBybitPosHub();
-  }
-
-  window.addEventListener("DOMContentLoaded", function() { setTimeout(refreshBybitMenuLayout, 90); });
-  window.addEventListener("hashchange", function() { setTimeout(refreshBybitMenuLayout, 50); });
-  document.addEventListener("click", function() { setTimeout(refreshBybitMenuLayout, 50); });
-})();
-</script>
-<script id="LEXWALLET_MODULE_EXPORTS">
-(function() {
-  var MAX_ROWS = 5000;
-  var SYNC_TIMEOUT_MS = 5000;
-
-  function currentTenant() {
-    if (typeof getActiveTenant === "function") {
-      var t = getActiveTenant();
-      if (t) return t;
-    }
-    if (typeof tenantStore === "object" && tenantStore) {
-      var keys = Object.keys(tenantStore);
-      if (keys.length > 0) return tenantStore[keys[0]];
-    }
-    return null;
-  }
-
-  function currentTenantId() {
-    if (typeof sessionState === "object" && sessionState && sessionState.activeTenantId) {
-      return String(sessionState.activeTenantId);
-    }
-    var t = currentTenant();
-    return (t && t.id) ? String(t.id) : "LOCAL-POS";
-  }
-
-  function csvEscape(v) {
-    var s = String(v === undefined || v === null ? "" : v);
-    if (s.indexOf(";") !== -1 || s.indexOf("\"") !== -1 || s.indexOf("\n") !== -1) {
-      return "\"" + s.replace(/"/g, "\"\"") + "\"";
-    }
-    return s;
-  }
-
-  function downloadFile(filename, content, mime) {
-    var blob = new Blob([content], { type: mime });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function() {
-      if (a.parentNode) a.parentNode.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 1000);
-  }
-
-  function openPrintableReport(title, subtitle, summaryHtml, headers, rows) {
-    var thHtml = headers.map(function(h) { return "<th>" + h + "</th>"; }).join("");
-    var trHtml = rows.map(function(r) {
-      return "<tr>" + r.map(function(c) { return "<td>" + c + "</td>"; }).join("") + "</tr>";
-    }).join("");
-    var docHtml = "<!doctype html><html><head><meta charset=\"utf-8\"><title>" + title + "</title>" +
-      "<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px;margin:0 0 4px}p{font-size:12px;color:#444;margin:0 0 12px}.summary{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}.card{border:1px solid #d1d5db;padding:8px 12px;border-radius:6px;font-size:12px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}th{background:#f3f4f6}</style></head><body>" +
-      "<h1>" + title + "</h1><p>" + subtitle + "</p>" +
-      "<div class=\"summary\">" + summaryHtml + "</div>" +
-      "<table><thead><tr>" + thHtml + "</tr></thead><tbody>" + (trHtml || "<tr><td colspan=\"" + headers.length + "\">Aucune donnée.</td></tr>") + "</tbody></table>" +
-<script id="LEXWALLET_FULL_MENU_CATALOG">
-(function() {
-  var FULL_CHEER_CATALOG = [
-    /* 1) Hamburgers & Variantes Fromages (Boeuf, Poulet, Poisson) */
-    { id: "BUR-BBQ-BOEUF", name: "Burger BBQ Smokey (Bœuf / Cheddar)", category: "Hamburgers", desc: "Bœuf, cheddar, sauce BBQ fumée, oignons frits", priceTtc: 11.50, cogs: 3.30, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-TRUFFE-POULET", name: "Burger Truffe & Gouda (Poulet / Gouda)", category: "Hamburgers", desc: "Poulet crispy, gouda maturé, crème truffe, champignons", priceTtc: 12.50, cogs: 3.60, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-RACLETTE-BOEUF", name: "Burger Raclette & Bœuf (Bœuf / Raclette)", category: "Hamburgers", desc: "Bœuf, fromage à raclette fondant, oignons confits", priceTtc: 13.00, cogs: 3.80, stockId: "ING-CHED", recipeUnit: 0.20 },
-    { id: "BUR-JALAPENO-POULET", name: "Burger Honey-Mustard Jalapeño (Poulet / Cheddar Blanc)", category: "Hamburgers", desc: "Poulet, cheddar blanc, miel-moutarde, jalapeños", priceTtc: 12.00, cogs: 3.40, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-BUFFALO-POULET", name: "Burger Spicy Buffalo Cajun (Poulet / Mozza-Cheddar)", category: "Hamburgers", desc: "Poulet épicé cajun, mozzarella & cheddar, sauce buffalo", priceTtc: 12.00, cogs: 3.45, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-SWEET-FISH", name: "Burger Sweet Chili & Ail (Poisson / Cheese Blend)", category: "Hamburgers", desc: "Poisson pané, cheese blend, sauce sweet chili & ail-persil", priceTtc: 12.00, cogs: 3.50, stockId: "ING-CHED", recipeUnit: 0.18 },
-
-    /* 2) Cheesecake */
-    { id: "DES-CHEESECAKE", name: "Cheesecake Maison", category: "Desserts & Café", desc: "Part de cheesecake crémeux sur biscuit", priceTtc: 5.50, cogs: 1.50, stockId: "ING-CHED", recipeUnit: 0.12 },
-
-    /* 3) Café Gourmet Cheese Cream */
-    { id: "CAF-CHEESE-CREAM", name: "Café Gourmet Cheese Cream", category: "Desserts & Café", desc: "Café expresso/filtre surmonté d'une crème cheese onctueuse", priceTtc: 4.80, cogs: 1.15, stockId: "ING-CHED", recipeUnit: 0.08 },
-
-    /* 4) Cheer Limonade Craft */
-    { id: "BOI-LIMONADE-CRAFT", name: "Cheer Limonade Craft", category: "Boissons", desc: "Limonade artisanale fraîche citron & infusion maison", priceTtc: 4.00, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
-
-    /* 5) Cheer Ice Tea */
-    { id: "BOI-ICE-TEA", name: "Cheer Ice Tea", category: "Boissons", desc: "Thé glacé maison infusé à froid", priceTtc: 4.00, cogs: 0.90, stockId: "BOIS-EAU", recipeUnit: 1 },
-
-    /* 6) Sélection de Vins (Rouge, Blanc, Rosé) & Offre Soirée */
-    { id: "VIN-ROUGE", name: "Vin Rouge Sélection (Verre)", category: "Vins & Soirée", desc: "Verre de vin rouge au service vitrine", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "VIN-BLANC", name: "Vin Blanc Sélection (Verre)", category: "Vins & Soirée", desc: "Verre de vin blanc au service vitrine", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "VIN-ROSE", name: "Vin Rosé Sélection (Verre)", category: "Vins & Soirée", desc: "Verre de vin rosé au service vitrine", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "SOI-PLATEAU-VIN-FROMAGE", name: "Planche Soirée Fromages & Vin", category: "Vins & Soirée", desc: "Assortiment fromages affinés & accompagnements soirée", priceTtc: 16.00, cogs: 3.60, stockId: "ING-CHED", recipeUnit: 0.25 },
-
-    /* 7) Garlic Melt */
-    { id: "MELT-GARLIC", name: "Garlic Melt", category: "Melts & Street", desc: "Pain grillé à l'ail & persil, double fromage fondu", priceTtc: 8.50, cogs: 2.20, stockId: "ING-PAIN", recipeUnit: 1 },
-
-    /* 8) Pepito */
-    { id: "STR-PEPITO", name: "Pepito", category: "Melts & Street", desc: "Sandwich grillé garni viande, fromage fondant & sauce", priceTtc: 9.50, cogs: 2.65, stockId: "ING-PAIN", recipeUnit: 1 },
-
-    /* 9) Salchipapa */
-    { id: "STR-SALCHIPAPA", name: "Salchipapa", category: "Melts & Street", desc: "Frites croustillantes, saucisses grillées, fromage & sauces", priceTtc: 8.50, cogs: 2.25, stockId: "ING-PAIN", recipeUnit: 1 },
-
-    /* 10) Les Sauces */
-    { id: "SAU-BBQ-SMOKEY", name: "Sauce BBQ Smokey", category: "Sauces", desc: "Pot / dose sauce fumée", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-TRUFFE-MAYO", name: "Sauce Truffe & Herbes", category: "Sauces", desc: "Pot / dose saveur truffe", priceTtc: 1.50, cogs: 0.35, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-HONEY-MUSTARD", name: "Sauce Honey-Mustard", category: "Sauces", desc: "Pot / dose miel & moutarde", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-BUFFALO-CAJUN", name: "Sauce Spicy Buffalo Cajun", category: "Sauces", desc: "Pot / dose épicée", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-SWEET-CHILI", name: "Sauce Sweet Chili & Ail", category: "Sauces", desc: "Pot / dose sucrée-piquante à l'ail", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-
-    /* 11) Les Accompagnements */
-    { id: "ACC-FRITES", name: "Frites", category: "Accompagnements", desc: "Portion de frites croustillantes", priceTtc: 3.50, cogs: 0.85, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "ACC-SALADE", name: "Salade", category: "Accompagnements", desc: "Salade fraîche composée", priceTtc: 3.80, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "ACC-ONION-RINGS", name: "Onion Rings", category: "Accompagnements", desc: "Rondelles d'oignons panées croustillantes", priceTtc: 4.20, cogs: 1.05, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "ACC-CHICKEN-BUCKET", name: "Chicken Bucket", category: "Accompagnements", desc: "Seau de pièces de poulet croustillant à partager", priceTtc: 14.50, cogs: 4.10, stockId: "ING-CHED", recipeUnit: 0.20 },
-    { id: "ACC-CHEESE-STICK", name: "Cheese Stick", category: "Accompagnements", desc: "Bâtonnets de fromage panés fondants", priceTtc: 4.80, cogs: 1.25, stockId: "ING-CHED", recipeUnit: 0.14 }
-  ];
-
-  function syncCatalogToTenants() {
-    if (typeof tenantStore !== "object" || !tenantStore) return;
-    var keys = Object.keys(tenantStore);
-    for (var i = 0; i < keys.length; i++) {
-      var t = tenantStore[keys[i]];
-      if (t) {
-        t.catalog = FULL_CHEER_CATALOG.map(function(it) {
-          return Object.assign({}, it);
-        });
-      }
-    }
-    if (typeof persistLocalOnly === "function") persistLocalOnly();
-  }
-
-  function rebuildCategoryFilterTabs() {
-    var tabsEl = document.getElementById("caisse-cat-tabs");
-    if (!tabsEl || tabsEl.dataset.cheerCatsBuilt === "1") return;
-    tabsEl.dataset.cheerCatsBuilt = "1";
-    var cats = [
-      "ALL",
-      "Hamburgers",
-      "Melts & Street",
-      "Accompagnements",
-      "Sauces",
-      "Boissons",
-      "Vins & Soirée",
-      "Desserts & Café"
-    ];
-    var labels = {
-      "ALL": "Tout",
-      "Hamburgers": "Burgers",
-      "Melts & Street": "Melts & Street",
-      "Accompagnements": "Sides",
-      "Sauces": "Sauces",
-      "Boissons": "Boissons",
-      "Vins & Soirée": "Vins",
-      "Desserts & Café": "Café & Cake"
-    };
-    tabsEl.innerHTML = "";
-    for (var i = 0; i < cats.length; i++) {
-      (function(cKey) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.dataset.cat = cKey;
-        btn.textContent = labels[cKey] || cKey;
-        btn.className = "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
-        btn.addEventListener("click", function() {
-          var searchInp = document.getElementById("caisse-search-input");
-          if (searchInp) searchInp.value = "";
-          var grid = document.getElementById("pos-catalog-grid");
-          if (grid) {
-            var list = FULL_CHEER_CATALOG.filter(function(it) {
-              return cKey === "ALL" || it.category === cKey;
-            });
-            grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
-            grid.innerHTML = list.map(function(item) {
-              return (
-                "<div class=\"bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition\">" +
-                  "<div class=\"min-w-0\">" +
-                    "<div class=\"font-bold text-white truncate\">" + item.name + "</div>" +
-                    "<div class=\"text-[11px] text-slate-400 mt-0.5\">" + Number(item.priceTtc || 0).toFixed(2) + " TTC • " + item.category + "</div>" +
-                  "</div>" +
-                  "<button type=\"button\" onclick=\"addItemToCart('" + item.id + "'); setTimeout(function(){ window.dispatchEvent(new Event('caisse:refresh')); }, 15);\" class=\"shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs\">+ Ajouter</button>" +
-                "</div>"
-              );
-            }).join("");
-          }
-          var allBtns = tabsEl.querySelectorAll("button");
-          for (var k = 0; k < allBtns.length; k++) {
-            var act = allBtns[k].dataset.cat === cKey;
-            allBtns[k].className = act
-              ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
-              : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
-          }
-        });
-        tabsEl.appendChild(btn);
-      })(cats[i]);
-    }
-  }
-
-  function initFullCatalog() {
-    syncCatalogToTenants();
-    rebuildCategoryFilterTabs();
-    var grid = document.getElementById("pos-catalog-grid");
-    if (grid && grid.children.length === 0) {
-      var allTab = document.querySelector("#caisse-cat-tabs button[data-cat='ALL']");
-      if (allTab) allTab.click();
-    }
-  }
-
-  window.addEventListener("DOMContentLoaded", function() { setTimeout(initFullCatalog, 140); });
-  window.addEventListener("hashchange", function() { setTimeout(initFullCatalog, 80); });
-  document.addEventListener("click", function() { setTimeout(initFullCatalog, 80); });
-})();
-</script>
-<script id="LEXWALLET_COMPLETE_CASH_MENU">
-(function() {
-  var COMPLETE_MENU = [
-    /* 1) Hamburgers (Boeuf, Poulet, Fish + variantes fromages / axes saveurs) */
     { id: "BUR-BEF-CHED", name: "Burger Bœuf Cheddar (BBQ Smokey)", category: "Hamburgers", desc: "Bœuf, cheddar, sauce BBQ fumée, oignons frits", priceTtc: 11.50, cogs: 3.20, stockId: "ING-CHED", recipeUnit: 0.18 },
     { id: "BUR-BEF-RACL", name: "Burger Bœuf Raclette", category: "Hamburgers", desc: "Bœuf, fromage à raclette, oignons confits", priceTtc: 13.00, cogs: 3.75, stockId: "ING-CHED", recipeUnit: 0.20 },
     { id: "BUR-BEF-GOUDA", name: "Burger Bœuf Gouda Truffe", category: "Hamburgers", desc: "Bœuf, gouda maturé, crème truffe, champignons", priceTtc: 13.50, cogs: 3.90, stockId: "ING-CHED", recipeUnit: 0.20 },
@@ -2369,99 +1450,110 @@
     { id: "BUR-POU-CAJUN", name: "Burger Poulet Mozza-Cheddar Cajun", category: "Hamburgers", desc: "Poulet cajun, mozzarella & cheddar, buffalo", priceTtc: 12.00, cogs: 3.40, stockId: "ING-CHED", recipeUnit: 0.18 },
     { id: "BUR-FSH-BLEND", name: "Burger Fish Cheese Blend Sweet Chili", category: "Hamburgers", desc: "Poisson pané, cheese blend, sweet chili & ail-herbes", priceTtc: 12.00, cogs: 3.45, stockId: "ING-CHED", recipeUnit: 0.18 },
     { id: "BUR-FSH-CHED", name: "Burger Fish Cheddar & Tartare", category: "Hamburgers", desc: "Poisson pané, cheddar fondant, sauce citronnée", priceTtc: 11.80, cogs: 3.35, stockId: "ING-CHED", recipeUnit: 0.18 },
-
-    /* 2) Cheesecake */
     { id: "DES-CHEESECAKE", name: "Cheesecake", category: "Cheesecake & Café", desc: "Cheesecake crémeux sur base sablée", priceTtc: 5.50, cogs: 1.50, stockId: "ING-CHED", recipeUnit: 0.12 },
-
-    /* 3) Café Gourmet Cheese Cream */
     { id: "CAF-CHEESE-CREAM", name: "Café Gourmet Cheese Cream", category: "Cheesecake & Café", desc: "Café gourmet surmonté d'une crème cheese", priceTtc: 4.80, cogs: 1.15, stockId: "ING-CHED", recipeUnit: 0.08 },
-
-    /* 4) Cheer Limonade Craft */
     { id: "BOI-LIMONADE-CRAFT", name: "Cheer Limonade Craft", category: "Boissons", desc: "Limonade artisanale fraîche", priceTtc: 4.00, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
-
-    /* 5) Cheer Ice Tea */
     { id: "BOI-ICE-TEA", name: "Cheer Ice Tea", category: "Boissons", desc: "Thé glacé maison", priceTtc: 4.00, cogs: 0.90, stockId: "BOIS-EAU", recipeUnit: 1 },
-
-    /* 6) Sélection de Vins (Rouge, Blanc, Rosé) */
     { id: "VIN-ROUGE", name: "Vin Rouge Sélection", category: "Vins", desc: "Verre de vin rouge", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
     { id: "VIN-BLANC", name: "Vin Blanc Sélection", category: "Vins", desc: "Verre de vin blanc", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
     { id: "VIN-ROSE", name: "Vin Rosé Sélection", category: "Vins", desc: "Verre de vin rosé", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-
-    /* 7) Garlic Melt */
     { id: "MELT-GARLIC", name: "Garlic Melt", category: "Melts & Street", desc: "Pain grillé ail & herbes, fromage fondu", priceTtc: 8.50, cogs: 2.20, stockId: "ING-PAIN", recipeUnit: 1 },
-
-    /* 8) Pepito */
     { id: "STR-PEPITO", name: "Pepito", category: "Melts & Street", desc: "Sandwich grillé viande, fromage & sauce", priceTtc: 9.50, cogs: 2.65, stockId: "ING-PAIN", recipeUnit: 1 },
-
-    /* 9) Salchipapa */
     { id: "STR-SALCHIPAPA", name: "Salchipapa", category: "Melts & Street", desc: "Frites, saucisses grillées, fromage & sauces", priceTtc: 8.50, cogs: 2.25, stockId: "ING-PAIN", recipeUnit: 1 },
-
-    /* 10) Les Sauces */
     { id: "SAU-BBQ", name: "Sauce BBQ Smokey", category: "Sauces", desc: "Sauce fumée", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
     { id: "SAU-TRUFFE", name: "Sauce Truffe & Herbes", category: "Sauces", desc: "Sauce truffée", priceTtc: 1.50, cogs: 0.35, stockId: "BOIS-EAU", recipeUnit: 1 },
     { id: "SAU-HONEY", name: "Sauce Honey-Mustard", category: "Sauces", desc: "Sauce miel & moutarde", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
     { id: "SAU-BUFFALO", name: "Sauce Spicy Buffalo Cajun", category: "Sauces", desc: "Sauce épicée cajun/buffalo", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
     { id: "SAU-CHILI", name: "Sauce Sweet Chili & Ail", category: "Sauces", desc: "Sauce sucrée-piquante ail & herbes", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-
-    /* 11) Les Accompagnements (Frites, Salade, Onion Rings, Chicken Bucket, Cheese Stick) */
     { id: "ACC-FRITES", name: "Frites", category: "Accompagnements", desc: "Portion de frites", priceTtc: 3.50, cogs: 0.85, stockId: "ING-PAIN", recipeUnit: 1 },
     { id: "ACC-SALADE", name: "Salade", category: "Accompagnements", desc: "Salade fraîche", priceTtc: 3.80, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
     { id: "ACC-ONION-RINGS", name: "Onion Rings", category: "Accompagnements", desc: "Rondelles d'oignons panées", priceTtc: 4.20, cogs: 1.05, stockId: "ING-PAIN", recipeUnit: 1 },
     { id: "ACC-CHICKEN-BUCKET", name: "Chicken Bucket", category: "Accompagnements", desc: "Bucket poulet croustillant", priceTtc: 14.50, cogs: 4.10, stockId: "ING-CHED", recipeUnit: 0.20 },
     { id: "ACC-CHEESE-STICK", name: "Cheese Stick", category: "Accompagnements", desc: "Bâtonnets de fromage panés", priceTtc: 4.80, cogs: 1.25, stockId: "ING-CHED", recipeUnit: 0.14 }
   ];
-
-  var currentCatFilter = "ALL";
-  var currentSearchText = "";
-
-  function applyCompleteMenuToStore() {
+  var catFilter = "ALL";
+  var queryText = "";
+  function findMenuItemById(itemId) {
+    for (var i = 0; i < MENU_ITEMS.length; i++) { if (MENU_ITEMS[i].id === itemId) return MENU_ITEMS[i]; }
+    return null;
+  }
+  function syncStoreCatalog() {
     if (typeof tenantStore === "object" && tenantStore) {
       var keys = Object.keys(tenantStore);
       for (var i = 0; i < keys.length; i++) {
-        var t = tenantStore[keys[i]];
-        if (t) {
-          t.catalog = COMPLETE_MENU.map(function(item) { return Object.assign({}, item); });
-        }
+        if (tenantStore[keys[i]]) tenantStore[keys[i]].catalog = MENU_ITEMS.map(function(x) { return Object.assign({}, x); });
       }
       if (typeof persistLocalOnly === "function") persistLocalOnly();
     }
   }
-
-  function renderAllMenuItems() {
-    applyCompleteMenuToStore();
+  var prevAdd = typeof window.addItemToCart === "function" ? window.addItemToCart : null;
+  window.addItemToCart = function(itemId) {
+    syncStoreCatalog();
+    if (prevAdd) { try { prevAdd(itemId); } catch (_) {} }
+    if (typeof cartState === "object" && cartState && Array.isArray(cartState.items)) {
+      var found = false;
+      for (var i = 0; i < cartState.items.length; i++) {
+        if (cartState.items[i].id === itemId) { cartState.items[i].qty = Number(cartState.items[i].qty || 0) + 1; found = true; break; }
+      }
+      if (!found) {
+        var def = findMenuItemById(itemId);
+        if (def) cartState.items.push({ id: def.id, name: def.name, priceTtc: def.priceTtc, cogs: def.cogs, stockId: def.stockId, recipeUnit: def.recipeUnit, qty: 1 });
+      }
+    }
+    window.dispatchEvent(new Event("caisse:refresh"));
+  };
+  function renderGridDom() {
     var grid = document.getElementById("pos-catalog-grid");
     if (!grid) return;
-
-    var filtered = [];
-    for (var i = 0; i < COMPLETE_MENU.length; i++) {
-      var it = COMPLETE_MENU[i];
-      if (currentCatFilter !== "ALL" && it.category !== currentCatFilter) continue;
-      if (currentSearchText) {
-        var txt = (it.name + " " + it.category + " " + it.desc).toLowerCase();
-        if (txt.indexOf(currentSearchText) === -1) continue;
+    var matches = [];
+    for (var i = 0; i < MENU_ITEMS.length && matches.length < MAX_RENDER; i++) {
+      var item = MENU_ITEMS[i];
+      if (catFilter !== "ALL" && item.category !== catFilter) continue;
+      if (queryText) {
+        var blob = (item.name + " " + item.category + " " + item.desc).toLowerCase();
+        if (blob.indexOf(queryText) === -1) continue;
       }
-      filtered.push(it);
+      matches.push(item);
     }
-
     grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
-    grid.innerHTML = filtered.map(function(item) {
-      return (
-        "<div class=\"bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition\">" +
-          "<div class=\"min-w-0\">" +
-            "<div class=\"font-bold text-white truncate\">" + item.name + "</div>" +
-            "<div class=\"text-[11px] text-slate-400 mt-0.5\">" + Number(item.priceTtc).toFixed(2) + " € TTC • " + item.category + "</div>" +
-          "</div>" +
-          "<button type=\"button\" onclick=\"addItemToCart('" + item.id + "'); setTimeout(function(){ window.dispatchEvent(new Event('caisse:refresh')); }, 15);\" class=\"shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs\">+ Ajouter</button>" +
-        "</div>"
-      );
-    }).join("");
+    grid.textContent = "";
+    if (matches.length === 0) {
+      var emptyP = document.createElement("p");
+      emptyP.className = "text-slate-500 col-span-2 text-xs";
+      emptyP.textContent = "Aucun article trouvé.";
+      grid.appendChild(emptyP);
+      return;
+    }
+    for (var j = 0; j < matches.length; j++) {
+      (function(it) {
+        var card = document.createElement("div");
+        card.className = "bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition";
+        var info = document.createElement("div");
+        info.className = "min-w-0";
+        var title = document.createElement("div");
+        title.className = "font-bold text-white truncate text-xs";
+        title.textContent = it.name;
+        var meta = document.createElement("div");
+        meta.className = "text-[11px] text-slate-400 mt-0.5 truncate";
+        meta.textContent = Number(it.priceTtc).toFixed(2) + " € TTC • " + it.category;
+        info.appendChild(title);
+        info.appendChild(meta);
+        var addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs";
+        addBtn.textContent = "+ Ajouter";
+        addBtn.addEventListener("click", function() { window.addItemToCart(it.id); });
+        card.appendChild(info);
+        card.appendChild(addBtn);
+        grid.appendChild(card);
+      })(matches[j]);
+    }
   }
-
-  function buildFilterBar() {
+  function renderTabsDom() {
     var tabsEl = document.getElementById("caisse-cat-tabs");
     if (!tabsEl) return;
-    var cats = [
-      { key: "ALL", label: "Tout (" + COMPLETE_MENU.length + ")" },
+    var categories = [
+      { key: "ALL", label: "Tout (" + MENU_ITEMS.length + ")" },
       { key: "Hamburgers", label: "Burgers" },
       { key: "Melts & Street", label: "Melt/Pepito/Salchi" },
       { key: "Accompagnements", label: "Accompagnements" },
@@ -2470,43 +1562,30 @@
       { key: "Vins", label: "Vins" },
       { key: "Cheesecake & Café", label: "Cake & Café" }
     ];
-    tabsEl.innerHTML = "";
-    for (var i = 0; i < cats.length; i++) {
-      (function(cObj) {
+    tabsEl.textContent = "";
+    for (var i = 0; i < categories.length; i++) {
+      (function(cat) {
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = cObj.label;
-        var active = currentCatFilter === cObj.key;
-        btn.className = active
+        btn.textContent = cat.label;
+        btn.className = (catFilter === cat.key)
           ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
           : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
-        btn.addEventListener("click", function() {
-          currentCatFilter = cObj.key;
-          buildFilterBar();
-          renderAllMenuItems();
-        });
+        btn.addEventListener("click", function() { catFilter = cat.key; renderTabsDom(); renderGridDom(); });
         tabsEl.appendChild(btn);
-      })(cats[i]);
+      })(categories[i]);
     }
-
     var searchInp = document.getElementById("caisse-search-input");
-    if (searchInp && !searchInp.dataset.boundCompleteSearch) {
-      searchInp.dataset.boundCompleteSearch = "1";
-      searchInp.addEventListener("input", function() {
-        currentSearchText = String(searchInp.value || "").trim().toLowerCase();
-        renderAllMenuItems();
-      });
+    if (searchInp && !searchInp.dataset.boundV2) {
+      searchInp.dataset.boundV2 = "1";
+      searchInp.addEventListener("input", function() { queryText = String(searchInp.value || "").trim().toLowerCase(); renderGridDom(); });
     }
   }
-
-  function syncCompleteCashMenu() {
-    buildFilterBar();
-    renderAllMenuItems();
-  }
-
-  window.addEventListener("DOMContentLoaded", function() { setTimeout(syncCompleteCashMenu, 180); });
-  window.addEventListener("hashchange", function() { setTimeout(syncCompleteCashMenu, 80); });
-  document.addEventListener("click", function() { setTimeout(syncCompleteCashMenu, 80); });
+  window.renderPosCatalog = function() { syncStoreCatalog(); renderTabsDom(); renderGridDom(); };
+  function bootMenuV2() { syncStoreCatalog(); renderTabsDom(); renderGridDom(); }
+  window.addEventListener("DOMContentLoaded", function() { bootMenuV2(); setTimeout(bootMenuV2, 200); });
+  window.addEventListener("hashchange", function() { setTimeout(bootMenuV2, 60); });
+  document.addEventListener("click", function() { setTimeout(bootMenuV2, 80); });
 })();
 </script>
       "</body></html>";
@@ -2672,6 +1751,5 @@
   window.addEventListener("hashchange", function() { setTimeout(initModuleExports, 60); });
   document.addEventListener("click", function() { setTimeout(initModuleExports, 60); });
 })();
-</script>
 </body>
 </html>
