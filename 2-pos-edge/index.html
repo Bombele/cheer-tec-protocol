@@ -1438,158 +1438,150 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_COMPLETE_CASH_MENU_V2">
+<script id="LEXWALLET_CAISSE_MENU_V3">
 (function() {
-  var MAX_RENDER = 100;
-  var MENU_ITEMS = [
-    { id: "BUR-BEF-CHED", name: "Burger Bœuf Cheddar (BBQ Smokey)", category: "Hamburgers", desc: "Bœuf, cheddar, sauce BBQ fumée, oignons frits", priceTtc: 11.50, cogs: 3.20, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-BEF-RACL", name: "Burger Bœuf Raclette", category: "Hamburgers", desc: "Bœuf, fromage à raclette, oignons confits", priceTtc: 13.00, cogs: 3.75, stockId: "ING-CHED", recipeUnit: 0.20 },
-    { id: "BUR-BEF-GOUDA", name: "Burger Bœuf Gouda Truffe", category: "Hamburgers", desc: "Bœuf, gouda maturé, crème truffe, champignons", priceTtc: 13.50, cogs: 3.90, stockId: "ING-CHED", recipeUnit: 0.20 },
-    { id: "BUR-POU-RACL", name: "Burger Poulet Raclette & Truffe", category: "Hamburgers", desc: "Poulet crispy, raclette, crème truffe & champignons", priceTtc: 12.50, cogs: 3.50, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-POU-JALAP", name: "Burger Poulet Cheddar Blanc Jalapeño", category: "Hamburgers", desc: "Poulet, cheddar blanc, honey-mustard, jalapeño", priceTtc: 12.00, cogs: 3.35, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-POU-CAJUN", name: "Burger Poulet Mozza-Cheddar Cajun", category: "Hamburgers", desc: "Poulet cajun, mozzarella & cheddar, buffalo", priceTtc: 12.00, cogs: 3.40, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-FSH-BLEND", name: "Burger Fish Cheese Blend Sweet Chili", category: "Hamburgers", desc: "Poisson pané, cheese blend, sweet chili & ail-herbes", priceTtc: 12.00, cogs: 3.45, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "BUR-FSH-CHED", name: "Burger Fish Cheddar & Tartare", category: "Hamburgers", desc: "Poisson pané, cheddar fondant, sauce citronnée", priceTtc: 11.80, cogs: 3.35, stockId: "ING-CHED", recipeUnit: 0.18 },
-    { id: "DES-CHEESECAKE", name: "Cheesecake", category: "Cheesecake & Café", desc: "Cheesecake crémeux sur base sablée", priceTtc: 5.50, cogs: 1.50, stockId: "ING-CHED", recipeUnit: 0.12 },
-    { id: "CAF-CHEESE-CREAM", name: "Café Gourmet Cheese Cream", category: "Cheesecake & Café", desc: "Café gourmet surmonté d'une crème cheese", priceTtc: 4.80, cogs: 1.15, stockId: "ING-CHED", recipeUnit: 0.08 },
-    { id: "BOI-LIMONADE-CRAFT", name: "Cheer Limonade Craft", category: "Boissons", desc: "Limonade artisanale fraîche", priceTtc: 4.00, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "BOI-ICE-TEA", name: "Cheer Ice Tea", category: "Boissons", desc: "Thé glacé maison", priceTtc: 4.00, cogs: 0.90, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "VIN-ROUGE", name: "Vin Rouge Sélection", category: "Vins", desc: "Verre de vin rouge", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "VIN-BLANC", name: "Vin Blanc Sélection", category: "Vins", desc: "Verre de vin blanc", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "VIN-ROSE", name: "Vin Rosé Sélection", category: "Vins", desc: "Verre de vin rosé", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
-    { id: "MELT-GARLIC", name: "Garlic Melt", category: "Melts & Street", desc: "Pain grillé ail & herbes, fromage fondu", priceTtc: 8.50, cogs: 2.20, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "STR-PEPITO", name: "Pepito", category: "Melts & Street", desc: "Sandwich grillé viande, fromage & sauce", priceTtc: 9.50, cogs: 2.65, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "STR-SALCHIPAPA", name: "Salchipapa", category: "Melts & Street", desc: "Frites, saucisses grillées, fromage & sauces", priceTtc: 8.50, cogs: 2.25, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "SAU-BBQ", name: "Sauce BBQ Smokey", category: "Sauces", desc: "Sauce fumée", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-TRUFFE", name: "Sauce Truffe & Herbes", category: "Sauces", desc: "Sauce truffée", priceTtc: 1.50, cogs: 0.35, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-HONEY", name: "Sauce Honey-Mustard", category: "Sauces", desc: "Sauce miel & moutarde", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-BUFFALO", name: "Sauce Spicy Buffalo Cajun", category: "Sauces", desc: "Sauce épicée cajun/buffalo", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "SAU-CHILI", name: "Sauce Sweet Chili & Ail", category: "Sauces", desc: "Sauce sucrée-piquante ail & herbes", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "ACC-FRITES", name: "Frites", category: "Accompagnements", desc: "Portion de frites", priceTtc: 3.50, cogs: 0.85, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "ACC-SALADE", name: "Salade", category: "Accompagnements", desc: "Salade fraîche", priceTtc: 3.80, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
-    { id: "ACC-ONION-RINGS", name: "Onion Rings", category: "Accompagnements", desc: "Rondelles d'oignons panées", priceTtc: 4.20, cogs: 1.05, stockId: "ING-PAIN", recipeUnit: 1 },
-    { id: "ACC-CHICKEN-BUCKET", name: "Chicken Bucket", category: "Accompagnements", desc: "Bucket poulet croustillant", priceTtc: 14.50, cogs: 4.10, stockId: "ING-CHED", recipeUnit: 0.20 },
-    { id: "ACC-CHEESE-STICK", name: "Cheese Stick", category: "Accompagnements", desc: "Bâtonnets de fromage panés", priceTtc: 4.80, cogs: 1.25, stockId: "ING-CHED", recipeUnit: 0.14 }
+  var MAX_ITEMS = 100;
+  var ITEMS = [
+    { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", category: "Hamburgers", priceTtc: 11.50, cogs: 3.20, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-BEF-RACL", name: "Burger Boeuf Raclette", category: "Hamburgers", priceTtc: 13.00, cogs: 3.75, stockId: "ING-CHED", recipeUnit: 0.20 },
+    { id: "BUR-BEF-GOUDA", name: "Burger Boeuf Gouda Truffe", category: "Hamburgers", priceTtc: 13.50, cogs: 3.90, stockId: "ING-CHED", recipeUnit: 0.20 },
+    { id: "BUR-POU-RACL", name: "Burger Poulet Raclette et Truffe", category: "Hamburgers", priceTtc: 12.50, cogs: 3.50, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-POU-JALAP", name: "Burger Poulet Cheddar Blanc Jalapeno", category: "Hamburgers", priceTtc: 12.00, cogs: 3.35, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-POU-CAJUN", name: "Burger Poulet Mozza-Cheddar Cajun", category: "Hamburgers", priceTtc: 12.00, cogs: 3.40, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-FSH-BLEND", name: "Burger Fish Cheese Blend Sweet Chili", category: "Hamburgers", priceTtc: 12.00, cogs: 3.45, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "BUR-FSH-CHED", name: "Burger Fish Cheddar et Tartare", category: "Hamburgers", priceTtc: 11.80, cogs: 3.35, stockId: "ING-CHED", recipeUnit: 0.18 },
+    { id: "DES-CHEESECAKE", name: "Cheesecake", category: "Cheesecake et Cafe", priceTtc: 5.50, cogs: 1.50, stockId: "ING-CHED", recipeUnit: 0.12 },
+    { id: "CAF-CHEESE-CREAM", name: "Cafe Gourmet Cheese Cream", category: "Cheesecake et Cafe", priceTtc: 4.80, cogs: 1.15, stockId: "ING-CHED", recipeUnit: 0.08 },
+    { id: "BOI-LIMONADE-CRAFT", name: "Cheer Limonade Craft", category: "Boissons", priceTtc: 4.00, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "BOI-ICE-TEA", name: "Cheer Ice Tea", category: "Boissons", priceTtc: 4.00, cogs: 0.90, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "VIN-ROUGE", name: "Vin Rouge Selection", category: "Vins", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "VIN-BLANC", name: "Vin Blanc Selection", category: "Vins", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "VIN-ROSE", name: "Vin Rose Selection", category: "Vins", priceTtc: 6.50, cogs: 1.50, stockId: "BOIS-VIN", recipeUnit: 1 },
+    { id: "MELT-GARLIC", name: "Garlic Melt", category: "Melts et Street", priceTtc: 8.50, cogs: 2.20, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "STR-PEPITO", name: "Pepito", category: "Melts et Street", priceTtc: 9.50, cogs: 2.65, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "STR-SALCHIPAPA", name: "Salchipapa", category: "Melts et Street", priceTtc: 8.50, cogs: 2.25, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "SAU-BBQ", name: "Sauce BBQ Smokey", category: "Sauces", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-TRUFFE", name: "Sauce Truffe et Herbes", category: "Sauces", priceTtc: 1.50, cogs: 0.35, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-HONEY", name: "Sauce Honey-Mustard", category: "Sauces", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-BUFFALO", name: "Sauce Spicy Buffalo Cajun", category: "Sauces", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "SAU-CHILI", name: "Sauce Sweet Chili et Ail", category: "Sauces", priceTtc: 1.20, cogs: 0.25, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "ACC-FRITES", name: "Frites", category: "Accompagnements", priceTtc: 3.50, cogs: 0.85, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "ACC-SALADE", name: "Salade", category: "Accompagnements", priceTtc: 3.80, cogs: 0.95, stockId: "BOIS-EAU", recipeUnit: 1 },
+    { id: "ACC-ONION-RINGS", name: "Onion Rings", category: "Accompagnements", priceTtc: 4.20, cogs: 1.05, stockId: "ING-PAIN", recipeUnit: 1 },
+    { id: "ACC-CHICKEN-BUCKET", name: "Chicken Bucket", category: "Accompagnements", priceTtc: 14.50, cogs: 4.10, stockId: "ING-CHED", recipeUnit: 0.20 },
+    { id: "ACC-CHEESE-STICK", name: "Cheese Stick", category: "Accompagnements", priceTtc: 4.80, cogs: 1.25, stockId: "ING-CHED", recipeUnit: 0.14 }
   ];
-  var catFilter = "ALL";
-  var queryText = "";
-  function findMenuItemById(itemId) {
-    for (var i = 0; i < MENU_ITEMS.length; i++) { if (MENU_ITEMS[i].id === itemId) return MENU_ITEMS[i]; }
+  var activeCat = "ALL";
+  var searchVal = "";
+  function getItemById(id) {
+    for (var i = 0; i < ITEMS.length; i++) { if (ITEMS[i].id === id) return ITEMS[i]; }
     return null;
   }
-  function syncStoreCatalog() {
+  function syncCatalog() {
     if (typeof tenantStore === "object" && tenantStore) {
-      var keys = Object.keys(tenantStore);
-      for (var i = 0; i < keys.length; i++) {
-        if (tenantStore[keys[i]]) tenantStore[keys[i]].catalog = MENU_ITEMS.map(function(x) { return Object.assign({}, x); });
+      var ks = Object.keys(tenantStore);
+      for (var i = 0; i < ks.length; i++) {
+        if (tenantStore[ks[i]]) tenantStore[ks[i]].catalog = ITEMS.slice();
       }
       if (typeof persistLocalOnly === "function") persistLocalOnly();
     }
   }
-  var prevAdd = typeof window.addItemToCart === "function" ? window.addItemToCart : null;
-  window.addItemToCart = function(itemId) {
-    syncStoreCatalog();
-    if (prevAdd) { try { prevAdd(itemId); } catch (_) {} }
+  var baseAdd = typeof window.addItemToCart === "function" ? window.addItemToCart : null;
+  window.addItemToCart = function(id) {
+    syncCatalog();
+    if (baseAdd) { try { baseAdd(id); } catch (_) {} }
     if (typeof cartState === "object" && cartState && Array.isArray(cartState.items)) {
       var found = false;
       for (var i = 0; i < cartState.items.length; i++) {
-        if (cartState.items[i].id === itemId) { cartState.items[i].qty = Number(cartState.items[i].qty || 0) + 1; found = true; break; }
+        if (cartState.items[i].id === id) { cartState.items[i].qty = Number(cartState.items[i].qty || 0) + 1; found = true; break; }
       }
       if (!found) {
-        var def = findMenuItemById(itemId);
-        if (def) cartState.items.push({ id: def.id, name: def.name, priceTtc: def.priceTtc, cogs: def.cogs, stockId: def.stockId, recipeUnit: def.recipeUnit, qty: 1 });
+        var it = getItemById(id);
+        if (it) cartState.items.push({ id: it.id, name: it.name, priceTtc: it.priceTtc, cogs: it.cogs, stockId: it.stockId, recipeUnit: it.recipeUnit, qty: 1 });
       }
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
-  function renderGridDom() {
+  function drawCatalog() {
     var grid = document.getElementById("pos-catalog-grid");
     if (!grid) return;
-    var matches = [];
-    for (var i = 0; i < MENU_ITEMS.length && matches.length < MAX_RENDER; i++) {
-      var item = MENU_ITEMS[i];
-      if (catFilter !== "ALL" && item.category !== catFilter) continue;
-      if (queryText) {
-        var blob = (item.name + " " + item.category + " " + item.desc).toLowerCase();
-        if (blob.indexOf(queryText) === -1) continue;
+    var list = [];
+    for (var i = 0; i < ITEMS.length && list.length < MAX_ITEMS; i++) {
+      var it = ITEMS[i];
+      if (activeCat !== "ALL" && it.category !== activeCat) continue;
+      if (searchVal) {
+        var hay = (it.name + " " + it.category).toLowerCase();
+        if (hay.indexOf(searchVal) === -1) continue;
       }
-      matches.push(item);
+      list.push(it);
     }
     grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
     grid.textContent = "";
-    if (matches.length === 0) {
-      var emptyP = document.createElement("p");
-      emptyP.className = "text-slate-500 col-span-2 text-xs";
-      emptyP.textContent = "Aucun article trouvé.";
-      grid.appendChild(emptyP);
-      return;
-    }
-    for (var j = 0; j < matches.length; j++) {
-      (function(it) {
-        var card = document.createElement("div");
-        card.className = "bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3 transition";
-        var info = document.createElement("div");
-        info.className = "min-w-0";
-        var title = document.createElement("div");
-        title.className = "font-bold text-white truncate text-xs";
-        title.textContent = it.name;
-        var meta = document.createElement("div");
-        meta.className = "text-[11px] text-slate-400 mt-0.5 truncate";
-        meta.textContent = Number(it.priceTtc).toFixed(2) + " € TTC • " + it.category;
-        info.appendChild(title);
-        info.appendChild(meta);
-        var addBtn = document.createElement("button");
-        addBtn.type = "button";
-        addBtn.className = "shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs";
-        addBtn.textContent = "+ Ajouter";
-        addBtn.addEventListener("click", function() { window.addItemToCart(it.id); });
-        card.appendChild(info);
-        card.appendChild(addBtn);
-        grid.appendChild(card);
-      })(matches[j]);
-    }
-  }
-  function renderTabsDom() {
-    var tabsEl = document.getElementById("caisse-cat-tabs");
-    if (!tabsEl) return;
-    var categories = [
-      { key: "ALL", label: "Tout (" + MENU_ITEMS.length + ")" },
-      { key: "Hamburgers", label: "Burgers" },
-      { key: "Melts & Street", label: "Melt/Pepito/Salchi" },
-      { key: "Accompagnements", label: "Accompagnements" },
-      { key: "Sauces", label: "Sauces" },
-      { key: "Boissons", label: "Limonade & Ice Tea" },
-      { key: "Vins", label: "Vins" },
-      { key: "Cheesecake & Café", label: "Cake & Café" }
-    ];
-    tabsEl.textContent = "";
-    for (var i = 0; i < categories.length; i++) {
-      (function(cat) {
+    for (var j = 0; j < list.length; j++) {
+      (function(item) {
+        var box = document.createElement("div");
+        box.className = "bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3";
+        var left = document.createElement("div");
+        left.className = "min-w-0";
+        var nEl = document.createElement("div");
+        nEl.className = "font-bold text-white truncate text-xs";
+        nEl.textContent = item.name;
+        var pEl = document.createElement("div");
+        pEl.className = "text-[11px] text-slate-400 mt-0.5";
+        pEl.textContent = Number(item.priceTtc).toFixed(2) + " EUR TTC - " + item.category;
+        left.appendChild(nEl);
+        left.appendChild(pEl);
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = cat.label;
-        btn.className = (catFilter === cat.key)
-          ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
-          : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
-        btn.addEventListener("click", function() { catFilter = cat.key; renderTabsDom(); renderGridDom(); });
-        tabsEl.appendChild(btn);
-      })(categories[i]);
-    }
-    var searchInp = document.getElementById("caisse-search-input");
-    if (searchInp && !searchInp.dataset.boundV2) {
-      searchInp.dataset.boundV2 = "1";
-      searchInp.addEventListener("input", function() { queryText = String(searchInp.value || "").trim().toLowerCase(); renderGridDom(); });
+        btn.className = "shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs";
+        btn.textContent = "+ Ajouter";
+        btn.addEventListener("click", function() { window.addItemToCart(item.id); });
+        box.appendChild(left);
+        box.appendChild(btn);
+        grid.appendChild(box);
+      })(list[j]);
     }
   }
-  window.renderPosCatalog = function() { syncStoreCatalog(); renderTabsDom(); renderGridDom(); };
-  function bootMenuV2() { syncStoreCatalog(); renderTabsDom(); renderGridDom(); }
-  window.addEventListener("DOMContentLoaded", function() { bootMenuV2(); setTimeout(bootMenuV2, 200); });
-  window.addEventListener("hashchange", function() { setTimeout(bootMenuV2, 60); });
-  document.addEventListener("click", function() { setTimeout(bootMenuV2, 80); });
+  function drawTabs() {
+    var tabs = document.getElementById("caisse-cat-tabs");
+    if (!tabs) return;
+    var cats = [
+      { k: "ALL", l: "Tout (" + ITEMS.length + ")" },
+      { k: "Hamburgers", l: "Burgers" },
+      { k: "Melts et Street", l: "Melt/Pepito/Salchi" },
+      { k: "Accompagnements", l: "Accompagnements" },
+      { k: "Sauces", l: "Sauces" },
+      { k: "Boissons", l: "Limonade et Ice Tea" },
+      { k: "Vins", l: "Vins" },
+      { k: "Cheesecake et Cafe", l: "Cake et Cafe" }
+    ];
+    tabs.textContent = "";
+    for (var i = 0; i < cats.length; i++) {
+      (function(c) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.textContent = c.l;
+        b.className = activeCat === c.k
+          ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
+          : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-900 text-slate-300 border border-slate-800";
+        b.addEventListener("click", function() { activeCat = c.k; drawTabs(); drawCatalog(); });
+        tabs.appendChild(b);
+      })(cats[i]);
+    }
+    var inp = document.getElementById("caisse-search-input");
+    if (inp && !inp.dataset.v3) {
+      inp.dataset.v3 = "1";
+      inp.addEventListener("input", function() { searchVal = String(inp.value || "").trim().toLowerCase(); drawCatalog(); });
+    }
+  }
+  window.renderPosCatalog = function() { syncCatalog(); drawTabs(); drawCatalog(); };
+  function initCaisseV3() { syncCatalog(); drawTabs(); drawCatalog(); }
+  window.addEventListener("DOMContentLoaded", function() { initCaisseV3(); setTimeout(initCaisseV3, 200); });
+  window.addEventListener("hashchange", function() { setTimeout(initCaisseV3, 60); });
+  document.addEventListener("click", function() { setTimeout(initCaisseV3, 80); });
 })();
 </script>
       "</body></html>";
-    var w = window.open("", "_blank", "width=900,height=700");
     if (!w) { window.print(); return; }
     w.document.open();
     w.document.write(docHtml);
@@ -1598,14 +1590,7 @@
     setTimeout(function() { w.print(); }, 250);
   }
 
-  function exportPnlCsv() {
-    var t = currentTenant();
-    var tId = currentTenantId();
-    var txs = (t && Array.isArray(t.transactions)) ? t.transactions : [];
-    var lines = [["Etablissement", "Ticket", "Date", "HT", "TVA", "TTC"].join(";")];
-    var n = 0;
     for (var i = 0; i < txs.length && n < MAX_ROWS; i++) {
-      var tx = txs[i];
       if (!tx || tx.cancelled || tx.is_test) continue;
       lines.push([csvEscape((t && t.name) || tId), csvEscape(tx.id || ""), csvEscape(tx.date || ""), Number(tx.total_ht || 0).toFixed(2), Number(tx.vat || 0).toFixed(2), Number(tx.total_ttc || 0).toFixed(2)].join(";"));
       n++;
@@ -1613,60 +1598,32 @@
     downloadFile("pnl_" + tId + "_" + new Date().toISOString().slice(0, 10) + ".csv", "\uFEFF" + lines.join("\r\n"), "text/csv;charset=utf-8;");
   }
 
-  function exportPnlPdf() {
-    var t = currentTenant();
-    var tId = currentTenantId();
-    var txs = (t && Array.isArray(t.transactions)) ? t.transactions : [];
-    var ht = 0, vat = 0, ttc = 0, rows = [];
     for (var i = 0; i < txs.length && rows.length < MAX_ROWS; i++) {
-      var tx = txs[i];
       if (!tx || tx.cancelled || tx.is_test) continue;
-      var rHt = Number(tx.total_ht || 0), rVat = Number(tx.vat || 0), rTtc = Number(tx.total_ttc || 0);
       ht += rHt; vat += rVat; ttc += rTtc;
       rows.push([tx.id || "-", tx.date || "-", rHt.toFixed(2), rVat.toFixed(2), rTtc.toFixed(2)]);
     }
-    var summary = "<div class=\"card\"><strong>CA HT :</strong> " + ht.toFixed(2) + "</div><div class=\"card\"><strong>TVA :</strong> " + vat.toFixed(2) + "</div><div class=\"card\"><strong>CA TTC :</strong> " + ttc.toFixed(2) + "</div>";
     openPrintableReport("Rapport P&L — " + ((t && t.name) || tId), "Code : " + tId + " • Généré le " + new Date().toLocaleString(), summary, ["Ticket", "Date", "HT", "TVA", "TTC"], rows);
   }
 
-  function exportHistoryCsv() {
-    var t = currentTenant();
-    var tId = currentTenantId();
-    var txs = (t && Array.isArray(t.transactions)) ? t.transactions : [];
-    var lines = [["Ticket", "Horodatage", "Mode", "Total_TTC", "Statut"].join(";")];
-    var n = 0;
     for (var i = 0; i < txs.length && n < MAX_ROWS; i++) {
-      var tx = txs[i];
       if (!tx) continue;
-      var st = tx.cancelled ? "ANNULE" : (tx.is_test ? "TEST" : "VALIDE");
       lines.push([csvEscape(tx.id || ""), csvEscape(tx.created_at || tx.date || ""), csvEscape(tx.sale_type || ""), Number(tx.total_ttc || 0).toFixed(2), st].join(";"));
       n++;
     }
     downloadFile("historique_caisse_" + tId + "_" + new Date().toISOString().slice(0, 10) + ".csv", "\uFEFF" + lines.join("\r\n"), "text/csv;charset=utf-8;");
   }
 
-  function exportHistoryPdf() {
-    var t = currentTenant();
-    var tId = currentTenantId();
-    var txs = (t && Array.isArray(t.transactions)) ? t.transactions : [];
-    var rows = [], validCount = 0, totalValide = 0;
     for (var i = 0; i < txs.length && rows.length < MAX_ROWS; i++) {
-      var tx = txs[i];
       if (!tx) continue;
-      var st = tx.cancelled ? "ANNULÉ" : (tx.is_test ? "TEST" : "VALIDÉ");
       if (!tx.cancelled && !tx.is_test) { validCount++; totalValide += Number(tx.total_ttc || 0); }
       rows.push([tx.id || "-", tx.created_at || tx.date || "-", tx.sale_type || "-", Number(tx.total_ttc || 0).toFixed(2), st]);
     }
-    var summary = "<div class=\"card\"><strong>Tickets validés :</strong> " + validCount + "</div><div class=\"card\"><strong>Total TTC validé :</strong> " + totalValide.toFixed(2) + "</div>";
     openPrintableReport("Historique Caisse — " + ((t && t.name) || tId), "Code : " + tId + " • Généré le " + new Date().toLocaleString(), summary, ["Ticket", "Horodatage", "Mode", "TTC", "Statut"], rows);
   }
 
-  function injectModuleExportButtons() {
-    var pnlSec = document.getElementById("view-pnl");
     if (pnlSec && !document.getElementById("pnl-pdf-export-btn")) {
-      var pnlHeaderRow = pnlSec.querySelector(".flex");
       if (pnlHeaderRow) {
-        var pdfBtn = document.createElement("button");
         pdfBtn.id = "pnl-pdf-export-btn";
         pdfBtn.type = "button";
         pdfBtn.className = "bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded font-bold";
@@ -1675,26 +1632,20 @@
         pnlHeaderRow.appendChild(pdfBtn);
       }
     }
-    var csvBtn = pnlSec ? pnlSec.querySelector("button[onclick*=\"exportSalesCsv\"]") : null;
     if (csvBtn && !csvBtn.dataset.boundPnlCsv) {
       csvBtn.dataset.boundPnlCsv = "1";
       csvBtn.textContent = "Export Excel / CSV";
       csvBtn.addEventListener("click", function(e) { e.preventDefault(); exportPnlCsv(); });
     }
 
-    var histSec = document.getElementById("view-history");
     if (histSec && !document.getElementById("history-export-bar")) {
-      var histHeader = histSec.querySelector(".border-b");
       if (histHeader) {
-        var bar = document.createElement("div");
         bar.id = "history-export-bar";
         bar.className = "flex flex-wrap gap-2 mt-3";
-        var hCsv = document.createElement("button");
         hCsv.type = "button";
         hCsv.className = "bg-sky-700 hover:bg-sky-600 text-white px-3 py-1.5 rounded font-bold";
         hCsv.textContent = "Export Excel / CSV";
         hCsv.addEventListener("click", exportHistoryCsv);
-        var hPdf = document.createElement("button");
         hPdf.type = "button";
         hPdf.className = "bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded font-bold";
         hPdf.textContent = "Export PDF";
@@ -1706,28 +1657,20 @@
     }
   }
 
-  function removeGlobalExportAndRestoreSync() {
-    var modal = document.getElementById("lex-export-modal");
     if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
-    var btns = document.querySelectorAll("button");
     for (var i = 0; i < btns.length; i++) {
-      var b = btns[i];
       if (String(b.textContent || "").trim() === "Exporter") {
         b.textContent = "Sync Cloud";
       }
     }
   }
 
-  window.syncNowManual = function() {
-    var endpoint = "";
     if (typeof getWorkerApiBase === "function") endpoint = String(getWorkerApiBase() || "").trim();
     if (!endpoint) {
       if (typeof showToast === "function") showToast("Mode local actif (aucun endpoint Worker configuré).");
       return;
     }
     if (typeof fetch !== "function" || typeof AbortController !== "function") return;
-    var ctrl = new AbortController();
-    var timer = setTimeout(function() { ctrl.abort(); }, SYNC_TIMEOUT_MS);
     fetch(endpoint + "/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1742,14 +1685,10 @@
     });
   };
 
-  function initModuleExports() {
     removeGlobalExportAndRestoreSync();
     injectModuleExportButtons();
   }
 
-  window.addEventListener("DOMContentLoaded", function() { setTimeout(initModuleExports, 100); });
-  window.addEventListener("hashchange", function() { setTimeout(initModuleExports, 60); });
-  document.addEventListener("click", function() { setTimeout(initModuleExports, 60); });
 })();
 </body>
 </html>
