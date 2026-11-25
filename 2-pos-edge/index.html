@@ -1436,7 +1436,7 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<style id="LEXWALLET_BYBIT_THEME_STYLE">
+<style id="LEXWALLET_BYBIT_THEME_V10">
   :root {
     --bybit-bg: #0b0e11;
     --bybit-surface: #12161c;
@@ -1464,61 +1464,17 @@
     color: var(--bybit-text) !important;
     border-radius: 6px !important;
   }
-  #cheer-menu-v4-host {
+  #cheer-menu-v10-host {
     background-color: var(--bybit-surface) !important;
     border: 1px solid var(--bybit-border) !important;
     border-radius: 8px !important;
     padding: 12px !important;
   }
-  #pos-catalog-grid > div {
-    background-color: var(--bybit-surface-2) !important;
-    border: 1px solid var(--bybit-border) !important;
-    border-radius: 8px !important;
-  }
 </style>
-<style id="LEXWALLET_BYBIT_THEME_STYLE">
-  :root {
-    --bybit-bg: #0b0e11;
-    --bybit-surface: #12161c;
-    --bybit-surface-2: #181d24;
-    --bybit-border: #262d37;
-    --bybit-text: #eaecef;
-    --bybit-muted: #848e9c;
-    --bybit-accent: #f7a600;
-  }
-  html, body {
-    background-color: var(--bybit-bg) !important;
-    color: var(--bybit-text) !important;
-  }
-  header, nav, .nav, [role="navigation"] {
-    background-color: var(--bybit-surface) !important;
-    border-color: var(--bybit-border) !important;
-  }
-  button, .btn, [role="button"] {
-    border-radius: 6px !important;
-    font-weight: 600 !important;
-  }
-  input, select, textarea {
-    background-color: var(--bybit-surface-2) !important;
-    border-color: var(--bybit-border) !important;
-    color: var(--bybit-text) !important;
-    border-radius: 6px !important;
-  }
-  #cheer-menu-v4-host {
-    background-color: var(--bybit-surface) !important;
-    border: 1px solid var(--bybit-border) !important;
-    border-radius: 8px !important;
-    padding: 12px !important;
-  }
-  #pos-catalog-grid > div {
-    background-color: var(--bybit-surface-2) !important;
-    border: 1px solid var(--bybit-border) !important;
-    border-radius: 8px !important;
-  }
-</style>
-<script id="LEXWALLET_CAISSE_BYBIT_V9">
+<script id="LEXWALLET_CAISSE_BYBIT_V10">
 (function() {
   var MAX_ITEMS = 100;
+  var MAX_POLLS = 20;
   var MENU = [
     { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", category: "Hamburgers", priceTtc: 11.50, cogs: 3.20, stockId: "ING-CHED", recipeUnit: 0.18 },
     { id: "BUR-BEF-RACL", name: "Burger Boeuf Raclette", category: "Hamburgers", priceTtc: 13.00, cogs: 3.75, stockId: "ING-CHED", recipeUnit: 0.20 },
@@ -1580,6 +1536,42 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
+  function findMountContainer() {
+    var ids = ["view-caisse", "caisse-view", "pos-caisse", "main-content", "app"];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el && el.offsetParent !== null) return el;
+    }
+    return document.body || null;
+  }
+  function ensureHostAndGrid() {
+    var grid = document.getElementById("pos-catalog-grid");
+    if (grid) return grid;
+    var mount = findMountContainer();
+    if (!mount) return null;
+    var host = document.getElementById("cheer-menu-v10-host");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "cheer-menu-v10-host";
+      host.className = "my-3 space-y-2.5";
+      var tabsBox = document.createElement("div");
+      tabsBox.id = "caisse-cat-tabs";
+      tabsBox.className = "flex flex-wrap gap-1.5";
+      var searchBox = document.createElement("input");
+      searchBox.id = "caisse-search-input";
+      searchBox.type = "text";
+      searchBox.placeholder = "Rechercher un burger, fromage, vin, sauce, side...";
+      searchBox.className = "w-full px-3 py-2 text-xs";
+      var itemsGrid = document.createElement("div");
+      itemsGrid.id = "pos-catalog-grid";
+      itemsGrid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2";
+      host.appendChild(tabsBox);
+      host.appendChild(searchBox);
+      host.appendChild(itemsGrid);
+      mount.insertBefore(host, mount.firstChild);
+    }
+    return document.getElementById("pos-catalog-grid");
+  }
   function compactMenus() {
     var btns = document.querySelectorAll("nav a, nav button, header a, header button, [role=\"navigation\"] a, [role=\"navigation\"] button");
     for (var i = 0; i < btns.length; i++) {
@@ -1588,10 +1580,10 @@
       btns[i].style.fontSize = "12px";
     }
   }
-  function renderMenuV9() {
+  function renderMenuV10() {
     syncTenants();
     compactMenus();
-    var grid = document.getElementById("pos-catalog-grid");
+    var grid = ensureHostAndGrid();
     if (!grid) return;
     var tabsEl = document.getElementById("caisse-cat-tabs");
     if (tabsEl) {
@@ -1612,17 +1604,17 @@
           b.type = "button";
           b.textContent = c.l;
           b.className = activeCat === c.k
-            ? "px-2.5 py-1 rounded font-semibold text-[11px] bg-amber-500 text-slate-950"
-            : "px-2.5 py-1 rounded font-semibold text-[11px] bg-[#181d24] text-slate-300 border border-[#262d37]";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV9(); });
+            ? "px-2.5 py-1 rounded text-[11px] bg-amber-500 text-slate-950"
+            : "px-2.5 py-1 rounded text-[11px] bg-[#181d24] text-slate-300 border border-[#262d37]";
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV10(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v9) {
-      inp.dataset.v9 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV9(); });
+    if (inp && !inp.dataset.v10) {
+      inp.dataset.v10 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV10(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1649,7 +1641,7 @@
         left.appendChild(sub);
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "shrink-0 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs";
+        btn.className = "shrink-0 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs";
         btn.textContent = "+ Ajouter";
         btn.addEventListener("click", function() { window.addItemToCart(item.id); });
         card.appendChild(left);
@@ -1658,11 +1650,15 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV9;
-  function bootV9() { renderMenuV9(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV9(); setTimeout(bootV9, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV9, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV9, 100); });
+  window.renderPosCatalog = renderMenuV10;
+  var polls = 0;
+  var timer = setInterval(function() {
+    polls++;
+    renderMenuV10();
+    if (polls >= MAX_POLLS) clearInterval(timer);
+  }, 200);
+  window.addEventListener("DOMContentLoaded", function() { renderMenuV10(); });
+  window.addEventListener("hashchange", function() { setTimeout(renderMenuV10, 80); });
 })();
 </script>
       "</body></html>";
