@@ -1436,7 +1436,7 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_CAISSE_CLEAN_V8">
+<script id="LEXWALLET_CAISSE_CLEAN_V6">
 (function() {
   var MAX_ITEMS = 100;
   var MENU = [
@@ -1500,7 +1500,7 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
-  function renderMenuV8() {
+  function renderMenuV6() {
     syncTenants();
     var grid = document.getElementById("pos-catalog-grid");
     if (!grid) return;
@@ -1525,15 +1525,15 @@
           b.className = activeCat === c.k
             ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
             : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-950 text-slate-300 border border-slate-800";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV8(); });
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV6(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v8) {
-      inp.dataset.v8 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV8(); });
+    if (inp && !inp.dataset.v6) {
+      inp.dataset.v6 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV6(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1569,11 +1569,11 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV8;
-  function bootV8() { renderMenuV8(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV8(); setTimeout(bootV8, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV8, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV8, 100); });
+  window.renderPosCatalog = renderMenuV6;
+  function bootV6() { renderMenuV6(); }
+  window.addEventListener("DOMContentLoaded", function() { bootV6(); setTimeout(bootV6, 250); });
+  window.addEventListener("hashchange", function() { setTimeout(bootV6, 80); });
+  document.addEventListener("click", function() { setTimeout(bootV6, 100); });
 })();
 </script>
       "</body></html>";
