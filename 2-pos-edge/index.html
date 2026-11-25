@@ -1438,7 +1438,8 @@
     </script>
 
 
-<style id="LEXWALLET_BYBIT_THEME_V124">
+
+<style id="LEXWALLET_BYBIT_THEME_V125">
   :root {
     --bybit-bg: #0b0e11;
     --bybit-surface: #12161c;
@@ -1453,18 +1454,19 @@
     color: var(--bybit-text) !important;
   }
 </style>
-<script id="LEXWALLET_POS_CORE_V124">
+<script id="LEXWALLET_POS_CORE_V125">
 (function () {
   "use strict";
 
-  var MAX_TICKS = 60;
-  var KEY_TX = "CHEER_POS_TICKETS_V124";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V124";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V124";
+  var MAX_TICKS = 80;
+  var KEY_TX = "CHEER_POS_TICKETS_V125";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V125";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V125";
   var txLock = false;
   var saleMode = "SUR_PLACE";
   var activeCart = [];
-  var lastStatus = "Pret";
+  var lastActionTime = 0;
+  var lastActionMsg = "Pret";
 
   var ITEMS = [
     { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", cat: "Hamburgers", ttc: 11.50, cogs: 3.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.12 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.04 }] },
@@ -1573,27 +1575,28 @@
     saveJson(KEY_AUDIT, auditLog);
   }
 
-  function resolveItemForElement(el) {
+  function resolveItemFromElement(el) {
     var cur = el;
     var depth = 0;
-    while (cur && cur !== document.body && depth < 7) {
+    while (cur && cur !== document.body && depth < 8) {
       var txt = normText(cur.textContent);
       for (var i = 0; i < ITEMS.length; i++) {
         var n = normText(ITEMS[i].name);
         if (n.length > 3 && txt.indexOf(n) !== -1) return ITEMS[i];
       }
-      var priceMatch = String(cur.textContent || "").match(/(\d+[.,]\d{2})\s*(?:EUR|€)/i);
-      if (priceMatch) {
+      var mPrice = String(cur.textContent || "").match(/(\d+[.,]\d{2})\s*(?:EUR|€)/i);
+      if (mPrice) {
         var lines = String(cur.textContent || "").split(/\n+/).map(function (s) { return s.trim(); }).filter(Boolean);
-        var label = "Article POS";
+        var title = "Article POS";
         for (var k = 0; k < lines.length; k++) {
-          if (lines[k].toLowerCase().indexOf("ajouter") === -1 && lines[k].toLowerCase().indexOf("eur") === -1 && lines[k].indexOf("€") === -1) {
-            label = lines[k];
+          var low = lines[k].toLowerCase();
+          if (low.indexOf("ajouter") === -1 && low.indexOf("eur") === -1 && lines[k].indexOf("€") === -1 && low.indexOf("ttc") === -1) {
+            title = lines[k];
             break;
           }
         }
-        var val = parseFloat(priceMatch[1].replace(",", ".")) || 5.0;
-        return { id: "POS-" + normText(label).slice(0, 12).replace(/\s+/g, "-").toUpperCase(), name: label, cat: "POS", ttc: val, cogs: Number((val * 0.28).toFixed(2)), vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }] };
+        var price = parseFloat(mPrice[1].replace(",", ".")) || 5.0;
+        return { id: "POS-" + normText(title).slice(0, 12).replace(/\s+/g, "-").toUpperCase(), name: title, cat: "POS", ttc: price, cogs: Number((price * 0.28).toFixed(2)), vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }] };
       }
       cur = cur.parentElement;
       depth++;
@@ -1602,6 +1605,9 @@
   }
 
   function addItemToCart(itemObj) {
+    var now = Date.now();
+    if (now - lastActionTime < 120) return;
+    lastActionTime = now;
     if (!itemObj) return;
     var found = false;
     for (var i = 0; i < activeCart.length; i++) {
@@ -1623,9 +1629,9 @@
         qty: 1
       });
     }
-    lastStatus = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
+    lastActionMsg = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
     logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc });
-    renderOverlayAndSync();
+    renderAll();
   }
 
   function getTotals() {
@@ -1716,13 +1722,13 @@
       saveJson(KEY_STOCK, stockLots);
       logAudit("TICKET_VALIDATED", { ticketId: tid, ttc: tot.ttc, ht: tot.ht, vat: tot.vat, cogs: tot.cogs, hash: h });
       logAudit("STOCK_DECREMENTED", { ticketId: tid, lots: lotsUsed });
-      lastStatus = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
+      lastActionMsg = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
       activeCart = [];
       window.CHEER_POS_TICKETS = tickets.slice();
       window.CHEER_POS_STOCK_LOTS = stockLots;
       window.CHEER_POS_AUDIT_CHAIN = auditLog.slice();
       window.CHEER_LAST_TICKET = rec;
-      renderOverlayAndSync();
+      renderAll();
     } finally {
       txLock = false;
     }
@@ -1751,45 +1757,41 @@
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="80" height="80" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
   }
 
-  function bindDirectAddButtons() {
-    var nodes = document.querySelectorAll("button, [role='button'], a, span, div");
-    for (var i = 0; i < nodes.length; i++) {
-      var el = nodes[i];
-      if (!el || el.children.length > 2) continue;
-      var t = String(el.textContent || "").trim().toLowerCase();
-      if (t === "+ ajouter" || t === "ajouter") {
-        if (el.getAttribute("data-cheer-bound") === "1") continue;
-        el.setAttribute("data-cheer-bound", "1");
-        el.style.cursor = "pointer";
-        el.addEventListener("click", function (ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          addItemToCart(resolveItemForElement(this));
-        }, true);
-      }
+  function handleCandidateTap(ev) {
+    var target = ev.target;
+    if (!target) return;
+    var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
+    var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
+    if (raw === "+ ajouter" || raw === "ajouter" || (raw.indexOf("ajouter") !== -1 && raw.length <= 16)) {
+      ev.preventDefault();
+      addItemToCart(resolveItemFromElement(el || target));
+      return;
+    }
+    if (raw.indexOf("panier / valider") !== -1 || raw.indexOf("valider ticket") !== -1) {
+      ev.preventDefault();
+      validateTicket();
     }
   }
 
-  function renderOverlayAndSync() {
+  function renderAll() {
     if (!document.body) return;
-    bindDirectAddButtons();
     var tot = getTotals();
 
-    var bar = document.getElementById("cheer-cart-bar-v124");
+    var bar = document.getElementById("cheer-cart-bar-v125");
     if (!bar) {
       bar = document.createElement("div");
-      bar.id = "cheer-cart-bar-v124";
-      bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#12161c;border-top:2px solid #f7a600;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaecef;font-size:12px;";
+      bar.id = "cheer-cart-bar-v125";
+      bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#12161c;border-top:2px solid #f7a600;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(bar);
     }
-    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' EUR TTC</strong></div><button type="button" id="cheer-val-btn-v124" style="padding:7px 14px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
-    var vb = document.getElementById("cheer-val-btn-v124");
+    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><button type="button" id="cheer-val-btn-v125" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
+    var vb = document.getElementById("cheer-val-btn-v125");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
 
-    var panel = document.getElementById("cheer-cart-panel-v124");
+    var panel = document.getElementById("cheer-cart-panel-v125");
     if (!panel) {
       panel = document.createElement("section");
-      panel.id = "cheer-cart-panel-v124";
+      panel.id = "cheer-cart-panel-v125";
       panel.style.cssText = "margin:10px 10px 76px 10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(panel);
     }
@@ -1807,38 +1809,31 @@
     var linesHtml = "";
     for (var c = 0; c < activeCart.length; c++) {
       var ci = activeCart[c];
-      linesHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #262d37;font-size:11px;"><span>' + ci.qty + 'x ' + ci.name + '</span><span>' + (ci.qty * ci.ttc).toFixed(2) + ' EUR</span></div>';
+      linesHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #262d37;font-size:11px;"><span>' + ci.qty + 'x ' + ci.name + '</span><span>' + (ci.qty * ci.ttc).toFixed(2) + ' €</span></div>';
     }
 
     var last = tickets.length > 0 ? tickets[0] : null;
     var lotsStr = last && Array.isArray(last.lot_allocations) ? last.lot_allocations.map(function (x) { return x.sku + "[" + x.lot + ":-" + x.qty + "]"; }).join(", ") : "";
-    var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:76px;height:76px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' EUR TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
+    var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:76px;height:76px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' € TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
 
-    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' EUR • TTC: ' + tot.ttc.toFixed(2) + ' EUR</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastStatus + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' EUR • COGS ' + pnlCogs.toFixed(2) + ' EUR</span><button type="button" id="cheer-panel-val-v124" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
+    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastActionMsg + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v125" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
 
-    var pb = document.getElementById("cheer-panel-val-v124");
+    var pb = document.getElementById("cheer-panel-val-v125");
     if (pb) pb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
   }
 
-  document.addEventListener("click", function (ev) {
+  document.addEventListener("click", handleCandidateTap, true);
+  document.addEventListener("pointerdown", function (ev) {
     var target = ev.target;
     if (!target) return;
     var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
     var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
-    if (raw === "+ ajouter" || raw === "ajouter" || (raw.indexOf("ajouter") !== -1 && raw.length <= 16)) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      addItemToCart(resolveItemForElement(el || target));
-      return;
-    }
-    if (raw.indexOf("panier / valider") !== -1 || raw.indexOf("valider ticket") !== -1) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      validateTicket();
+    if (raw === "+ ajouter" || raw === "ajouter") {
+      addItemToCart(resolveItemFromElement(el || target));
     }
   }, true);
 
-  window.CheerPosCoreV124 = {
+  window.CheerPosCoreV125 = {
     addItem: function (q) {
       var n = normText(q);
       for (var i = 0; i < ITEMS.length; i++) {
@@ -1850,6 +1845,7 @@
       addItemToCart(ITEMS[0]);
     },
     validate: validateTicket,
+    getCart: function () { return activeCart.slice(); },
     getTickets: function () { return tickets.slice(); },
     getStockLots: function () { return stockLots; },
     getAudit: function () { return auditLog.slice(); }
@@ -1858,14 +1854,14 @@
   var ticks = 0;
   var timer = setInterval(function () {
     ticks++;
-    renderOverlayAndSync();
+    renderAll();
     if (ticks >= MAX_TICKS) clearInterval(timer);
   }, 300);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderOverlayAndSync);
+    document.addEventListener("DOMContentLoaded", renderAll);
   } else {
-    renderOverlayAndSync();
+    renderAll();
   }
 })();
 </script>
