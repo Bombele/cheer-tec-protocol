@@ -508,6 +508,7 @@
             return `${h1.toString(16).padStart(8, '0')}${h2.toString(16).padStart(8, '0')}`;
         }
 
+        function getWorkerApiBase() {
             try {
                 const saved = (localStorage.getItem(WORKER_URL_KEY) || '').trim();
                 if (saved) return saved.replace(/\/+$/, '');
@@ -678,6 +679,7 @@
 
         async function flushSyncQueue() {
             if (isSyncing) return;
+            const base = getWorkerApiBase();
             if (!base || syncQueue.length === 0) return;
             isSyncing = true;
             try {
@@ -707,6 +709,7 @@
         }
 
         async function syncNowManual() {
+            const base = getWorkerApiBase();
             if (!base) {
                 return alert("Aucun endpoint Worker configuré. Ajoutez l'URL dans Fiscalité & API > Endpoint Worker (ou conservez le stockage local).");
             }
@@ -744,6 +747,7 @@
         }
 
         function updateSyncBadge() {
+            const base = getWorkerApiBase();
             const badge = document.getElementById('sync-mode-badge');
             if (!badge) return;
             badge.innerText = base
@@ -803,6 +807,7 @@
             ? (parseHashRoute() === '/' ? (sessionState.role === 'holding' ? '/POS/holding-kyc' : '/POS') : parseHashRoute())
             : '/';
         navigateRoute(initialPath);
+        if (getWorkerApiBase()) flushSyncQueue();
 
         window.addEventListener('hashchange', () => {
             const target = parseHashRoute();
@@ -834,6 +839,7 @@
 
             try {
                 let authUser = null;
+                const base = getWorkerApiBase();
                 if (base) {
                     try {
                         const res = await fetch(`${base}/api/auth/login`, {
@@ -897,6 +903,7 @@
             sessionState = { authenticated: true, role: 'tenant', email, activeTenantId: tenantId };
             persistLocalOnly();
 
+            const base = getWorkerApiBase();
             if (base) {
                 try {
                     await fetch(`${base}/api/tenants/register`, {
@@ -935,6 +942,7 @@
             sessionState.activeTenantId = rawId;
             persistLocalOnly();
 
+            const base = getWorkerApiBase();
             if (base) {
                 try {
                     await fetch(`${base}/api/tenants/register`, {
@@ -1039,6 +1047,7 @@
             document.getElementById('jur-employer-rate').value = t.fiscal.employerRatePct;
             document.getElementById('jur-employee-rate').value = t.fiscal.employeeRatePct;
             document.getElementById('jur-currency').value = t.fiscal.currency;
+            document.getElementById('cfg-worker-url').value = getWorkerApiBase();
 
             document.getElementById('cfg-rent-pct').value = Math.min(7, t.costConfig.rentPct);
             document.getElementById('cfg-royalties-pct').value = t.costConfig.royaltiesPct;
@@ -1242,6 +1251,7 @@
         function switchSupplySubTab(tab) { ['stock', 'iot', 'scanner'].forEach(t => { document.getElementById('sup-panel-' + t).classList.toggle('hidden', t !== tab); document.getElementById('sup-tab-' + t).className = t === tab ? 'px-3 py-1.5 rounded font-bold bg-emerald-600 text-white' : 'px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300'; }); }
         function applyJurisdictionPreset() { const t = getActiveTenant(); const c = document.getElementById('jur-country').value; t.fiscal = JURISDICTION_PRESETS[c] ? { ...JURISDICTION_PRESETS[c] } : { ...t.fiscal, country: 'CUSTOM' }; queueAndSyncTenant(t); hydrateTenantInputs(); syncActiveView(); }
         function saveJurisdictionConfig() { const t = getActiveTenant(); t.fiscal = { country: document.getElementById('jur-country').value, vatPlacePct: Math.max(0, parseFloat(document.getElementById('jur-vat-place').value) || 0), vatTakeoutPct: Math.max(0, parseFloat(document.getElementById('jur-vat-takeout').value) || 0), employerRatePct: Math.max(0, parseFloat(document.getElementById('jur-employer-rate').value) || 0), employeeRatePct: Math.max(0, parseFloat(document.getElementById('jur-employee-rate').value) || 0), currency: (document.getElementById('jur-currency').value || '€').trim() }; queueAndSyncTenant(t); syncActiveView(); }
+        function renderFiscalSummary() { const t = getActiveTenant(); document.getElementById('jur-summary-line').innerText = `${t.name} • ${t.fiscal.country} • TVA ${t.fiscal.vatPlacePct}%/${t.fiscal.vatTakeoutPct}% • Charges ${t.fiscal.employerRatePct}% • API : ${getWorkerApiBase() || 'Local'}`; }
         function applyProfitableDefaults() { const t = getActiveTenant(); t.costConfig = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 }; queueAndSyncTenant(t); hydrateTenantInputs(); syncActiveView(); }
         function setCostScopeMode(mode) { costScopeMode = mode; document.getElementById('scope-btn-day').className = mode === 'day' ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300"; document.getElementById('scope-btn-all_real').className = mode === 'all_real' ? "px-3 py-1.5 rounded font-bold bg-emerald-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300"; updateCostsView(); }
         function saveCostConfig() { const t = getActiveTenant(); t.costConfig = { rentPct: Math.min(7, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)), royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)), staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)), maintPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-maint-pct').value) || 0)), otherPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-other-pct').value) || 0)), taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)), capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0)) }; queueAndSyncTenant(t); hydrateTenantInputs(); updateCostsView(); }
@@ -1428,7 +1438,7 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_CAISSE_CLEAN_V7">
+<script id="LEXWALLET_CAISSE_CLEAN_V5">
 (function() {
   var MAX_ITEMS = 100;
   var MENU = [
@@ -1492,9 +1502,52 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
-  function renderMenuV7() {
-    syncTenants();
+  function hideLegacyDuplicateMenuSections() {
+    var caisseView = document.getElementById("view-caisse");
+    if (!caisseView) return;
+    var host = document.getElementById("cheer-menu-v4-host");
+    var kids = caisseView.children;
+    for (var i = 0; i < kids.length; i++) {
+      var el = kids[i];
+      if (!el || el === host || el.contains(document.getElementById("pos-catalog-grid"))) continue;
+      var txt = String(el.textContent || "");
+      if (txt.indexOf("Cheer Classic Cheese Burger") !== -1 || txt.indexOf("Cheer Truffle Bacon Burger") !== -1 || txt.indexOf("Plats & Burgers") !== -1 || txt.indexOf("Boissons Normal / Soft") !== -1 || txt.indexOf("Vins, Alcools & Spiritueux") !== -1) {
+        el.style.display = "none";
+      }
+    }
+  }
+  function findOrCreateGridTarget() {
     var grid = document.getElementById("pos-catalog-grid");
+    if (grid) return grid;
+    var caisseView = document.getElementById("view-caisse");
+    if (!caisseView) return null;
+    var host = document.getElementById("cheer-menu-v4-host");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "cheer-menu-v4-host";
+      host.className = "bg-slate-900/90 border border-slate-800 rounded-2xl p-4 my-3 space-y-3";
+      var tabsBox = document.createElement("div");
+      tabsBox.id = "caisse-cat-tabs";
+      tabsBox.className = "flex flex-wrap gap-1.5";
+      var searchBox = document.createElement("input");
+      searchBox.id = "caisse-search-input";
+      searchBox.type = "text";
+      searchBox.placeholder = "Rechercher un burger, fromage, vin, sauce, side...";
+      searchBox.className = "w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs";
+      var itemsGrid = document.createElement("div");
+      itemsGrid.id = "pos-catalog-grid";
+      itemsGrid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
+      host.appendChild(tabsBox);
+      host.appendChild(searchBox);
+      host.appendChild(itemsGrid);
+      caisseView.insertBefore(host, caisseView.firstChild);
+    }
+    return document.getElementById("pos-catalog-grid");
+  }
+  function renderMenuV5() {
+    syncTenants();
+    hideLegacyDuplicateMenuSections();
+    var grid = findOrCreateGridTarget();
     if (!grid) return;
     var tabsEl = document.getElementById("caisse-cat-tabs");
     if (tabsEl) {
@@ -1517,15 +1570,15 @@
           b.className = activeCat === c.k
             ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
             : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-950 text-slate-300 border border-slate-800";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV7(); });
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV5(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v7) {
-      inp.dataset.v7 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV7(); });
+    if (inp && !inp.dataset.v5) {
+      inp.dataset.v5 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV5(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1561,14 +1614,15 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV7;
-  function bootV7() { renderMenuV7(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV7(); setTimeout(bootV7, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV7, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV7, 100); });
+  window.renderPosCatalog = renderMenuV5;
+  function bootV5() { renderMenuV5(); }
+  window.addEventListener("DOMContentLoaded", function() { bootV5(); setTimeout(bootV5, 250); });
+  window.addEventListener("hashchange", function() { setTimeout(bootV5, 80); });
+  document.addEventListener("click", function() { setTimeout(bootV5, 100); });
 })();
 </script>
       "</body></html>";
+    w.focus();
   }
 
       n++;
@@ -1610,6 +1664,7 @@
   }
 
     if (!endpoint) {
+      if (typeof showToast === "function") showToast("Mode local actif (aucun endpoint Worker configuré).");
       return;
     }
     if (typeof fetch !== "function" || typeof AbortController !== "function") return;
@@ -1619,8 +1674,10 @@
       signal: ctrl.signal
     }).then(function() {
       clearTimeout(timer);
+      if (typeof showToast === "function") showToast("Synchronisation terminée.");
     }).catch(function() {
       clearTimeout(timer);
+      if (typeof showToast === "function") showToast("Mode local conservé.");
     });
   };
 
