@@ -1437,6 +1437,7 @@
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
 
+
 <style id="LEXWALLET_BYBIT_THEME_V124">
   :root {
     --bybit-bg: #0b0e11;
