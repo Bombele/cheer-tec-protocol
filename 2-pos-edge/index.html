@@ -1436,4 +1436,435 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_POS_CORE_V122">(function(){console.log("CheerPosCoreV122 fallback attached");})();</script>
+
+<style id="LEXWALLET_BYBIT_THEME_V124">
+  :root {
+    --bybit-bg: #0b0e11;
+    --bybit-surface: #12161c;
+    --bybit-surface-2: #181d24;
+    --bybit-border: #262d37;
+    --bybit-text: #eaecef;
+    --bybit-muted: #848e9c;
+    --bybit-accent: #f7a600;
+  }
+  html, body {
+    background-color: var(--bybit-bg) !important;
+    color: var(--bybit-text) !important;
+  }
+</style>
+<script id="LEXWALLET_POS_CORE_V124">
+(function () {
+  "use strict";
+
+  var MAX_TICKS = 60;
+  var KEY_TX = "CHEER_POS_TICKETS_V124";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V124";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V124";
+  var txLock = false;
+  var saleMode = "SUR_PLACE";
+  var activeCart = [];
+  var lastStatus = "Pret";
+
+  var ITEMS = [
+    { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", cat: "Hamburgers", ttc: 11.50, cogs: 3.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.12 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.04 }] },
+    { id: "BUR-BEF-RACL", name: "Burger Boeuf Raclette", cat: "Hamburgers", ttc: 13.00, cogs: 3.75, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "RACLETTE-FERMIERE", qty: 0.14 }, { sku: "CHEDDAR-MATURE", qty: 0.06 }] },
+    { id: "BUR-BEF-GOUDA", name: "Burger Boeuf Gouda Truffe", cat: "Hamburgers", ttc: 13.50, cogs: 3.90, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "GOUDA-TRUFFE", qty: 0.14 }, { sku: "SAUCE-TRUFFE-HERBES", qty: 0.04 }] },
+    { id: "BUR-POU-RACL", name: "Burger Poulet Raclette et Truffe", cat: "Hamburgers", ttc: 12.50, cogs: 3.50, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "FILET-POULET-CRISPY", qty: 1 }, { sku: "RACLETTE-FERMIERE", qty: 0.12 }, { sku: "SAUCE-TRUFFE-HERBES", qty: 0.04 }] },
+    { id: "BUR-POU-JALAP", name: "Burger Poulet Cheddar Blanc Jalapeno", cat: "Hamburgers", ttc: 12.00, cogs: 3.35, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "FILET-POULET-CRISPY", qty: 1 }, { sku: "CHEDDAR-BLANC", qty: 0.12 }, { sku: "JALAPENO-PICKLES", qty: 0.04 }] },
+    { id: "BUR-POU-CAJUN", name: "Burger Poulet Mozza-Cheddar Cajun", cat: "Hamburgers", ttc: 12.00, cogs: 3.40, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "FILET-POULET-CRISPY", qty: 1 }, { sku: "MOZZA-CHEDDAR-BLEND", qty: 0.12 }, { sku: "SAUCE-BUFFALO-CAJUN", qty: 0.04 }] },
+    { id: "BUR-FSH-BLEND", name: "Burger Fish Cheese Blend Sweet Chili", cat: "Hamburgers", ttc: 12.00, cogs: 3.45, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "PAVE-POISSON-PANE", qty: 1 }, { sku: "MOZZA-CHEDDAR-BLEND", qty: 0.10 }, { sku: "SAUCE-SWEET-CHILI", qty: 0.04 }] },
+    { id: "BUR-FSH-CHED", name: "Burger Fish Cheddar et Tartare", cat: "Hamburgers", ttc: 11.80, cogs: 3.35, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "PAVE-POISSON-PANE", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.10 }, { sku: "SAUCE-HONEY-MUSTARD", qty: 0.04 }] },
+    { id: "DES-CHEESECAKE", name: "Cheesecake", cat: "Cheesecake et Cafe", ttc: 5.50, cogs: 1.50, vatP: 0.06, vatT: 0.06, bom: [{ sku: "BASE-CHEESECAKE", qty: 1 }, { sku: "CREAM-CHEESE-PATISSIER", qty: 0.12 }] },
+    { id: "CAF-CHEESE-CREAM", name: "Cafe Gourmet Cheese Cream", cat: "Cheesecake et Cafe", ttc: 4.80, cogs: 1.15, vatP: 0.06, vatT: 0.06, bom: [{ sku: "GRAINS-CAFE-ESPRESSO", qty: 0.02 }, { sku: "CREAM-CHEESE-PATISSIER", qty: 0.06 }, { sku: "LAIT-ENTIER-UHT", qty: 0.12 }] },
+    { id: "BOI-LIMONADE-CRAFT", name: "Cheer Limonade Craft", cat: "Boissons", ttc: 4.00, cogs: 0.95, vatP: 0.21, vatT: 0.06, bom: [{ sku: "CONCENTRE-CITRON-CRAFT", qty: 0.08 }, { sku: "EAU-GAZEIFIEE-33CL", qty: 1 }] },
+    { id: "BOI-ICE-TEA", name: "Cheer Ice Tea", cat: "Boissons", ttc: 4.00, cogs: 0.90, vatP: 0.21, vatT: 0.06, bom: [{ sku: "INFUSION-THE-NOIR", qty: 0.25 }, { sku: "SIROP-PECHE-CITRON", qty: 0.05 }] },
+    { id: "VIN-ROUGE", name: "Vin Rouge Selection", cat: "Vins", ttc: 6.50, cogs: 1.50, vatP: 0.21, vatT: 0.21, bom: [{ sku: "BOUTEILLE-VIN-ROUGE", qty: 0.15 }, { sku: "VERRE-JETABLE-OU-SERVICE", qty: 1 }] },
+    { id: "VIN-BLANC", name: "Vin Blanc Selection", cat: "Vins", ttc: 6.50, cogs: 1.50, vatP: 0.21, vatT: 0.21, bom: [{ sku: "BOUTEILLE-VIN-BLANC", qty: 0.15 }, { sku: "VERRE-JETABLE-OU-SERVICE", qty: 1 }] },
+    { id: "VIN-ROSE", name: "Vin Rose Selection", cat: "Vins", ttc: 6.50, cogs: 1.50, vatP: 0.21, vatT: 0.21, bom: [{ sku: "BOUTEILLE-VIN-ROSE", qty: 0.15 }, { sku: "VERRE-JETABLE-OU-SERVICE", qty: 1 }] },
+    { id: "MELT-GARLIC", name: "Garlic Melt", cat: "Melts et Street", ttc: 8.50, cogs: 2.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-MIE-GRILLE", qty: 2 }, { sku: "MOZZA-CHEDDAR-BLEND", qty: 0.15 }, { sku: "BEURRE-AIL-PERSIL", qty: 0.03 }] },
+    { id: "STR-PEPITO", name: "Pepito", cat: "Melts et Street", ttc: 9.50, cogs: 2.65, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BAGUETTE-CRUSTY", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.10 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.03 }] },
+    { id: "STR-SALCHIPAPA", name: "Salchipapa", cat: "Melts et Street", ttc: 8.50, cogs: 2.25, vatP: 0.12, vatT: 0.06, bom: [{ sku: "POMMES-DE-TERRE-FRITES", qty: 0.25 }, { sku: "SAUCISSE-GRILLEE-STREET", qty: 1 }, { sku: "MOZZA-CHEDDAR-BLEND", qty: 0.08 }, { sku: "SAUCE-SWEET-CHILI", qty: 0.03 }] },
+    { id: "SAU-BBQ", name: "Sauce BBQ Smokey", cat: "Sauces", ttc: 1.20, cogs: 0.25, vatP: 0.12, vatT: 0.06, bom: [{ sku: "SAUCE-BBQ-SMOKEY", qty: 0.05 }, { sku: "POT-SAUCE-OPERCULE", qty: 1 }] },
+    { id: "SAU-TRUFFE", name: "Sauce Truffe et Herbes", cat: "Sauces", ttc: 1.50, cogs: 0.35, vatP: 0.12, vatT: 0.06, bom: [{ sku: "SAUCE-TRUFFE-HERBES", qty: 0.05 }, { sku: "POT-SAUCE-OPERCULE", qty: 1 }] },
+    { id: "SAU-HONEY", name: "Sauce Honey-Mustard", cat: "Sauces", ttc: 1.20, cogs: 0.25, vatP: 0.12, vatT: 0.06, bom: [{ sku: "SAUCE-HONEY-MUSTARD", qty: 0.05 }, { sku: "POT-SAUCE-OPERCULE", qty: 1 }] },
+    { id: "SAU-BUFFALO", name: "Sauce Spicy Buffalo Cajun", cat: "Sauces", ttc: 1.20, cogs: 0.25, vatP: 0.12, vatT: 0.06, bom: [{ sku: "SAUCE-BUFFALO-CAJUN", qty: 0.05 }, { sku: "POT-SAUCE-OPERCULE", qty: 1 }] },
+    { id: "SAU-CHILI", name: "Sauce Sweet Chili et Ail", cat: "Sauces", ttc: 1.20, cogs: 0.25, vatP: 0.12, vatT: 0.06, bom: [{ sku: "SAUCE-SWEET-CHILI", qty: 0.05 }, { sku: "POT-SAUCE-OPERCULE", qty: 1 }] },
+    { id: "ACC-FRITES", name: "Frites", cat: "Accompagnements", ttc: 3.50, cogs: 0.85, vatP: 0.12, vatT: 0.06, bom: [{ sku: "POMMES-DE-TERRE-FRITES", qty: 0.22 }, { sku: "EMBALLAGE-FRITES", qty: 1 }] },
+    { id: "ACC-SALADE", name: "Salade", cat: "Accompagnements", ttc: 3.80, cogs: 0.95, vatP: 0.12, vatT: 0.06, bom: [{ sku: "LAITUE-CROUSTILLANTE", qty: 0.12 }, { sku: "VINAIGRETTE-MAISON", qty: 0.03 }, { sku: "BOL-SALADE-CRAFT", qty: 1 }] },
+    { id: "ACC-ONION-RINGS", name: "Onion Rings", cat: "Accompagnements", ttc: 4.20, cogs: 1.05, vatP: 0.12, vatT: 0.06, bom: [{ sku: "ONION-RINGS-PANES", qty: 0.18 }, { sku: "EMBALLAGE-FRITES", qty: 1 }] },
+    { id: "ACC-CHICKEN-BUCKET", name: "Chicken Bucket", cat: "Accompagnements", ttc: 14.50, cogs: 4.10, vatP: 0.12, vatT: 0.06, bom: [{ sku: "FILET-POULET-CRISPY", qty: 3 }, { sku: "POMMES-DE-TERRE-FRITES", qty: 0.25 }, { sku: "BUCKET-CHICKEN-L", qty: 1 }] },
+    { id: "ACC-CHEESE-STICK", name: "Cheese Stick", cat: "Accompagnements", ttc: 4.80, cogs: 1.25, vatP: 0.12, vatT: 0.06, bom: [{ sku: "MOZZARELLA-STICKS", qty: 5 }, { sku: "EMBALLAGE-FRITES", qty: 1 }] }
+  ];
+
+  var INIT_LOTS = {
+    "PAIN-BRIOCHE": [{ lot: "LOT-PB-2611", qty: 200, cost: 0.55 }],
+    "BOEUF-HACHE-150G": [{ lot: "LOT-BF-2611", qty: 150, cost: 1.65 }],
+    "FILET-POULET-CRISPY": [{ lot: "LOT-PK-2611", qty: 160, cost: 1.10 }],
+    "PAVE-POISSON-PANE": [{ lot: "LOT-FS-2611", qty: 100, cost: 1.35 }],
+    "CHEDDAR-MATURE": [{ lot: "LOT-CH-2611", qty: 40, cost: 8.50 }],
+    "CHEDDAR-BLANC": [{ lot: "LOT-CW-2611", qty: 30, cost: 8.80 }],
+    "RACLETTE-FERMIERE": [{ lot: "LOT-RC-2611", qty: 30, cost: 9.60 }],
+    "GOUDA-TRUFFE": [{ lot: "LOT-GT-2611", qty: 25, cost: 10.40 }],
+    "MOZZA-CHEDDAR-BLEND": [{ lot: "LOT-MC-2611", qty: 35, cost: 8.20 }],
+    "JALAPENO-PICKLES": [{ lot: "LOT-JP-2611", qty: 20, cost: 5.40 }],
+    "SAUCE-BBQ-SMOKEY": [{ lot: "LOT-SB-2611", qty: 25, cost: 4.80 }],
+    "SAUCE-TRUFFE-HERBES": [{ lot: "LOT-ST-2611", qty: 20, cost: 6.90 }],
+    "SAUCE-HONEY-MUSTARD": [{ lot: "LOT-SH-2611", qty: 20, cost: 4.60 }],
+    "SAUCE-BUFFALO-CAJUN": [{ lot: "LOT-SC-2611", qty: 20, cost: 4.70 }],
+    "SAUCE-SWEET-CHILI": [{ lot: "LOT-SS-2611", qty: 20, cost: 4.60 }],
+    "POT-SAUCE-OPERCULE": [{ lot: "LOT-PO-2611", qty: 500, cost: 0.06 }],
+    "BASE-CHEESECAKE": [{ lot: "LOT-DC-2611", qty: 90, cost: 1.15 }],
+    "CREAM-CHEESE-PATISSIER": [{ lot: "LOT-CC-2611", qty: 25, cost: 7.50 }],
+    "GRAINS-CAFE-ESPRESSO": [{ lot: "LOT-CF-2611", qty: 15, cost: 14.00 }],
+    "LAIT-ENTIER-UHT": [{ lot: "LOT-LT-2611", qty: 50, cost: 1.15 }],
+    "CONCENTRE-CITRON-CRAFT": [{ lot: "LOT-LC-2611", qty: 20, cost: 5.20 }],
+    "EAU-GAZEIFIEE-33CL": [{ lot: "LOT-EG-2611", qty: 250, cost: 0.45 }],
+    "INFUSION-THE-NOIR": [{ lot: "LOT-IT-2611", qty: 35, cost: 1.80 }],
+    "SIROP-PECHE-CITRON": [{ lot: "LOT-SP-2611", qty: 20, cost: 4.40 }],
+    "BOUTEILLE-VIN-ROUGE": [{ lot: "LOT-VR-2611", qty: 30, cost: 6.80 }],
+    "BOUTEILLE-VIN-BLANC": [{ lot: "LOT-VB-2611", qty: 30, cost: 6.80 }],
+    "BOUTEILLE-VIN-ROSE": [{ lot: "LOT-VP-2611", qty: 30, cost: 6.80 }],
+    "VERRE-JETABLE-OU-SERVICE": [{ lot: "LOT-VJ-2611", qty: 300, cost: 0.12 }],
+    "PAIN-MIE-GRILLE": [{ lot: "LOT-PM-2611", qty: 240, cost: 0.25 }],
+    "BEURRE-AIL-PERSIL": [{ lot: "LOT-BA-2611", qty: 15, cost: 7.20 }],
+    "PAIN-BAGUETTE-CRUSTY": [{ lot: "LOT-BG-2611", qty: 180, cost: 0.50 }],
+    "POMMES-DE-TERRE-FRITES": [{ lot: "LOT-PF-2611", qty: 100, cost: 2.10 }],
+    "SAUCISSE-GRILLEE-STREET": [{ lot: "LOT-SG-2611", qty: 140, cost: 0.75 }],
+    "EMBALLAGE-FRITES": [{ lot: "LOT-EF-2611", qty: 500, cost: 0.14 }],
+    "LAITUE-CROUSTILLANTE": [{ lot: "LOT-SL-2611", qty: 30, cost: 3.40 }],
+    "VINAIGRETTE-MAISON": [{ lot: "LOT-VM-2611", qty: 15, cost: 4.50 }],
+    "BOL-SALADE-CRAFT": [{ lot: "LOT-BS-2611", qty: 220, cost: 0.22 }],
+    "ONION-RINGS-PANES": [{ lot: "LOT-OR-2611", qty: 35, cost: 4.30 }],
+    "BUCKET-CHICKEN-L": [{ lot: "LOT-BC-2611", qty: 150, cost: 0.45 }],
+    "MOZZARELLA-STICKS": [{ lot: "LOT-MS-2611", qty: 280, cost: 0.22 }]
+  };
+
+  function loadJson(k, fb) {
+    try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v !== null ? v : fb; } catch (_) { return fb; }
+  }
+  function saveJson(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {}
+  }
+  function normText(s) {
+    return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  function hashChainStr(s) {
+    var h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i); h1 ^= c; h1 = Math.imul(h1, 0x01000193); h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+    }
+    return "AUD-" + ((h1 >>> 0).toString(16).padStart(8, "0")) + "-" + (h2.toString(16).padStart(8, "0"));
+  }
+
+  var stockLots = loadJson(KEY_STOCK, null);
+  if (!stockLots) { stockLots = JSON.parse(JSON.stringify(INIT_LOTS)); saveJson(KEY_STOCK, stockLots); }
+  var tickets = loadJson(KEY_TX, []);
+  if (!Array.isArray(tickets)) tickets = [];
+  var auditLog = loadJson(KEY_AUDIT, []);
+  if (!Array.isArray(auditLog)) auditLog = [];
+
+  function logAudit(type, data) {
+    var prev = auditLog.length > 0 ? auditLog[auditLog.length - 1].hash : "GENESIS-CHEER";
+    var ts = new Date().toISOString();
+    var tenant = "CHEER-FLAGSHIP-01";
+    var h = hashChainStr(prev + "|" + ts + "|" + tenant + "|" + type + "|" + JSON.stringify(data || {}));
+    auditLog.push({ seq: auditLog.length + 1, ts: ts, tenantId: tenant, eventType: type, prevHash: prev, hash: h, data: data || {} });
+    saveJson(KEY_AUDIT, auditLog);
+  }
+
+  function resolveItemForElement(el) {
+    var cur = el;
+    var depth = 0;
+    while (cur && cur !== document.body && depth < 7) {
+      var txt = normText(cur.textContent);
+      for (var i = 0; i < ITEMS.length; i++) {
+        var n = normText(ITEMS[i].name);
+        if (n.length > 3 && txt.indexOf(n) !== -1) return ITEMS[i];
+      }
+      var priceMatch = String(cur.textContent || "").match(/(\d+[.,]\d{2})\s*(?:EUR|€)/i);
+      if (priceMatch) {
+        var lines = String(cur.textContent || "").split(/\n+/).map(function (s) { return s.trim(); }).filter(Boolean);
+        var label = "Article POS";
+        for (var k = 0; k < lines.length; k++) {
+          if (lines[k].toLowerCase().indexOf("ajouter") === -1 && lines[k].toLowerCase().indexOf("eur") === -1 && lines[k].indexOf("€") === -1) {
+            label = lines[k];
+            break;
+          }
+        }
+        var val = parseFloat(priceMatch[1].replace(",", ".")) || 5.0;
+        return { id: "POS-" + normText(label).slice(0, 12).replace(/\s+/g, "-").toUpperCase(), name: label, cat: "POS", ttc: val, cogs: Number((val * 0.28).toFixed(2)), vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }] };
+      }
+      cur = cur.parentElement;
+      depth++;
+    }
+    return ITEMS[0];
+  }
+
+  function addItemToCart(itemObj) {
+    if (!itemObj) return;
+    var found = false;
+    for (var i = 0; i < activeCart.length; i++) {
+      if (activeCart[i].id === itemObj.id) {
+        activeCart[i].qty = Number(activeCart[i].qty || 0) + 1;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      activeCart.push({
+        id: itemObj.id,
+        name: itemObj.name,
+        ttc: Number(itemObj.ttc),
+        cogs: Number(itemObj.cogs),
+        vatP: Number(itemObj.vatP),
+        vatT: Number(itemObj.vatT),
+        bom: (itemObj.bom || []).slice(),
+        qty: 1
+      });
+    }
+    lastStatus = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
+    logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc });
+    renderOverlayAndSync();
+  }
+
+  function getTotals() {
+    var qty = 0, ttc = 0, cogs = 0, vatAcc = 0;
+    for (var i = 0; i < activeCart.length; i++) {
+      var l = activeCart[i];
+      var q = Number(l.qty || 0);
+      var lineTtc = Number(l.ttc || 0) * q;
+      var rate = saleMode === "A_EMPORTER" ? Number(l.vatT || 0.06) : Number(l.vatP || 0.12);
+      qty += q;
+      ttc += lineTtc;
+      cogs += Number(l.cogs || 0) * q;
+      vatAcc += lineTtc * rate;
+    }
+    var avgR = ttc > 0 ? (vatAcc / ttc) : (saleMode === "A_EMPORTER" ? 0.06 : 0.12);
+    var ht = Number((ttc / (1 + avgR)).toFixed(2));
+    var vat = Number((ttc - ht).toFixed(2));
+    return { qty: qty, ttc: Number(ttc.toFixed(2)), ht: ht, vat: vat, cogs: Number(cogs.toFixed(2)) };
+  }
+
+  function consumeLots(sku, needQty) {
+    var list = stockLots[sku] || [];
+    var rem = Number(needQty || 0);
+    var used = [];
+    for (var i = 0; i < list.length && rem > 1e-9; i++) {
+      var av = Number(list[i].qty || 0);
+      if (av <= 0) continue;
+      var take = Math.min(av, rem);
+      list[i].qty = Number((av - take).toFixed(4));
+      rem = Number((rem - take).toFixed(4));
+      used.push({ sku: sku, lot: list[i].lot, qty: Number(take.toFixed(4)), cost: Number(list[i].cost || 0) });
+    }
+    if (rem > 1e-9) {
+      used.push({ sku: sku, lot: "LOT-REGUL", qty: Number(rem.toFixed(4)), cost: 0.50 });
+    }
+    stockLots[sku] = list;
+    return used;
+  }
+
+  function validateTicket() {
+    if (txLock || activeCart.length === 0) return;
+    txLock = true;
+    try {
+      var tot = getTotals();
+      var tid = "TCK-" + Date.now().toString(36).toUpperCase();
+      var ts = new Date().toISOString();
+      var lotsUsed = [];
+      for (var i = 0; i < activeCart.length; i++) {
+        var ci = activeCart[i];
+        var q = Math.max(1, Number(ci.qty || 1));
+        var bom = ci.bom || [];
+        for (var b = 0; b < bom.length; b++) {
+          var dec = consumeLots(bom[b].sku, Number(bom[b].qty || 0) * q);
+          for (var d = 0; d < dec.length; d++) {
+            lotsUsed.push({ itemId: ci.id, sku: dec[d].sku, lot: dec[d].lot, qty: dec[d].qty, cost: dec[d].cost });
+          }
+        }
+      }
+      var qrPayload = JSON.stringify({
+        tid: tid,
+        tenant: "CHEER-FLAGSHIP-01",
+        ts: ts,
+        mode: saleMode,
+        ttc: tot.ttc,
+        ht: tot.ht,
+        vat: tot.vat,
+        lots: lotsUsed.map(function (x) { return x.sku + ":" + x.lot + ":" + x.qty; })
+      });
+      var h = hashChainStr(tid + "|" + ts + "|" + tot.ttc + "|" + qrPayload);
+      var rec = {
+        id: tid,
+        created_at: ts,
+        tenantId: "CHEER-FLAGSHIP-01",
+        sale_type: saleMode,
+        cancelled: false,
+        is_test: false,
+        items: activeCart.slice(),
+        subtotal_ht: tot.ht,
+        tva_amount: tot.vat,
+        total_ttc: tot.ttc,
+        cogs_total: tot.cogs,
+        lot_allocations: lotsUsed,
+        qr_payload: qrPayload,
+        integrity_hash: h
+      };
+      tickets.unshift(rec);
+      saveJson(KEY_TX, tickets);
+      saveJson(KEY_STOCK, stockLots);
+      logAudit("TICKET_VALIDATED", { ticketId: tid, ttc: tot.ttc, ht: tot.ht, vat: tot.vat, cogs: tot.cogs, hash: h });
+      logAudit("STOCK_DECREMENTED", { ticketId: tid, lots: lotsUsed });
+      lastStatus = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
+      activeCart = [];
+      window.CHEER_POS_TICKETS = tickets.slice();
+      window.CHEER_POS_STOCK_LOTS = stockLots;
+      window.CHEER_POS_AUDIT_CHAIN = auditLog.slice();
+      window.CHEER_LAST_TICKET = rec;
+      renderOverlayAndSync();
+    } finally {
+      txLock = false;
+    }
+  }
+
+  function makeQrSvg(payload) {
+    var h = hashChainStr(payload);
+    var sz = 21;
+    var rects = [];
+    for (var r = 0; r < sz; r++) {
+      for (var c = 0; c < sz; c++) {
+        var isFinder = (r < 7 && c < 7) || (r < 7 && c >= sz - 7) || (r >= sz - 7 && c < 7);
+        var dark = false;
+        if (isFinder) {
+          var lr = r < 7 ? r : r - (sz - 7);
+          var lc = c < 7 ? c : c - (sz - 7);
+          dark = lr === 0 || lr === 6 || lc === 0 || lc === 6 || (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4);
+        } else {
+          dark = ((h.charCodeAt((r * sz + c) % h.length) + r * 3 + c * 5) % 2) === 0;
+        }
+        if (dark) {
+          rects.push('<rect x="' + c + '" y="' + r + '" width="1" height="1" fill="#0b0e11"/>');
+        }
+      }
+    }
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="80" height="80" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
+  }
+
+  function bindDirectAddButtons() {
+    var nodes = document.querySelectorAll("button, [role='button'], a, span, div");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!el || el.children.length > 2) continue;
+      var t = String(el.textContent || "").trim().toLowerCase();
+      if (t === "+ ajouter" || t === "ajouter") {
+        if (el.getAttribute("data-cheer-bound") === "1") continue;
+        el.setAttribute("data-cheer-bound", "1");
+        el.style.cursor = "pointer";
+        el.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          addItemToCart(resolveItemForElement(this));
+        }, true);
+      }
+    }
+  }
+
+  function renderOverlayAndSync() {
+    if (!document.body) return;
+    bindDirectAddButtons();
+    var tot = getTotals();
+
+    var bar = document.getElementById("cheer-cart-bar-v124");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "cheer-cart-bar-v124";
+      bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#12161c;border-top:2px solid #f7a600;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaecef;font-size:12px;";
+      document.body.appendChild(bar);
+    }
+    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' EUR TTC</strong></div><button type="button" id="cheer-val-btn-v124" style="padding:7px 14px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
+    var vb = document.getElementById("cheer-val-btn-v124");
+    if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
+
+    var panel = document.getElementById("cheer-cart-panel-v124");
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "cheer-cart-panel-v124";
+      panel.style.cssText = "margin:10px 10px 76px 10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
+      document.body.appendChild(panel);
+    }
+
+    var pnlHt = 0, pnlTtc = 0, pnlCogs = 0, pnlCount = 0;
+    for (var i = 0; i < tickets.length; i++) {
+      var tx = tickets[i];
+      if (!tx || tx.cancelled || tx.is_test) continue;
+      pnlCount++;
+      pnlHt += Number(tx.subtotal_ht || 0);
+      pnlTtc += Number(tx.total_ttc || 0);
+      pnlCogs += Number(tx.cogs_total || 0);
+    }
+
+    var linesHtml = "";
+    for (var c = 0; c < activeCart.length; c++) {
+      var ci = activeCart[c];
+      linesHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #262d37;font-size:11px;"><span>' + ci.qty + 'x ' + ci.name + '</span><span>' + (ci.qty * ci.ttc).toFixed(2) + ' EUR</span></div>';
+    }
+
+    var last = tickets.length > 0 ? tickets[0] : null;
+    var lotsStr = last && Array.isArray(last.lot_allocations) ? last.lot_allocations.map(function (x) { return x.sku + "[" + x.lot + ":-" + x.qty + "]"; }).join(", ") : "";
+    var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:76px;height:76px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' EUR TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
+
+    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' EUR • TTC: ' + tot.ttc.toFixed(2) + ' EUR</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastStatus + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' EUR • COGS ' + pnlCogs.toFixed(2) + ' EUR</span><button type="button" id="cheer-panel-val-v124" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
+
+    var pb = document.getElementById("cheer-panel-val-v124");
+    if (pb) pb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
+  }
+
+  document.addEventListener("click", function (ev) {
+    var target = ev.target;
+    if (!target) return;
+    var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
+    var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
+    if (raw === "+ ajouter" || raw === "ajouter" || (raw.indexOf("ajouter") !== -1 && raw.length <= 16)) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      addItemToCart(resolveItemForElement(el || target));
+      return;
+    }
+    if (raw.indexOf("panier / valider") !== -1 || raw.indexOf("valider ticket") !== -1) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      validateTicket();
+    }
+  }, true);
+
+  window.CheerPosCoreV124 = {
+    addItem: function (q) {
+      var n = normText(q);
+      for (var i = 0; i < ITEMS.length; i++) {
+        if (normText(ITEMS[i].id) === n || normText(ITEMS[i].name).indexOf(n) !== -1) {
+          addItemToCart(ITEMS[i]);
+          return;
+        }
+      }
+      addItemToCart(ITEMS[0]);
+    },
+    validate: validateTicket,
+    getTickets: function () { return tickets.slice(); },
+    getStockLots: function () { return stockLots; },
+    getAudit: function () { return auditLog.slice(); }
+  };
+
+  var ticks = 0;
+  var timer = setInterval(function () {
+    ticks++;
+    renderOverlayAndSync();
+    if (ticks >= MAX_TICKS) clearInterval(timer);
+  }, 300);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", renderOverlayAndSync);
+  } else {
+    renderOverlayAndSync();
+  }
+})();
+</script>
