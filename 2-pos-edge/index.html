@@ -508,7 +508,6 @@
             return `${h1.toString(16).padStart(8, '0')}${h2.toString(16).padStart(8, '0')}`;
         }
 
-        function getWorkerApiBase() {
             try {
                 const saved = (localStorage.getItem(WORKER_URL_KEY) || '').trim();
                 if (saved) return saved.replace(/\/+$/, '');
@@ -679,7 +678,6 @@
 
         async function flushSyncQueue() {
             if (isSyncing) return;
-            const base = getWorkerApiBase();
             if (!base || syncQueue.length === 0) return;
             isSyncing = true;
             try {
@@ -709,7 +707,6 @@
         }
 
         async function syncNowManual() {
-            const base = getWorkerApiBase();
             if (!base) {
                 return alert("Aucun endpoint Worker configuré. Ajoutez l'URL dans Fiscalité & API > Endpoint Worker (ou conservez le stockage local).");
             }
@@ -747,7 +744,6 @@
         }
 
         function updateSyncBadge() {
-            const base = getWorkerApiBase();
             const badge = document.getElementById('sync-mode-badge');
             if (!badge) return;
             badge.innerText = base
@@ -807,7 +803,6 @@
             ? (parseHashRoute() === '/' ? (sessionState.role === 'holding' ? '/POS/holding-kyc' : '/POS') : parseHashRoute())
             : '/';
         navigateRoute(initialPath);
-        if (getWorkerApiBase()) flushSyncQueue();
 
         window.addEventListener('hashchange', () => {
             const target = parseHashRoute();
@@ -839,7 +834,6 @@
 
             try {
                 let authUser = null;
-                const base = getWorkerApiBase();
                 if (base) {
                     try {
                         const res = await fetch(`${base}/api/auth/login`, {
@@ -903,7 +897,6 @@
             sessionState = { authenticated: true, role: 'tenant', email, activeTenantId: tenantId };
             persistLocalOnly();
 
-            const base = getWorkerApiBase();
             if (base) {
                 try {
                     await fetch(`${base}/api/tenants/register`, {
@@ -942,7 +935,6 @@
             sessionState.activeTenantId = rawId;
             persistLocalOnly();
 
-            const base = getWorkerApiBase();
             if (base) {
                 try {
                     await fetch(`${base}/api/tenants/register`, {
@@ -1047,7 +1039,6 @@
             document.getElementById('jur-employer-rate').value = t.fiscal.employerRatePct;
             document.getElementById('jur-employee-rate').value = t.fiscal.employeeRatePct;
             document.getElementById('jur-currency').value = t.fiscal.currency;
-            document.getElementById('cfg-worker-url').value = getWorkerApiBase();
 
             document.getElementById('cfg-rent-pct').value = Math.min(7, t.costConfig.rentPct);
             document.getElementById('cfg-royalties-pct').value = t.costConfig.royaltiesPct;
@@ -1251,7 +1242,6 @@
         function switchSupplySubTab(tab) { ['stock', 'iot', 'scanner'].forEach(t => { document.getElementById('sup-panel-' + t).classList.toggle('hidden', t !== tab); document.getElementById('sup-tab-' + t).className = t === tab ? 'px-3 py-1.5 rounded font-bold bg-emerald-600 text-white' : 'px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300'; }); }
         function applyJurisdictionPreset() { const t = getActiveTenant(); const c = document.getElementById('jur-country').value; t.fiscal = JURISDICTION_PRESETS[c] ? { ...JURISDICTION_PRESETS[c] } : { ...t.fiscal, country: 'CUSTOM' }; queueAndSyncTenant(t); hydrateTenantInputs(); syncActiveView(); }
         function saveJurisdictionConfig() { const t = getActiveTenant(); t.fiscal = { country: document.getElementById('jur-country').value, vatPlacePct: Math.max(0, parseFloat(document.getElementById('jur-vat-place').value) || 0), vatTakeoutPct: Math.max(0, parseFloat(document.getElementById('jur-vat-takeout').value) || 0), employerRatePct: Math.max(0, parseFloat(document.getElementById('jur-employer-rate').value) || 0), employeeRatePct: Math.max(0, parseFloat(document.getElementById('jur-employee-rate').value) || 0), currency: (document.getElementById('jur-currency').value || '€').trim() }; queueAndSyncTenant(t); syncActiveView(); }
-        function renderFiscalSummary() { const t = getActiveTenant(); document.getElementById('jur-summary-line').innerText = `${t.name} • ${t.fiscal.country} • TVA ${t.fiscal.vatPlacePct}%/${t.fiscal.vatTakeoutPct}% • Charges ${t.fiscal.employerRatePct}% • API : ${getWorkerApiBase() || 'Local'}`; }
         function applyProfitableDefaults() { const t = getActiveTenant(); t.costConfig = { rentPct: 7, royaltiesPct: 4, staffPct: 22, maintPct: 3, otherPct: 4, taxReservePct: 12, capReservePct: 5 }; queueAndSyncTenant(t); hydrateTenantInputs(); syncActiveView(); }
         function setCostScopeMode(mode) { costScopeMode = mode; document.getElementById('scope-btn-day').className = mode === 'day' ? "px-3 py-1.5 rounded font-bold bg-sky-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300"; document.getElementById('scope-btn-all_real').className = mode === 'all_real' ? "px-3 py-1.5 rounded font-bold bg-emerald-600 text-white" : "px-3 py-1.5 rounded font-bold bg-slate-800 text-slate-300"; updateCostsView(); }
         function saveCostConfig() { const t = getActiveTenant(); t.costConfig = { rentPct: Math.min(7, Math.max(0, parseFloat(document.getElementById('cfg-rent-pct').value) || 0)), royaltiesPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-royalties-pct').value) || 0)), staffPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-staff-pct').value) || 0)), maintPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-maint-pct').value) || 0)), otherPct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-other-pct').value) || 0)), taxReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-tax-reserve-pct').value) || 0)), capReservePct: Math.min(100, Math.max(0, parseFloat(document.getElementById('cfg-cap-reserve-pct').value) || 0)) }; queueAndSyncTenant(t); hydrateTenantInputs(); updateCostsView(); }
@@ -1438,7 +1428,7 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_CAISSE_CLEAN_V6">
+<script id="LEXWALLET_CAISSE_CLEAN_V7">
 (function() {
   var MAX_ITEMS = 100;
   var MENU = [
@@ -1502,7 +1492,7 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
-  function renderMenuV6() {
+  function renderMenuV7() {
     syncTenants();
     var grid = document.getElementById("pos-catalog-grid");
     if (!grid) return;
@@ -1527,15 +1517,15 @@
           b.className = activeCat === c.k
             ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
             : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-950 text-slate-300 border border-slate-800";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV6(); });
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV7(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v6) {
-      inp.dataset.v6 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV6(); });
+    if (inp && !inp.dataset.v7) {
+      inp.dataset.v7 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV7(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1571,15 +1561,14 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV6;
-  function bootV6() { renderMenuV6(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV6(); setTimeout(bootV6, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV6, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV6, 100); });
+  window.renderPosCatalog = renderMenuV7;
+  function bootV7() { renderMenuV7(); }
+  window.addEventListener("DOMContentLoaded", function() { bootV7(); setTimeout(bootV7, 250); });
+  window.addEventListener("hashchange", function() { setTimeout(bootV7, 80); });
+  document.addEventListener("click", function() { setTimeout(bootV7, 100); });
 })();
 </script>
       "</body></html>";
-    w.focus();
   }
 
       n++;
@@ -1621,7 +1610,6 @@
   }
 
     if (!endpoint) {
-      if (typeof showToast === "function") showToast("Mode local actif (aucun endpoint Worker configuré).");
       return;
     }
     if (typeof fetch !== "function" || typeof AbortController !== "function") return;
@@ -1631,10 +1619,8 @@
       signal: ctrl.signal
     }).then(function() {
       clearTimeout(timer);
-      if (typeof showToast === "function") showToast("Synchronisation terminée.");
     }).catch(function() {
       clearTimeout(timer);
-      if (typeof showToast === "function") showToast("Mode local conservé.");
     });
   };
 
