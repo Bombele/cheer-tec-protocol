@@ -1440,7 +1440,8 @@
 
 
 
-<style id="LEXWALLET_BYBIT_THEME_V126">
+
+<style id="LEXWALLET_BYBIT_THEME_V127">
   :root {
     --bybit-bg: #0b0e11;
     --bybit-surface: #12161c;
@@ -1455,14 +1456,14 @@
     color: var(--bybit-text) !important;
   }
 </style>
-<script id="LEXWALLET_POS_CORE_V126">
+<script id="LEXWALLET_POS_CORE_V127">
 (function () {
   "use strict";
 
   var MAX_TICKS = 100;
-  var KEY_TX = "CHEER_POS_TICKETS_V126";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V126";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V126";
+  var KEY_TX = "CHEER_POS_TICKETS_V127";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V127";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V127";
   var txLock = false;
   var saleMode = "SUR_PLACE";
   var activeCart = [];
@@ -1778,21 +1779,21 @@
     if (!document.body) return;
     var tot = getTotals();
 
-    var bar = document.getElementById("cheer-cart-bar-v126");
+    var bar = document.getElementById("cheer-cart-bar-v127");
     if (!bar) {
       bar = document.createElement("div");
-      bar.id = "cheer-cart-bar-v126";
+      bar.id = "cheer-cart-bar-v127";
       bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#12161c;border-top:2px solid #f7a600;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(bar);
     }
-    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><button type="button" id="cheer-val-btn-v126" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
-    var vb = document.getElementById("cheer-val-btn-v126");
+    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><button type="button" id="cheer-val-btn-v127" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
+    var vb = document.getElementById("cheer-val-btn-v127");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
 
-    var panel = document.getElementById("cheer-cart-panel-v126");
+    var panel = document.getElementById("cheer-cart-panel-v127");
     if (!panel) {
       panel = document.createElement("section");
-      panel.id = "cheer-cart-panel-v126";
+      panel.id = "cheer-cart-panel-v127";
       panel.style.cssText = "margin:10px 10px 76px 10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(panel);
     }
@@ -1817,16 +1818,16 @@
     var lotsStr = last && Array.isArray(last.lot_allocations) ? last.lot_allocations.map(function (x) { return x.sku + "[" + x.lot + ":-" + x.qty + "]"; }).join(", ") : "";
     var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:76px;height:76px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' € TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
 
-    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastActionMsg + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v126" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
+    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastActionMsg + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v127" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
 
-    var pb = document.getElementById("cheer-panel-val-v126");
+    var pb = document.getElementById("cheer-panel-val-v127");
     if (pb) pb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
   }
 
   document.addEventListener("click", processEventTarget, true);
   document.addEventListener("touchend", processEventTarget, { capture: true, passive: false });
 
-  window.CheerPosCoreV126 = {
+  window.CheerPosCoreV127 = {
     addItem: function (q) {
       var n = normText(q);
       for (var i = 0; i < ITEMS.length; i++) {
