@@ -1439,7 +1439,8 @@
 
 
 
-<style id="LEXWALLET_BYBIT_THEME_V125">
+
+<style id="LEXWALLET_BYBIT_THEME_V126">
   :root {
     --bybit-bg: #0b0e11;
     --bybit-surface: #12161c;
@@ -1454,19 +1455,19 @@
     color: var(--bybit-text) !important;
   }
 </style>
-<script id="LEXWALLET_POS_CORE_V125">
+<script id="LEXWALLET_POS_CORE_V126">
 (function () {
   "use strict";
 
-  var MAX_TICKS = 80;
-  var KEY_TX = "CHEER_POS_TICKETS_V125";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V125";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V125";
+  var MAX_TICKS = 100;
+  var KEY_TX = "CHEER_POS_TICKETS_V126";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V126";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V126";
   var txLock = false;
   var saleMode = "SUR_PLACE";
   var activeCart = [];
-  var lastActionTime = 0;
-  var lastActionMsg = "Pret";
+  var lastTapTs = 0;
+  var lastStatus = "Pret";
 
   var ITEMS = [
     { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", cat: "Hamburgers", ttc: 11.50, cogs: 3.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.12 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.04 }] },
@@ -1606,8 +1607,8 @@
 
   function addItemToCart(itemObj) {
     var now = Date.now();
-    if (now - lastActionTime < 120) return;
-    lastActionTime = now;
+    if (now - lastTapTs < 140) return;
+    lastTapTs = now;
     if (!itemObj) return;
     var found = false;
     for (var i = 0; i < activeCart.length; i++) {
@@ -1629,7 +1630,7 @@
         qty: 1
       });
     }
-    lastActionMsg = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
+    lastStatus = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
     logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc });
     renderAll();
   }
@@ -1722,7 +1723,7 @@
       saveJson(KEY_STOCK, stockLots);
       logAudit("TICKET_VALIDATED", { ticketId: tid, ttc: tot.ttc, ht: tot.ht, vat: tot.vat, cogs: tot.cogs, hash: h });
       logAudit("STOCK_DECREMENTED", { ticketId: tid, lots: lotsUsed });
-      lastActionMsg = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
+      lastStatus = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
       activeCart = [];
       window.CHEER_POS_TICKETS = tickets.slice();
       window.CHEER_POS_STOCK_LOTS = stockLots;
@@ -1757,7 +1758,7 @@
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="80" height="80" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
   }
 
-  function handleCandidateTap(ev) {
+  function processEventTarget(ev) {
     var target = ev.target;
     if (!target) return;
     var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
@@ -1777,21 +1778,21 @@
     if (!document.body) return;
     var tot = getTotals();
 
-    var bar = document.getElementById("cheer-cart-bar-v125");
+    var bar = document.getElementById("cheer-cart-bar-v126");
     if (!bar) {
       bar = document.createElement("div");
-      bar.id = "cheer-cart-bar-v125";
+      bar.id = "cheer-cart-bar-v126";
       bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#12161c;border-top:2px solid #f7a600;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(bar);
     }
-    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><button type="button" id="cheer-val-btn-v125" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
-    var vb = document.getElementById("cheer-val-btn-v125");
+    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><button type="button" id="cheer-val-btn-v126" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button>';
+    var vb = document.getElementById("cheer-val-btn-v126");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
 
-    var panel = document.getElementById("cheer-cart-panel-v125");
+    var panel = document.getElementById("cheer-cart-panel-v126");
     if (!panel) {
       panel = document.createElement("section");
-      panel.id = "cheer-cart-panel-v125";
+      panel.id = "cheer-cart-panel-v126";
       panel.style.cssText = "margin:10px 10px 76px 10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(panel);
     }
@@ -1816,24 +1817,16 @@
     var lotsStr = last && Array.isArray(last.lot_allocations) ? last.lot_allocations.map(function (x) { return x.sku + "[" + x.lot + ":-" + x.qty + "]"; }).join(", ") : "";
     var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:76px;height:76px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' € TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
 
-    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastActionMsg + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v125" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
+    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.)</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastActionMsg + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v126" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
 
-    var pb = document.getElementById("cheer-panel-val-v125");
+    var pb = document.getElementById("cheer-panel-val-v126");
     if (pb) pb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
   }
 
-  document.addEventListener("click", handleCandidateTap, true);
-  document.addEventListener("pointerdown", function (ev) {
-    var target = ev.target;
-    if (!target) return;
-    var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
-    var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
-    if (raw === "+ ajouter" || raw === "ajouter") {
-      addItemToCart(resolveItemFromElement(el || target));
-    }
-  }, true);
+  document.addEventListener("click", processEventTarget, true);
+  document.addEventListener("touchend", processEventTarget, { capture: true, passive: false });
 
-  window.CheerPosCoreV125 = {
+  window.CheerPosCoreV126 = {
     addItem: function (q) {
       var n = normText(q);
       for (var i = 0; i < ITEMS.length; i++) {
