@@ -1436,7 +1436,47 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_CAISSE_CLEAN_V8">
+<style id="LEXWALLET_BYBIT_THEME_STYLE">
+  :root {
+    --bybit-bg: #0b0e11;
+    --bybit-surface: #12161c;
+    --bybit-surface-2: #181d24;
+    --bybit-border: #262d37;
+    --bybit-text: #eaecef;
+    --bybit-muted: #848e9c;
+    --bybit-accent: #f7a600;
+  }
+  html, body {
+    background-color: var(--bybit-bg) !important;
+    color: var(--bybit-text) !important;
+  }
+  header, nav, .nav, [role="navigation"] {
+    background-color: var(--bybit-surface) !important;
+    border-color: var(--bybit-border) !important;
+  }
+  button, .btn, [role="button"] {
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+  }
+  input, select, textarea {
+    background-color: var(--bybit-surface-2) !important;
+    border-color: var(--bybit-border) !important;
+    color: var(--bybit-text) !important;
+    border-radius: 6px !important;
+  }
+  #cheer-menu-v4-host {
+    background-color: var(--bybit-surface) !important;
+    border: 1px solid var(--bybit-border) !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+  }
+  #pos-catalog-grid > div {
+    background-color: var(--bybit-surface-2) !important;
+    border: 1px solid var(--bybit-border) !important;
+    border-radius: 8px !important;
+  }
+</style>
+<script id="LEXWALLET_CAISSE_BYBIT_V9">
 (function() {
   var MAX_ITEMS = 100;
   var MENU = [
@@ -1500,8 +1540,17 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
-  function renderMenuV8() {
+  function compactMenus() {
+    var btns = document.querySelectorAll("nav a, nav button, header a, header button, [role=\"navigation\"] a, [role=\"navigation\"] button");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].style.paddingTop = "5px";
+      btns[i].style.paddingBottom = "5px";
+      btns[i].style.fontSize = "12px";
+    }
+  }
+  function renderMenuV9() {
     syncTenants();
+    compactMenus();
     var grid = document.getElementById("pos-catalog-grid");
     if (!grid) return;
     var tabsEl = document.getElementById("caisse-cat-tabs");
@@ -1523,17 +1572,17 @@
           b.type = "button";
           b.textContent = c.l;
           b.className = activeCat === c.k
-            ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
-            : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-950 text-slate-300 border border-slate-800";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV8(); });
+            ? "px-2.5 py-1 rounded font-semibold text-[11px] bg-amber-500 text-slate-950"
+            : "px-2.5 py-1 rounded font-semibold text-[11px] bg-[#181d24] text-slate-300 border border-[#262d37]";
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV9(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v8) {
-      inp.dataset.v8 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV8(); });
+    if (inp && !inp.dataset.v9) {
+      inp.dataset.v9 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV9(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1542,25 +1591,25 @@
       if (searchQuery && (it.name + " " + it.category).toLowerCase().indexOf(searchQuery) === -1) continue;
       list.push(it);
     }
-    grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
+    grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2";
     grid.textContent = "";
     for (var j = 0; j < list.length; j++) {
       (function(item) {
         var card = document.createElement("div");
-        card.className = "bg-slate-950 border border-slate-800 hover:border-emerald-500/70 p-3.5 rounded-xl flex items-center justify-between gap-3";
+        card.className = "bg-[#181d24] border border-[#262d37] hover:border-amber-500/70 p-3 rounded-lg flex items-center justify-between gap-3";
         var left = document.createElement("div");
         left.className = "min-w-0";
         var title = document.createElement("div");
-        title.className = "font-bold text-white truncate text-xs";
+        title.className = "font-semibold text-white truncate text-xs";
         title.textContent = item.name;
         var sub = document.createElement("div");
-        sub.className = "text-[11px] text-slate-400 mt-0.5";
+        sub.className = "text-[11px] text-[#848e9c] mt-0.5";
         sub.textContent = Number(item.priceTtc).toFixed(2) + " EUR TTC - " + item.category;
         left.appendChild(title);
         left.appendChild(sub);
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "shrink-0 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs";
+        btn.className = "shrink-0 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs";
         btn.textContent = "+ Ajouter";
         btn.addEventListener("click", function() { window.addItemToCart(item.id); });
         card.appendChild(left);
@@ -1569,11 +1618,11 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV8;
-  function bootV8() { renderMenuV8(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV8(); setTimeout(bootV8, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV8, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV8, 100); });
+  window.renderPosCatalog = renderMenuV9;
+  function bootV9() { renderMenuV9(); }
+  window.addEventListener("DOMContentLoaded", function() { bootV9(); setTimeout(bootV9, 250); });
+  window.addEventListener("hashchange", function() { setTimeout(bootV9, 80); });
+  document.addEventListener("click", function() { setTimeout(bootV9, 100); });
 })();
 </script>
       "</body></html>";
