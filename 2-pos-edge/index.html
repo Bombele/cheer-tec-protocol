@@ -1438,7 +1438,7 @@
         function exportBackupJson() { const t = getActiveTenant(); const blob = new Blob([JSON.stringify(t, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `lexwallet-${t.id}-backup.json`; a.click(); URL.revokeObjectURL(url); }
         function importBackupJson(event) { const file = event.target.files && event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const data = JSON.parse(String(reader.result || '{}')); const t = getActiveTenant(); tenantStore[t.id] = { ...t, ...data, id: t.id, ingredients: normalizeIngredientsWithBeverages(data.ingredients || t.ingredients, 250, t.id.slice(-2)) }; queueAndSyncTenant(tenantStore[t.id]); syncActiveView(); alert("Sauvegarde importée."); } catch (_) { alert("JSON invalide."); } }; reader.readAsText(file); }
     </script>
-<script id="LEXWALLET_CAISSE_CLEAN_V5">
+<script id="LEXWALLET_CAISSE_CLEAN_V6">
 (function() {
   var MAX_ITEMS = 100;
   var MENU = [
@@ -1502,52 +1502,9 @@
     }
     window.dispatchEvent(new Event("caisse:refresh"));
   };
-  function hideLegacyDuplicateMenuSections() {
-    var caisseView = document.getElementById("view-caisse");
-    if (!caisseView) return;
-    var host = document.getElementById("cheer-menu-v4-host");
-    var kids = caisseView.children;
-    for (var i = 0; i < kids.length; i++) {
-      var el = kids[i];
-      if (!el || el === host || el.contains(document.getElementById("pos-catalog-grid"))) continue;
-      var txt = String(el.textContent || "");
-      if (txt.indexOf("Cheer Classic Cheese Burger") !== -1 || txt.indexOf("Cheer Truffle Bacon Burger") !== -1 || txt.indexOf("Plats & Burgers") !== -1 || txt.indexOf("Boissons Normal / Soft") !== -1 || txt.indexOf("Vins, Alcools & Spiritueux") !== -1) {
-        el.style.display = "none";
-      }
-    }
-  }
-  function findOrCreateGridTarget() {
-    var grid = document.getElementById("pos-catalog-grid");
-    if (grid) return grid;
-    var caisseView = document.getElementById("view-caisse");
-    if (!caisseView) return null;
-    var host = document.getElementById("cheer-menu-v4-host");
-    if (!host) {
-      host = document.createElement("div");
-      host.id = "cheer-menu-v4-host";
-      host.className = "bg-slate-900/90 border border-slate-800 rounded-2xl p-4 my-3 space-y-3";
-      var tabsBox = document.createElement("div");
-      tabsBox.id = "caisse-cat-tabs";
-      tabsBox.className = "flex flex-wrap gap-1.5";
-      var searchBox = document.createElement("input");
-      searchBox.id = "caisse-search-input";
-      searchBox.type = "text";
-      searchBox.placeholder = "Rechercher un burger, fromage, vin, sauce, side...";
-      searchBox.className = "w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs";
-      var itemsGrid = document.createElement("div");
-      itemsGrid.id = "pos-catalog-grid";
-      itemsGrid.className = "grid grid-cols-1 sm:grid-cols-2 gap-2.5";
-      host.appendChild(tabsBox);
-      host.appendChild(searchBox);
-      host.appendChild(itemsGrid);
-      caisseView.insertBefore(host, caisseView.firstChild);
-    }
-    return document.getElementById("pos-catalog-grid");
-  }
-  function renderMenuV5() {
+  function renderMenuV6() {
     syncTenants();
-    hideLegacyDuplicateMenuSections();
-    var grid = findOrCreateGridTarget();
+    var grid = document.getElementById("pos-catalog-grid");
     if (!grid) return;
     var tabsEl = document.getElementById("caisse-cat-tabs");
     if (tabsEl) {
@@ -1570,15 +1527,15 @@
           b.className = activeCat === c.k
             ? "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-emerald-600 text-white"
             : "px-2.5 py-1.5 rounded-lg font-bold text-[11px] bg-slate-950 text-slate-300 border border-slate-800";
-          b.addEventListener("click", function() { activeCat = c.k; renderMenuV5(); });
+          b.addEventListener("click", function() { activeCat = c.k; renderMenuV6(); });
           tabsEl.appendChild(b);
         })(cats[i]);
       }
     }
     var inp = document.getElementById("caisse-search-input");
-    if (inp && !inp.dataset.v5) {
-      inp.dataset.v5 = "1";
-      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV5(); });
+    if (inp && !inp.dataset.v6) {
+      inp.dataset.v6 = "1";
+      inp.addEventListener("input", function() { searchQuery = String(inp.value || "").trim().toLowerCase(); renderMenuV6(); });
     }
     var list = [];
     for (var i = 0; i < MENU.length && list.length < MAX_ITEMS; i++) {
@@ -1614,11 +1571,11 @@
       })(list[j]);
     }
   }
-  window.renderPosCatalog = renderMenuV5;
-  function bootV5() { renderMenuV5(); }
-  window.addEventListener("DOMContentLoaded", function() { bootV5(); setTimeout(bootV5, 250); });
-  window.addEventListener("hashchange", function() { setTimeout(bootV5, 80); });
-  document.addEventListener("click", function() { setTimeout(bootV5, 100); });
+  window.renderPosCatalog = renderMenuV6;
+  function bootV6() { renderMenuV6(); }
+  window.addEventListener("DOMContentLoaded", function() { bootV6(); setTimeout(bootV6, 250); });
+  window.addEventListener("hashchange", function() { setTimeout(bootV6, 80); });
+  document.addEventListener("click", function() { setTimeout(bootV6, 100); });
 })();
 </script>
       "</body></html>";
