@@ -1450,21 +1450,22 @@
 
 
 
-<style id="LEXWALLET_ROUTE_CONTROL_STYLE_V136">
+
+<style id="LEXWALLET_ROUTE_CONTROL_STYLE_V137">
   body:not([data-cheer-route="caisse"]) [data-cheer-pos-catalog="1"] {
     display: none !important;
   }
 </style>
-<script id="LEXWALLET_ROUTE_CONTROL_CORE_V136">
+<script id="LEXWALLET_ROUTE_CONTROL_CORE_V137">
 (function () {
   "use strict";
 
-  var MAX_RUN_MS = 300000;
+  var MAX_RUN_MS = 120000;
   var startTs = Date.now();
-  var KEY_TX = "CHEER_POS_TICKETS_V136";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V136";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V136";
-  var KEY_CART = "CHEER_POS_ACTIVE_CART_V136";
+  var KEY_TX = "CHEER_POS_TICKETS_V137";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V137";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V137";
+  var KEY_CART = "CHEER_POS_ACTIVE_CART_V137";
   var TENANT_ID = "CHEER-FLAGSHIP-01";
   var txLock = false;
   var saleMode = "SUR_PLACE";
@@ -1610,7 +1611,7 @@
     var els = document.querySelectorAll("div, section, ul");
     for (var i = 0; i < els.length; i++) {
       var el = els[i];
-      if (el.id === "cheer-caisse-view-v136") continue;
+      if (el.id === "cheer-caisse-view-v137") continue;
       var txt = normText(el.textContent);
       if (txt.indexOf("tout 28") !== -1 && txt.indexOf("burger boeuf cheddar") !== -1 && txt.length < 4000) {
         el.setAttribute("data-cheer-pos-catalog", "1");
@@ -1790,7 +1791,7 @@
   }
 
   function removeCaisseView() {
-    var v = document.getElementById("cheer-caisse-view-v136");
+    var v = document.getElementById("cheer-caisse-view-v137");
     if (v && v.parentNode) v.parentNode.removeChild(v);
   }
 
@@ -1808,10 +1809,10 @@
     }
 
     var tot = getTotals();
-    var view = document.getElementById("cheer-caisse-view-v136");
+    var view = document.getElementById("cheer-caisse-view-v137");
     if (!view) {
       view = document.createElement("section");
-      view.id = "cheer-caisse-view-v136";
+      view.id = "cheer-caisse-view-v137";
       view.style.cssText = "margin:10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(view);
     }
@@ -1836,7 +1837,7 @@
       '<div style="font-size:11px;color:#00b074;margin-bottom:8px;">' + lastStatus + ' (HT ' + tot.ht.toFixed(2) + ' € • TVA ' + tot.vat.toFixed(2) + ' €)</div>' +
       '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px;">' + quickBtns + '</div>' +
       '<div style="background:#181d24;padding:8px;border-radius:6px;margin-bottom:8px;"><strong style="font-size:11px;">Panier actif</strong>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;margin-top:4px;">Aucun article dans le panier.</div>') + '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v136" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v137" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
       lastCard;
 
     var qBtns = view.querySelectorAll("[data-qadd]");
@@ -1851,7 +1852,7 @@
       };
     }
 
-    var vb = document.getElementById("cheer-val-btn-v136");
+    var vb = document.getElementById("cheer-val-btn-v137");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
   }
 
@@ -1875,7 +1876,7 @@
   window.addEventListener("hashchange", syncRouteView);
   window.addEventListener("popstate", syncRouteView);
 
-  window.CheerRouteControlV136 = {
+  window.CheerRouteControlV137 = {
     isCaisseRoute: isCaisseRoute,
     addItem: function (q) {
       var n = normText(q);
