@@ -1451,26 +1451,30 @@
 
 
 
-<style id="LEXWALLET_ROUTE_CONTROL_STYLE_V137">
-  body:not([data-cheer-route="caisse"]) [data-cheer-pos-catalog="1"] {
-    display: none !important;
-  }
-</style>
-<script id="LEXWALLET_ROUTE_CONTROL_CORE_V137">
+
+<script id="LEXWALLET_ROUTE_CONTROL_CORE_V138">
 (function () {
   "use strict";
 
   var MAX_RUN_MS = 120000;
   var startTs = Date.now();
-  var KEY_TX = "CHEER_POS_TICKETS_V137";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V137";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V137";
-  var KEY_CART = "CHEER_POS_ACTIVE_CART_V137";
+  var KEY_TX = "CHEER_POS_TICKETS_V138";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V138";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V138";
+  var KEY_CART = "CHEER_POS_ACTIVE_CART_V138";
   var TENANT_ID = "CHEER-FLAGSHIP-01";
   var txLock = false;
   var saleMode = "SUR_PLACE";
   var lastTapTs = 0;
-  var lastStatus = "Caisse prete sur #/POS/caisse";
+  var lastStatus = "Caisse active sur #/POS/caisse";
+
+  if (typeof navigator !== "undefined" && navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      for (var i = 0; i < regs.length; i++) {
+        regs[i].unregister().catch(function () {});
+      }
+    }).catch(function () {});
+  }
 
   var CATALOG = [
     { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", cat: "Hamburgers", ttc: 11.50, cogs: 3.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.12 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.04 }] },
@@ -1549,7 +1553,9 @@
   function isCaisseRoute() {
     var h = String(window.location.hash || "").toLowerCase();
     var p = String(window.location.pathname || "").toLowerCase();
-    return h.indexOf("/pos/caisse") !== -1 || p.indexOf("/pos/caisse") !== -1;
+    if (h.indexOf("/pos/caisse") !== -1 || p.indexOf("/pos/caisse") !== -1) return true;
+    var b = normText(document.body ? document.body.textContent : "");
+    return b.indexOf("encaissement sur place") !== -1 && b.indexOf("validation ticket") !== -1;
   }
 
   function loadJson(k, fb) {
@@ -1606,23 +1612,10 @@
     }
   }
 
-  function tagCatalogContainers() {
-    if (!document.body) return;
-    var els = document.querySelectorAll("div, section, ul");
-    for (var i = 0; i < els.length; i++) {
-      var el = els[i];
-      if (el.id === "cheer-caisse-view-v137") continue;
-      var txt = normText(el.textContent);
-      if (txt.indexOf("tout 28") !== -1 && txt.indexOf("burger boeuf cheddar") !== -1 && txt.length < 4000) {
-        el.setAttribute("data-cheer-pos-catalog", "1");
-      }
-    }
-  }
-
   function resolveItemFromElement(el) {
     var cur = el;
     var depth = 0;
-    while (cur && cur !== document.body && depth < 8) {
+    while (cur && cur !== document.body && depth < 10) {
       var txt = normText(cur.textContent);
       for (var i = 0; i < CATALOG.length; i++) {
         var n = normText(CATALOG[i].name);
@@ -1635,9 +1628,8 @@
   }
 
   function addItemToCart(itemObj) {
-    if (!isCaisseRoute()) return;
     var now = Date.now();
-    if (now - lastTapTs < 120) return;
+    if (now - lastTapTs < 100) return;
     lastTapTs = now;
     if (!itemObj) return;
     var found = false;
@@ -1790,29 +1782,15 @@
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="72" height="72" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
   }
 
-  function removeCaisseView() {
-    var v = document.getElementById("cheer-caisse-view-v137");
-    if (v && v.parentNode) v.parentNode.removeChild(v);
-  }
-
   function syncRouteView() {
     if (!document.body) return;
     scrubStrayTextCode();
-    tagCatalogContainers();
-
-    var onCaisse = isCaisseRoute();
-    document.body.setAttribute("data-cheer-route", onCaisse ? "caisse" : "other");
-
-    if (!onCaisse) {
-      removeCaisseView();
-      return;
-    }
 
     var tot = getTotals();
-    var view = document.getElementById("cheer-caisse-view-v137");
+    var view = document.getElementById("cheer-caisse-view-v138");
     if (!view) {
       view = document.createElement("section");
-      view.id = "cheer-caisse-view-v137";
+      view.id = "cheer-caisse-view-v138";
       view.style.cssText = "margin:10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(view);
     }
@@ -1837,7 +1815,7 @@
       '<div style="font-size:11px;color:#00b074;margin-bottom:8px;">' + lastStatus + ' (HT ' + tot.ht.toFixed(2) + ' € • TVA ' + tot.vat.toFixed(2) + ' €)</div>' +
       '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px;">' + quickBtns + '</div>' +
       '<div style="background:#181d24;padding:8px;border-radius:6px;margin-bottom:8px;"><strong style="font-size:11px;">Panier actif</strong>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;margin-top:4px;">Aucun article dans le panier.</div>') + '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v137" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v138" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
       lastCard;
 
     var qBtns = view.querySelectorAll("[data-qadd]");
@@ -1852,23 +1830,22 @@
       };
     }
 
-    var vb = document.getElementById("cheer-val-btn-v137");
+    var vb = document.getElementById("cheer-val-btn-v138");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
   }
 
   document.addEventListener("click", function (ev) {
-    if (!isCaisseRoute()) return;
     var target = ev.target;
     if (!target) return;
     var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
     var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
-    if (raw === "+ ajouter" || raw === "ajouter" || (raw.indexOf("ajouter") !== -1 && raw.length <= 16)) {
-      ev.preventDefault();
-      addItemToCart(resolveItemFromElement(el || target));
-      return;
+    if (raw === "+ ajouter" || raw === "ajouter" || raw.indexOf("ajouter") !== -1) {
+      if (raw.length <= 24) {
+        addItemToCart(resolveItemFromElement(el || target));
+        return;
+      }
     }
     if (raw.indexOf("panier / valider") !== -1 || raw.indexOf("valider ticket") !== -1) {
-      ev.preventDefault();
       validateTicket();
     }
   }, true);
@@ -1876,7 +1853,7 @@
   window.addEventListener("hashchange", syncRouteView);
   window.addEventListener("popstate", syncRouteView);
 
-  window.CheerRouteControlV137 = {
+  window.CheerRouteControlV138 = {
     isCaisseRoute: isCaisseRoute,
     addItem: function (q) {
       var n = normText(q);
