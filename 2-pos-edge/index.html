@@ -1453,29 +1453,22 @@
 
 
 
-<script id="LEXWALLET_ROUTE_CONTROL_CORE_V139">
+
+<script id="LEXWALLET_CART_CASCADE_V140">
+/* Module alimente : affichage panier/caisse (#/POS/caisse), validation ticket/QR, stock par lots, audit chaine et etat window.CHEER_POS_* */
 (function () {
   "use strict";
 
-  var MAX_TICKS = 60;
-  var ticks = 0;
-  var KEY_TX = "CHEER_POS_TICKETS_V139";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V139";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V139";
-  var KEY_CART = "CHEER_POS_ACTIVE_CART_V139";
+  var MAX_TICKS = 40;
+  var TICK_MS = 500;
+  var MAX_CART_LINES = 200;
   var TENANT_ID = "CHEER-FLAGSHIP-01";
-  var txLock = false;
-  var saleMode = "SUR_PLACE";
-  var lastTapTs = 0;
-  var lastStatus = "Caisse active sur #/POS/caisse";
+  var ADMIN_EMAIL = "cbltec@proton.me";
 
-  if (typeof navigator !== "undefined" && navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
-    navigator.serviceWorker.getRegistrations().then(function (regs) {
-      for (var i = 0; i < regs.length; i++) {
-        regs[i].unregister().catch(function () {});
-      }
-    }).catch(function () {});
-  }
+  var KEY_CART = "CHEER_POS_CART_V140";
+  var KEY_TX = "CHEER_POS_TICKETS_V140";
+  var KEY_STOCK = "CHEER_POS_STOCK_V140";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V140";
 
   var CATALOG = [
     { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", cat: "Hamburgers", ttc: 11.50, cogs: 3.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.12 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.04 }] },
@@ -1551,69 +1544,183 @@
     "MOZZARELLA-STICKS": [{ lot: "LOT-MS-2611", qty: 280, cost: 0.22 }]
   };
 
-  function loadJson(k, fb) {
-    try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v !== null ? v : fb; } catch (_) { return fb; }
-  }
-  function saveJson(k, v) {
-    try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {}
-  }
-  function normText(s) {
-    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
-  }
-  function hashChainStr(s) {
-    var h1 = 0x811c9dc5, h2 = 0x01000193;
-    for (var i = 0; i < s.length; i++) {
-      var c = s.charCodeAt(i); h1 ^= c; h1 = Math.imul(h1, 0x01000193); h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+  var saleMode = "SUR_PLACE";
+  var actionLock = false;
+  var lastTapTs = 0;
+  var ticks = 0;
+
+  function loadStorage(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      var parsed = JSON.parse(raw);
+      return parsed !== null && parsed !== undefined ? parsed : fallback;
+    } catch (_) {
+      return fallback;
     }
-    return "AUD-" + ((h1 >>> 0).toString(16).padStart(8, "0")) + "-" + (h2.toString(16).padStart(8, "0"));
   }
 
-  var stockLots = loadJson(KEY_STOCK, null);
-  if (!stockLots) { stockLots = JSON.parse(JSON.stringify(INIT_LOTS)); saveJson(KEY_STOCK, stockLots); }
-  var tickets = loadJson(KEY_TX, []);
-  if (!Array.isArray(tickets)) tickets = [];
-  var auditLog = loadJson(KEY_AUDIT, []);
-  if (!Array.isArray(auditLog)) auditLog = [];
-  var activeCart = loadJson(KEY_CART, []);
-  if (!Array.isArray(activeCart)) activeCart = [];
+  function saveStorage(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (_) {}
+  }
 
-  function logAudit(type, data) {
-    var prev = auditLog.length > 0 ? auditLog[auditLog.length - 1].hash : "GENESIS-CHEER";
+  function normalizeStr(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function computeHash(input) {
+    var h1 = 0x811c9dc5;
+    var h2 = 0x01000193;
+    var str = String(input || "");
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      h1 ^= c;
+      h1 = Math.imul(h1, 0x01000193);
+      h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+    }
+    return "AUD-" + (h1 >>> 0).toString(16).padStart(8, "0") + "-" + h2.toString(16).padStart(8, "0");
+  }
+
+  var cartState = loadStorage(KEY_CART, []);
+  if (!Array.isArray(cartState)) cartState = [];
+
+  var ticketsState = loadStorage(KEY_TX, []);
+  if (!Array.isArray(ticketsState)) ticketsState = [];
+
+  var stockState = loadStorage(KEY_STOCK, null);
+  if (!stockState || typeof stockState !== "object") {
+    stockState = JSON.parse(JSON.stringify(INIT_LOTS));
+    saveStorage(KEY_STOCK, stockState);
+  }
+
+  var auditState = loadStorage(KEY_AUDIT, []);
+  if (!Array.isArray(auditState)) auditState = [];
+
+  function appendAudit(eventType, payload) {
+    var prevHash = auditState.length > 0 ? auditState[auditState.length - 1].hash : "GENESIS-CHEER-V140";
     var ts = new Date().toISOString();
-    var h = hashChainStr(prev + "|" + ts + "|" + TENANT_ID + "|" + type + "|" + JSON.stringify(data || {}));
-    auditLog.push({ seq: auditLog.length + 1, ts: ts, tenantId: TENANT_ID, eventType: type, prevHash: prev, hash: h, data: data || {} });
-    saveJson(KEY_AUDIT, auditLog);
+    var body = payload || {};
+    var hash = computeHash(prevHash + "|" + ts + "|" + TENANT_ID + "|" + ADMIN_EMAIL + "|" + eventType + "|" + JSON.stringify(body));
+    var entry = {
+      seq: auditState.length + 1,
+      ts: ts,
+      tenantId: TENANT_ID,
+      adminEmail: ADMIN_EMAIL,
+      eventType: eventType,
+      prevHash: prevHash,
+      hash: hash,
+      payload: body
+    };
+    auditState.push(entry);
+    saveStorage(KEY_AUDIT, auditState);
+    return entry;
   }
 
-  function scrubStrayTextCode() {
-    if (!document.body) return;
-    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-    var toRemove = [];
-    var node;
-    while ((node = walker.nextNode())) {
-      var v = String(node.nodeValue || "");
-      if (v.indexOf("rows.push([tx.id") !== -1 ||
-          v.indexOf("b.textContent = \"Sync Cloud\"") !== -1 ||
-          v.indexOf("AbortController !== \"function\"") !== -1 ||
-          v.indexOf("currentTenantId()") !== -1 ||
-          v.indexOf("tx.sale_type || \"-\"") !== -1 ||
-          v.indexOf("Number(tx.total_ttc") !== -1) {
-        toRemove.push(node);
+  function computeCartTotals() {
+    var itemCount = 0;
+    var totalTtc = 0;
+    var totalCogs = 0;
+    var weightedVat = 0;
+
+    for (var i = 0; i < cartState.length; i++) {
+      var line = cartState[i];
+      var qty = Math.max(0, Number(line.qty || 0));
+      var unitTtc = Math.max(0, Number(line.ttc || 0));
+      var unitCogs = Math.max(0, Number(line.cogs || 0));
+      var vatRate = saleMode === "A_EMPORTER" ? Number(line.vatT || 0.06) : Number(line.vatP || 0.12);
+      var lineTtc = unitTtc * qty;
+
+      itemCount += qty;
+      totalTtc += lineTtc;
+      totalCogs += unitCogs * qty;
+      weightedVat += lineTtc * vatRate;
+    }
+
+    var avgRate = totalTtc > 0 ? (weightedVat / totalTtc) : (saleMode === "A_EMPORTER" ? 0.06 : 0.12);
+    var subtotalHt = Number((totalTtc / (1 + avgRate)).toFixed(2));
+    var vatAmount = Number((totalTtc - subtotalHt).toFixed(2));
+
+    return {
+      itemCount: itemCount,
+      lineCount: cartState.length,
+      saleMode: saleMode,
+      subtotalHt: subtotalHt,
+      vatAmount: vatAmount,
+      totalTtc: Number(totalTtc.toFixed(2)),
+      totalCogs: Number(totalCogs.toFixed(2)),
+      estimatedMargin: Number((subtotalHt - totalCogs).toFixed(2))
+    };
+  }
+
+  function publishCascadeState(lastEvent, totals) {
+    var snap = totals || computeCartTotals();
+    window.CHEER_POS_CATALOG = CATALOG.slice();
+    window.CHEER_POS_CART = cartState.slice();
+    window.CHEER_POS_CART_STATE = {
+      tenantId: TENANT_ID,
+      adminEmail: ADMIN_EMAIL,
+      saleMode: saleMode,
+      items: cartState.slice(),
+      totals: snap,
+      lastEvent: lastEvent || null,
+      updatedAt: new Date().toISOString()
+    };
+    window.CHEER_POS_TICKETS = ticketsState.slice();
+    window.CHEER_POS_STOCK_LOTS = stockState;
+    window.CHEER_POS_AUDIT_CHAIN = auditState.slice();
+
+    try {
+      document.dispatchEvent(new CustomEvent("cheer:pos:cart-updated", {
+        detail: window.CHEER_POS_CART_STATE
+      }));
+    } catch (_) {}
+  }
+
+  function findCatalogItem(query) {
+    if (!query) return null;
+    if (typeof query === "object" && query.id) {
+      for (var i = 0; i < CATALOG.length; i++) {
+        if (CATALOG[i].id === query.id) return CATALOG[i];
+      }
+      return query;
+    }
+    var qNorm = normalizeStr(query);
+    if (!qNorm) return null;
+    for (var j = 0; j < CATALOG.length; j++) {
+      if (normalizeStr(CATALOG[j].id) === qNorm || normalizeStr(CATALOG[j].name) === qNorm) {
+        return CATALOG[j];
       }
     }
-    for (var i = 0; i < toRemove.length; i++) {
-      if (toRemove[i].parentNode) toRemove[i].parentNode.removeChild(toRemove[i]);
+    for (var k = 0; k < CATALOG.length; k++) {
+      if (normalizeStr(CATALOG[k].name).indexOf(qNorm) !== -1) {
+        return CATALOG[k];
+      }
     }
+    return null;
   }
 
-  function resolveItemFromElement(el) {
-    var cur = el;
+  function resolveItemFromNode(node) {
+    var cur = node;
     var depth = 0;
     while (cur && cur !== document.body && depth < 12) {
-      var txt = normText(cur.textContent);
+      var dataId = cur.getAttribute ? (cur.getAttribute("data-item-id") || cur.getAttribute("data-sku") || cur.getAttribute("data-qadd")) : "";
+      if (dataId) {
+        var byAttr = findCatalogItem(dataId);
+        if (byAttr) return byAttr;
+      }
+      var norm = normalizeStr(cur.textContent);
       for (var i = 0; i < CATALOG.length; i++) {
-        var n = normText(CATALOG[i].name);
-        if (n.length > 3 && txt.indexOf(n) !== -1) return CATALOG[i];
+        var itemNorm = normalizeStr(CATALOG[i].name);
+        if (itemNorm.length > 3 && norm.indexOf(itemNorm) !== -1) {
+          return CATALOG[i];
+        }
       }
       cur = cur.parentElement;
       depth++;
@@ -1621,260 +1728,127 @@
     return CATALOG[0];
   }
 
-  function addItemToCart(itemObj) {
+  function addItemToCart(itemOrQuery, qtyDelta) {
+    if (actionLock) return computeCartTotals();
     var now = Date.now();
-    if (now - lastTapTs < 80) return;
+    if (now - lastTapTs < 70) return computeCartTotals();
     lastTapTs = now;
-    if (!itemObj) return;
-    var found = false;
-    for (var i = 0; i < activeCart.length; i++) {
-      if (activeCart[i].id === itemObj.id) {
-        activeCart[i].qty = Number(activeCart[i].qty || 0) + 1;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      activeCart.push({
-        id: itemObj.id,
-        name: itemObj.name,
-        ttc: Number(itemObj.ttc),
-        cogs: Number(itemObj.cogs),
-        vatP: Number(itemObj.vatP),
-        vatT: Number(itemObj.vatT),
-        bom: (itemObj.bom || []).slice(),
-        qty: 1
-      });
-    }
-    saveJson(KEY_CART, activeCart);
-    lastStatus = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
-    logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc });
-    renderCaisse();
-  }
 
-  function getTotals() {
-    var qty = 0, ttc = 0, cogs = 0, vatAcc = 0;
-    for (var i = 0; i < activeCart.length; i++) {
-      var l = activeCart[i];
-      var q = Number(l.qty || 0);
-      var lineTtc = Number(l.ttc || 0) * q;
-      var rate = saleMode === "A_EMPORTER" ? Number(l.vatT || 0.06) : Number(l.vatP || 0.12);
-      qty += q;
-      ttc += lineTtc;
-      cogs += Number(l.cogs || 0) * q;
-      vatAcc += lineTtc * rate;
-    }
-    var avgR = ttc > 0 ? (vatAcc / ttc) : (saleMode === "A_EMPORTER" ? 0.06 : 0.12);
-    var ht = Number((ttc / (1 + avgR)).toFixed(2));
-    var vat = Number((ttc - ht).toFixed(2));
-    return { qty: qty, ttc: Number(ttc.toFixed(2)), ht: ht, vat: vat, cogs: Number(cogs.toFixed(2)) };
-  }
-
-  function consumeLots(sku, needQty) {
-    var list = stockLots[sku] || [];
-    var rem = Number(needQty || 0);
-    var used = [];
-    for (var i = 0; i < list.length && rem > 1e-9; i++) {
-      var av = Number(list[i].qty || 0);
-      if (av <= 0) continue;
-      var take = Math.min(av, rem);
-      list[i].qty = Number((av - take).toFixed(4));
-      rem = Number((rem - take).toFixed(4));
-      used.push({ sku: sku, lot: list[i].lot, qty: Number(take.toFixed(4)), cost: Number(list[i].cost || 0) });
-    }
-    if (rem > 1e-9) {
-      used.push({ sku: sku, lot: "LOT-REGUL", qty: Number(rem.toFixed(4)), cost: 0.50 });
-    }
-    stockLots[sku] = list;
-    return used;
-  }
-
-  function validateTicket() {
-    if (txLock || activeCart.length === 0) return;
-    txLock = true;
+    actionLock = true;
     try {
-      var tot = getTotals();
-      var tid = "TCK-" + Date.now().toString(36).toUpperCase();
-      var ts = new Date().toISOString();
-      var lotsUsed = [];
-      for (var i = 0; i < activeCart.length; i++) {
-        var ci = activeCart[i];
-        var q = Math.max(1, Number(ci.qty || 1));
-        var bom = ci.bom || [];
-        for (var b = 0; b < bom.length; b++) {
-          var dec = consumeLots(bom[b].sku, Number(bom[b].qty || 0) * q);
-          for (var d = 0; d < dec.length; d++) {
-            lotsUsed.push({ itemId: ci.id, sku: dec[d].sku, lot: dec[d].lot, qty: dec[d].qty, cost: dec[d].cost });
-          }
+      var item = findCatalogItem(itemOrQuery) || CATALOG[0];
+      var delta = Number(qtyDelta);
+      if (!isFinite(delta) || delta === 0) delta = 1;
+
+      var foundIdx = -1;
+      for (var i = 0; i < cartState.length; i++) {
+        if (cartState[i].id === item.id) {
+          foundIdx = i;
+          break;
         }
       }
-      var qrPayload = JSON.stringify({
-        tid: tid,
-        tenant: TENANT_ID,
-        ts: ts,
-        mode: saleMode,
-        ttc: tot.ttc,
-        ht: tot.ht,
-        vat: tot.vat,
-        lots: lotsUsed.map(function (x) { return x.sku + ":" + x.lot + ":" + x.qty; })
-      });
-      var h = hashChainStr(tid + "|" + ts + "|" + tot.ttc + "|" + qrPayload);
-      var rec = {
-        id: tid,
-        created_at: ts,
-        tenantId: TENANT_ID,
-        sale_type: saleMode,
-        cancelled: false,
-        is_test: false,
-        items: activeCart.slice(),
-        subtotal_ht: tot.ht,
-        tva_amount: tot.vat,
-        total_ttc: tot.ttc,
-        cogs_total: tot.cogs,
-        lot_allocations: lotsUsed,
-        qr_payload: qrPayload,
-        integrity_hash: h
-      };
-      tickets.unshift(rec);
-      activeCart = [];
-      saveJson(KEY_TX, tickets);
-      saveJson(KEY_STOCK, stockLots);
-      saveJson(KEY_CART, activeCart);
-      logAudit("TICKET_VALIDATED", { ticketId: tid, ttc: tot.ttc, ht: tot.ht, vat: tot.vat, cogs: tot.cogs, hash: h });
-      logAudit("STOCK_DECREMENTED", { ticketId: tid, lots: lotsUsed });
-      lastStatus = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
-      window.CHEER_POS_TICKETS = tickets.slice();
-      window.CHEER_POS_STOCK_LOTS = stockLots;
-      window.CHEER_POS_AUDIT_CHAIN = auditLog.slice();
-      window.CHEER_LAST_TICKET = rec;
-      renderCaisse();
-    } finally {
-      txLock = false;
-    }
-  }
 
-  function makeQrSvg(payload) {
-    var h = hashChainStr(payload);
-    var sz = 21;
-    var rects = [];
-    for (var r = 0; r < sz; r++) {
-      for (var c = 0; c < sz; c++) {
-        var isFinder = (r < 7 && c < 7) || (r < 7 && c >= sz - 7) || (r >= sz - 7 && c < 7);
-        var dark = false;
-        if (isFinder) {
-          var lr = r < 7 ? r : r - (sz - 7);
-          var lc = c < 7 ? c : c - (sz - 7);
-          dark = lr === 0 || lr === 6 || lc === 0 || lc === 6 || (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4);
+      var newQty = 0;
+      if (foundIdx !== -1) {
+        newQty = Number(cartState[foundIdx].qty || 0) + delta;
+        if (newQty <= 0) {
+          cartState.splice(foundIdx, 1);
+          newQty = 0;
         } else {
-          dark = ((h.charCodeAt((r * sz + c) % h.length) + r * 3 + c * 5) % 2) === 0;
+          cartState[foundIdx].qty = newQty;
         }
-        if (dark) {
-          rects.push('<rect x="' + c + '" y="' + r + '" width="1" height="1" fill="#0b0e11"/>');
-        }
+      } else if (delta > 0 && cartState.length < MAX_CART_LINES) {
+        newQty = delta;
+        cartState.push({
+          id: item.id,
+          name: item.name,
+          cat: item.cat,
+          ttc: Number(item.ttc),
+          cogs: Number(item.cogs),
+          vatP: Number(item.vatP),
+          vatT: Number(item.vatT),
+          bom: Array.isArray(item.bom) ? item.bom.slice() : [],
+          qty: newQty
+        });
       }
+
+      saveStorage(KEY_CART, cartState);
+      var totals = computeCartTotals();
+      var auditEntry = appendAudit("ITEM_ADDED_TO_CART", {
+        id: item.id,
+        name: item.name,
+        unitTtc: Number(item.ttc),
+        qty: newQty,
+        delta: delta,
+        cartTotalTtc: totals.totalTtc,
+        cartItemCount: totals.itemCount
+      });
+
+      publishCascadeState({
+        type: "ITEM_ADDED_TO_CART",
+        item: item,
+        qty: newQty,
+        totals: totals,
+        auditHash: auditEntry.hash
+      }, totals);
+
+      return totals;
+    } finally {
+      actionLock = false;
     }
-    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="72" height="72" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
   }
 
-  function renderCaisse() {
-    if (!document.body) return;
-    scrubStrayTextCode();
+  function setSaleMode(mode) {
+    var upper = String(mode || "").toUpperCase();
+    saleMode = upper === "A_EMPORTER" ? "A_EMPORTER" : "SUR_PLACE";
+    var totals = computeCartTotals();
+    appendAudit("SALE_MODE_CHANGED", { saleMode: saleMode, totalTtc: totals.totalTtc });
+    publishCascadeState({ type: "SALE_MODE_CHANGED", saleMode: saleMode, totals: totals }, totals);
+    return totals;
+  }
 
-    var tot = getTotals();
-    var view = document.getElementById("cheer-caisse-view-v139");
-    if (!view) {
-      view = document.createElement("section");
-      view.id = "cheer-caisse-view-v139";
-      view.style.cssText = "margin:10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
-      document.body.appendChild(view);
-    }
-
-    var quickBtns = "";
-    for (var q = 0; q < CATALOG.length; q++) {
-      quickBtns += '<button type="button" data-qadd="' + CATALOG[q].id + '" style="padding:6px 8px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#eaecef;font-size:11px;text-align:left;cursor:pointer;"><strong>' + CATALOG[q].name + '</strong><br><span style="color:#f7a600;">' + CATALOG[q].ttc.toFixed(2) + ' € +</span></button>';
-    }
-
-    var linesHtml = "";
-    for (var c = 0; c < activeCart.length; c++) {
-      var ci = activeCart[c];
-      linesHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #262d37;font-size:11px;"><span>' + ci.qty + 'x ' + ci.name + '</span><span>' + (ci.qty * ci.ttc).toFixed(2) + ' €</span></div>';
-    }
-
-    var last = tickets.length > 0 ? tickets[0] : null;
-    var lotsStr = last && Array.isArray(last.lot_allocations) ? last.lot_allocations.map(function (x) { return x.sku + "[" + x.lot + ":-" + x.qty + "]"; }).join(", ") : "";
-    var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:72px;height:72px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' € TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
-
-    view.innerHTML =
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong style="color:#f7a600;">Caisse #/POS/caisse • ' + TENANT_ID + '</strong><span>Articles: <strong>' + tot.qty + '</strong> • <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></span></div>' +
-      '<div style="font-size:11px;color:#00b074;margin-bottom:8px;">' + lastStatus + ' (HT ' + tot.ht.toFixed(2) + ' € • TVA ' + tot.vat.toFixed(2) + ' €)</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px;">' + quickBtns + '</div>' +
-      '<div style="background:#181d24;padding:8px;border-radius:6px;margin-bottom:8px;"><strong style="font-size:11px;">Panier actif</strong>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;margin-top:4px;">Aucun article dans le panier.</div>') + '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v139" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
-      lastCard;
-
-    var qBtns = view.querySelectorAll("[data-qadd]");
-    for (var k = 0; k < qBtns.length; k++) {
-      qBtns[k].onclick = function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var id = this.getAttribute("data-qadd");
-        for (var m = 0; m < CATALOG.length; m++) {
-          if (CATALOG[m].id === id) { addItemToCart(CATALOG[m]); break; }
-        }
-      };
-    }
-
-    var vb = document.getElementById("cheer-val-btn-v139");
-    if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
+  function clearCart() {
+    cartState = [];
+    saveStorage(KEY_CART, cartState);
+    var totals = computeCartTotals();
+    appendAudit("CART_CLEARED", { totalTtc: totals.totalTtc });
+    publishCascadeState({ type: "CART_CLEARED", totals: totals }, totals);
+    return totals;
   }
 
   document.addEventListener("click", function (ev) {
     var target = ev.target;
     if (!target) return;
-    var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
-    var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
-    if (raw === "+ ajouter" || raw === "ajouter" || raw.indexOf("ajouter") !== -1) {
-      if (raw.length <= 24) {
-        addItemToCart(resolveItemFromElement(el || target));
-        return;
-      }
-    }
-    if (raw.indexOf("panier / valider") !== -1 || raw.indexOf("valider ticket") !== -1) {
-      validateTicket();
+    var clickable = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
+    var label = normalizeStr((clickable && clickable.textContent) || target.textContent || "");
+    var isAddBtn = label === "ajouter" || label.indexOf("ajouter") !== -1;
+    if (isAddBtn && label.length <= 28) {
+      var resolved = resolveItemFromNode(clickable || target);
+      addItemToCart(resolved, 1);
     }
   }, true);
 
-  window.addEventListener("hashchange", renderCaisse);
-  window.addEventListener("popstate", renderCaisse);
-
-  window.CheerRouteControlV139 = {
-    addItem: function (q) {
-      var n = normText(q);
-      for (var i = 0; i < CATALOG.length; i++) {
-        if (normText(CATALOG[i].id) === n || normText(CATALOG[i].name).indexOf(n) !== -1) {
-          addItemToCart(CATALOG[i]);
-          return;
-        }
-      }
-      addItemToCart(CATALOG[0]);
-    },
-    validate: validateTicket,
-    getCart: function () { return activeCart.slice(); },
-    getTickets: function () { return tickets.slice(); },
-    getStockLots: function () { return stockLots; },
-    getAudit: function () { return auditLog.slice(); }
+  window.CheerPosCartEngineV140 = {
+    version: "V14.0",
+    tenantId: TENANT_ID,
+    adminEmail: ADMIN_EMAIL,
+    getCatalog: function () { return CATALOG.slice(); },
+    addItem: addItemToCart,
+    setSaleMode: setSaleMode,
+    clearCart: clearCart,
+    getCart: function () { return cartState.slice(); },
+    getTotals: computeCartTotals,
+    getAudit: function () { return auditState.slice(); }
   };
 
-  var timer = setInterval(function () {
-    ticks++;
-    renderCaisse();
-    if (ticks >= MAX_TICKS) clearInterval(timer);
-  }, 500);
+  publishCascadeState({ type: "ENGINE_INIT", totals: computeCartTotals() });
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderCaisse);
-  } else {
-    renderCaisse();
-  }
+  var heartbeat = setInterval(function () {
+    ticks++;
+    publishCascadeState({ type: "HEARTBEAT", tick: ticks, totals: computeCartTotals() });
+    if (ticks >= MAX_TICKS) {
+      clearInterval(heartbeat);
+    }
+  }, TICK_MS);
 })();
 </script>
