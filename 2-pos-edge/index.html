@@ -2353,3 +2353,76 @@
   }, TICK_MS);
 })();
 </script>
+
+<script id="LEXWALLET_CAISSE_TAB_SCOPE_V140">
+/* Module alimente : affichage conditionnel de #cheer-caisse-panel-v140 dans l onglet Caisse (#/POS/caisse) uniquement */
+(function () {
+  "use strict";
+
+  var MAX_TICKS = 40;
+  var TICK_MS = 500;
+  var ticks = 0;
+
+  function isCaisseTabActive() {
+    var h = String(window.location.hash || "").toLowerCase();
+    if (h.indexOf("/pos/caisse") !== -1 || h.indexOf("caisse") !== -1) {
+      return true;
+    }
+    var caisseView = document.getElementById("view-caisse") || document.querySelector("[data-view='caisse'], #cart-panel-anchor");
+    if (caisseView) {
+      if (caisseView.classList && caisseView.classList.contains("hidden")) {
+        return false;
+      }
+      var style = window.getComputedStyle ? window.getComputedStyle(caisseView) : null;
+      if (style && style.display === "none") {
+        return false;
+      }
+    }
+    return h === "" || h === "#";
+  }
+
+  function findCaisseHostContainer() {
+    return (
+      document.getElementById("cart-panel-anchor") ||
+      document.getElementById("view-caisse") ||
+      document.querySelector("[data-view='caisse']") ||
+      document.body
+    );
+  }
+
+  function syncCaisseVisibility() {
+    var panel = document.getElementById("cheer-caisse-panel-v140");
+    if (!panel) return;
+    var active = isCaisseTabActive();
+    if (!active) {
+      panel.style.display = "none";
+      return;
+    }
+    var targetContainer = findCaisseHostContainer();
+    if (targetContainer && panel.parentElement !== targetContainer) {
+      targetContainer.appendChild(panel);
+    }
+    panel.style.display = "block";
+  }
+
+  document.addEventListener("click", function () {
+    setTimeout(syncCaisseVisibility, 30);
+  }, true);
+
+  window.addEventListener("hashchange", syncCaisseVisibility);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncCaisseVisibility);
+  } else {
+    syncCaisseVisibility();
+  }
+
+  var t = setInterval(function () {
+    ticks++;
+    syncCaisseVisibility();
+    if (ticks >= MAX_TICKS) {
+      clearInterval(t);
+    }
+  }, TICK_MS);
+})();
+</script>
