@@ -1852,3 +1852,412 @@
   }, TICK_MS);
 })();
 </script>
+
+<script id="LEXWALLET_CAISSE_TICKET_QR_V140">
+/* Module alimente : vues aval tickets/P&L/Z, stock/lots, audit chaine et etat window.CHEER_LAST_TICKET / CHEER_POS_* */
+(function () {
+  "use strict";
+
+  var MAX_TICKS = 40;
+  var TICK_MS = 500;
+  var TENANT_ID = "CHEER-FLAGSHIP-01";
+  var ADMIN_EMAIL = "cbltec@proton.me";
+
+  var KEY_TX = "CHEER_POS_TICKETS_V140";
+  var KEY_STOCK = "CHEER_POS_STOCK_V140";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V140";
+
+  var validatingLock = false;
+  var statusMessage = "Caisse prete • Ajout article -> cumul TTC -> validation ticket";
+  var ticks = 0;
+
+  function loadStorage(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      var parsed = JSON.parse(raw);
+      return parsed !== null && parsed !== undefined ? parsed : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  function saveStorage(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (_) {}
+  }
+
+  function computeHash(input) {
+    var h1 = 0x811c9dc5;
+    var h2 = 0x01000193;
+    var str = String(input || "");
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      h1 ^= c;
+      h1 = Math.imul(h1, 0x01000193);
+      h2 = (Math.imul(h2, 31) + c + i) >>> 0;
+    }
+    return "AUD-" + (h1 >>> 0).toString(16).padStart(8, "0") + "-" + h2.toString(16).padStart(8, "0");
+  }
+
+  var tickets = loadStorage(KEY_TX, []);
+  if (!Array.isArray(tickets)) tickets = [];
+
+  var stockLots = loadStorage(KEY_STOCK, {});
+  if (!stockLots || typeof stockLots !== "object") stockLots = {};
+
+  var auditChain = loadStorage(KEY_AUDIT, []);
+  if (!Array.isArray(auditChain)) auditChain = [];
+
+  function appendAudit(eventType, payload) {
+    var prev = auditChain.length > 0 ? auditChain[auditChain.length - 1].hash : "GENESIS-CHEER-V140";
+    var ts = new Date().toISOString();
+    var body = payload || {};
+    var h = computeHash(prev + "|" + ts + "|" + TENANT_ID + "|" + ADMIN_EMAIL + "|" + eventType + "|" + JSON.stringify(body));
+    var entry = {
+      seq: auditChain.length + 1,
+      ts: ts,
+      tenantId: TENANT_ID,
+      adminEmail: ADMIN_EMAIL,
+      eventType: eventType,
+      prevHash: prev,
+      hash: h,
+      payload: body
+    };
+    auditChain.push(entry);
+    saveStorage(KEY_AUDIT, auditChain);
+    return entry;
+  }
+
+  function consumeLotsForSku(sku, requiredQty) {
+    var list = Array.isArray(stockLots[sku]) ? stockLots[sku] : [];
+    var remaining = Math.max(0, Number(requiredQty || 0));
+    var allocations = [];
+
+    for (var i = 0; i < list.length && remaining > 1e-9; i++) {
+      var available = Math.max(0, Number(list[i].qty || 0));
+      if (available <= 0) continue;
+      var take = Math.min(available, remaining);
+      list[i].qty = Number((available - take).toFixed(4));
+      remaining = Number((remaining - take).toFixed(4));
+      allocations.push({
+        sku: sku,
+        lot: String(list[i].lot || ("LOT-" + sku)),
+        qty: Number(take.toFixed(4)),
+        cost: Number(list[i].cost || 0)
+      });
+    }
+
+    if (remaining > 1e-9) {
+      allocations.push({
+        sku: sku,
+        lot: "LOT-REGUL",
+        qty: Number(remaining.toFixed(4)),
+        cost: 0.50
+      });
+    }
+
+    stockLots[sku] = list;
+    return allocations;
+  }
+
+  function getEngine() {
+    return window.CheerPosCartEngineV140 || null;
+  }
+
+  function validateCurrentCart() {
+    if (validatingLock) return null;
+    var engine = getEngine();
+    if (!engine) {
+      statusMessage = "Moteur panier V14.0 indisponible.";
+      renderView();
+      return null;
+    }
+
+    var cartItems = engine.getCart();
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      statusMessage = "Panier vide : ajoutez au moins un article avant validation.";
+      renderView();
+      return null;
+    }
+
+    validatingLock = true;
+    try {
+      var totals = engine.getTotals();
+      var ticketId = "TCK-" + Date.now().toString(36).toUpperCase();
+      var ts = new Date().toISOString();
+      var lotAllocations = [];
+
+      for (var i = 0; i < cartItems.length; i++) {
+        var line = cartItems[i];
+        var qty = Math.max(1, Number(line.qty || 1));
+        var bom = Array.isArray(line.bom) ? line.bom : [];
+        for (var b = 0; b < bom.length; b++) {
+          var needed = Number(bom[b].qty || 0) * qty;
+          var consumed = consumeLotsForSku(bom[b].sku, needed);
+          for (var c = 0; c < consumed.length; c++) {
+            lotAllocations.push({
+              itemId: line.id,
+              sku: consumed[c].sku,
+              lot: consumed[c].lot,
+              qty: consumed[c].qty,
+              cost: consumed[c].cost
+            });
+          }
+        }
+      }
+
+      var qrPayload = JSON.stringify({
+        ticketId: ticketId,
+        tenantId: TENANT_ID,
+        adminEmail: ADMIN_EMAIL,
+        ts: ts,
+        saleMode: totals.saleMode,
+        subtotalHt: totals.subtotalHt,
+        vatAmount: totals.vatAmount,
+        totalTtc: totals.totalTtc,
+        lots: lotAllocations.map(function (x) { return x.sku + ":" + x.lot + ":" + x.qty; })
+      });
+
+      var integrityHash = computeHash(ticketId + "|" + ts + "|" + totals.totalTtc + "|" + qrPayload);
+
+      var ticketRecord = {
+        id: ticketId,
+        created_at: ts,
+        tenantId: TENANT_ID,
+        adminEmail: ADMIN_EMAIL,
+        sale_type: totals.saleMode,
+        cancelled: false,
+        is_test: false,
+        items: cartItems.map(function (it) {
+          return {
+            id: it.id,
+            name: it.name,
+            qty: Number(it.qty || 1),
+            ttc: Number(it.ttc || 0),
+            cogs: Number(it.cogs || 0)
+          };
+        }),
+        subtotal_ht: totals.subtotalHt,
+        tva_amount: totals.vatAmount,
+        total_ttc: totals.totalTtc,
+        cogs_total: totals.totalCogs,
+        lot_allocations: lotAllocations,
+        qr_payload: qrPayload,
+        integrity_hash: integrityHash
+      };
+
+      tickets.unshift(ticketRecord);
+      saveStorage(KEY_TX, tickets);
+      saveStorage(KEY_STOCK, stockLots);
+
+      appendAudit("TICKET_VALIDATED", {
+        ticketId: ticketId,
+        totalTtc: totals.totalTtc,
+        subtotalHt: totals.subtotalHt,
+        vatAmount: totals.vatAmount,
+        cogsTotal: totals.totalCogs,
+        integrityHash: integrityHash
+      });
+
+      appendAudit("STOCK_LOTS_DECREMENTED", {
+        ticketId: ticketId,
+        allocations: lotAllocations
+      });
+
+      engine.clearCart();
+      statusMessage = "Ticket valide : " + ticketId + " (" + totals.totalTtc.toFixed(2) + " EUR TTC)";
+
+      window.CHEER_LAST_TICKET = ticketRecord;
+      window.CHEER_POS_TICKETS = tickets.slice();
+      window.CHEER_POS_STOCK_LOTS = stockLots;
+      window.CHEER_POS_AUDIT_CHAIN = auditChain.slice();
+
+      try {
+        document.dispatchEvent(new CustomEvent("cheer:pos:ticket-validated", {
+          detail: ticketRecord
+        }));
+      } catch (_) {}
+
+      renderView();
+      return ticketRecord;
+    } finally {
+      validatingLock = false;
+    }
+  }
+
+  function buildQrDataUrl(payload) {
+    var h = computeHash(payload);
+    var size = 21;
+    var cells = [];
+    for (var r = 0; r < size; r++) {
+      for (var c = 0; c < size; c++) {
+        var isFinder = (r < 7 && c < 7) || (r < 7 && c >= size - 7) || (r >= size - 7 && c < 7);
+        var dark = false;
+        if (isFinder) {
+          var lr = r < 7 ? r : r - (size - 7);
+          var lc = c < 7 ? c : c - (size - 7);
+          dark = lr === 0 || lr === 6 || lc === 0 || lc === 6 || (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4);
+        } else {
+          dark = ((h.charCodeAt((r * size + c) % h.length) + r * 3 + c * 5) % 2) === 0;
+        }
+        if (dark) {
+          cells.push('<rect x="' + c + '" y="' + r + '" width="1" height="1" fill="#0b0e11"/>');
+        }
+      }
+    }
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" width="76" height="76" style="background:#ffffff;padding:4px;border-radius:6px;">' + cells.join("") + "</svg>";
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
+
+  function renderView() {
+    if (!document.body) return;
+    var engine = getEngine();
+    var cart = engine ? engine.getCart() : [];
+    var totals = engine ? engine.getTotals() : { itemCount: 0, subtotalHt: 0, vatAmount: 0, totalTtc: 0, saleMode: "SUR_PLACE" };
+    var catalog = engine ? engine.getCatalog() : [];
+
+    var host = document.getElementById("cheer-caisse-panel-v140");
+    if (!host) {
+      host = document.createElement("section");
+      host.id = "cheer-caisse-panel-v140";
+      host.style.cssText = "margin:10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
+      document.body.appendChild(host);
+    }
+
+    var quickHtml = "";
+    for (var i = 0; i < catalog.length; i++) {
+      var item = catalog[i];
+      quickHtml += '<button type="button" data-add-sku="' + item.id + '" style="padding:6px 8px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#eaecef;font-size:11px;text-align:left;cursor:pointer;">' +
+        '<strong>' + item.name + '</strong><br><span style="color:#f7a600;">' + Number(item.ttc).toFixed(2) + ' € TTC +</span></button>';
+    }
+
+    var linesHtml = "";
+    for (var j = 0; j < cart.length; j++) {
+      var l = cart[j];
+      var lineTotal = (Number(l.qty || 1) * Number(l.ttc || 0)).toFixed(2);
+      linesHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #262d37;font-size:11px;">' +
+        '<span>' + l.qty + 'x ' + l.name + '</span>' +
+        '<span><strong>' + lineTotal + ' €</strong></span></div>';
+    }
+
+    var lastTicket = tickets.length > 0 ? tickets[0] : null;
+    var lotsSummary = "";
+    if (lastTicket && Array.isArray(lastTicket.lot_allocations)) {
+      lotsSummary = lastTicket.lot_allocations.map(function (a) {
+        return a.sku + "[" + a.lot + ":-" + a.qty + "]";
+      }).join(", ");
+    }
+
+    var ticketHtml = "";
+    if (lastTicket) {
+      ticketHtml = '<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;">' +
+        '<img src="' + buildQrDataUrl(lastTicket.qr_payload) + '" alt="QR Ticket" style="width:76px;height:76px;flex-shrink:0;"/>' +
+        '<div style="font-size:11px;min-width:0;">' +
+        '<div><strong>' + lastTicket.id + '</strong> • ' + Number(lastTicket.total_ttc).toFixed(2) + ' € TTC (HT ' + Number(lastTicket.subtotal_ht).toFixed(2) + ' € • TVA ' + Number(lastTicket.tva_amount).toFixed(2) + ' €)</div>' +
+        '<div style="color:#848e9c;">Hash: ' + lastTicket.integrity_hash + '</div>' +
+        '<div style="word-break:break-word;margin-top:2px;">Lots: ' + (lotsSummary || "Aucun") + '</div>' +
+        '</div></div>';
+    }
+
+    host.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">' +
+      '<strong style="color:#f7a600;">Caisse #/POS/caisse • ' + TENANT_ID + '</strong>' +
+      '<span>Articles: <strong>' + totals.itemCount + '</strong> • Total: <strong id="cheer-ttc-sum-v140">' + Number(totals.totalTtc).toFixed(2) + ' € TTC</strong></span></div>' +
+      '<div style="font-size:11px;color:#00b074;margin-bottom:8px;">' + statusMessage + ' (HT ' + Number(totals.subtotalHt).toFixed(2) + ' € • TVA ' + Number(totals.vatAmount).toFixed(2) + ' €)</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:8px;">' +
+      '<button type="button" id="cheer-mode-surplace-v140" style="padding:5px 10px;border-radius:6px;border:1px solid #262d37;background:' + (totals.saleMode === "SUR_PLACE" ? "#262d37" : "#181d24") + ';color:#eaecef;font-size:11px;cursor:pointer;">Sur Place</button>' +
+      '<button type="button" id="cheer-mode-emporter-v140" style="padding:5px 10px;border-radius:6px;border:1px solid #262d37;background:' + (totals.saleMode === "A_EMPORTER" ? "#262d37" : "#181d24") + ';color:#eaecef;font-size:11px;cursor:pointer;">A Emporter</button>' +
+      '<button type="button" id="cheer-clear-cart-v140" style="padding:5px 10px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#848e9c;font-size:11px;cursor:pointer;">Vider</button></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px;">' + quickHtml + '</div>' +
+      '<div style="background:#181d24;padding:8px;border-radius:6px;margin-bottom:8px;"><strong style="font-size:11px;">Panier actif</strong>' +
+      (linesHtml || '<div style="color:#848e9c;font-size:11px;margin-top:4px;">Aucun article dans le panier.</div>') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+      '<span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditChain.length + '</span>' +
+      '<button type="button" id="cheer-validate-btn-v140" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
+      ticketHtml;
+
+    var addButtons = host.querySelectorAll("[data-add-sku]");
+    for (var k = 0; k < addButtons.length; k++) {
+      addButtons[k].onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var skuId = this.getAttribute("data-add-sku");
+        var eng = getEngine();
+        if (eng) {
+          var res = eng.addItem(skuId, 1);
+          statusMessage = "Ajoute (" + skuId + ") • Cumul : " + Number(res.totalTtc).toFixed(2) + " € TTC";
+          renderView();
+        }
+      };
+    }
+
+    var btnSurPlace = document.getElementById("cheer-mode-surplace-v140");
+    if (btnSurPlace) {
+      btnSurPlace.onclick = function () {
+        var eng = getEngine();
+        if (eng) { eng.setSaleMode("SUR_PLACE"); renderView(); }
+      };
+    }
+
+    var btnEmporter = document.getElementById("cheer-mode-emporter-v140");
+    if (btnEmporter) {
+      btnEmporter.onclick = function () {
+        var eng = getEngine();
+        if (eng) { eng.setSaleMode("A_EMPORTER"); renderView(); }
+      };
+    }
+
+    var btnClear = document.getElementById("cheer-clear-cart-v140");
+    if (btnClear) {
+      btnClear.onclick = function () {
+        var eng = getEngine();
+        if (eng) { eng.clearCart(); statusMessage = "Panier vide."; renderView(); }
+      };
+    }
+
+    var btnValidate = document.getElementById("cheer-validate-btn-v140");
+    if (btnValidate) {
+      btnValidate.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        validateCurrentCart();
+      };
+    }
+  }
+
+  document.addEventListener("cheer:pos:cart-updated", function (ev) {
+    var detail = ev && ev.detail ? ev.detail : null;
+    if (detail && detail.lastEvent && detail.lastEvent.type === "ITEM_ADDED_TO_CART") {
+      var item = detail.lastEvent.item;
+      var ttc = detail.totals ? Number(detail.totals.totalTtc).toFixed(2) : "0.00";
+      statusMessage = "Ajoute : " + (item ? item.name : "Article") + " • Cumul : " + ttc + " € TTC";
+    }
+    renderView();
+  });
+
+  window.CheerPosTicketQrV140 = {
+    version: "V14.0",
+    validate: validateCurrentCart,
+    render: renderView,
+    getTickets: function () { return tickets.slice(); },
+    getStockLots: function () { return stockLots; },
+    getAudit: function () { return auditChain.slice(); }
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", renderView);
+  } else {
+    renderView();
+  }
+
+  var syncTimer = setInterval(function () {
+    ticks++;
+    renderView();
+    if (ticks >= MAX_TICKS) {
+      clearInterval(syncTimer);
+    }
+  }, TICK_MS);
+})();
+</script>
