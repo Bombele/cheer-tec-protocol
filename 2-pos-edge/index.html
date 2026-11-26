@@ -2262,19 +2262,20 @@
 })();
 </script>
 
-<script id="LEXWALLET_ADD_BTN_FIX_V140">
-/* Module alimente : CheerPosCartEngineV140, affichage panier/TTC (#cheer-caisse-panel-v140) et validation ticket/QR */
+
+<script id="LEXWALLET_NATIVE_BRIDGE_V140">
+/* Module alimente : fonction native addToCart(sku) et updateCartUI() de la caisse (lignes 1336-1339) */
 (function () {
   "use strict";
 
   var MAX_TICKS = 40;
   var TICK_MS = 500;
-  var lastAddTs = 0;
-  var selectedItem = null;
+  var lastClickTs = 0;
+  var lastSelectedSku = "";
   var ticks = 0;
 
-  function norm(txt) {
-    return String(txt || "")
+  function norm(s) {
+    return String(s || "")
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -2282,92 +2283,72 @@
       .trim();
   }
 
-  function findItemInText(text) {
-    var eng = window.CheerPosCartEngineV140;
-    if (!eng || typeof eng.getCatalog !== "function") return null;
-    var cat = eng.getCatalog();
-    var t = norm(text);
-    if (!t) return null;
-    for (var i = 0; i < cat.length; i++) {
-      var n = norm(cat[i].name);
-      if (n.length > 3 && t.indexOf(n) !== -1) {
-        return cat[i];
-      }
-    }
-    return null;
+  function extractSkuFromAttrOrHandler(el) {
+    if (!el) return "";
+    var attrSku = el.getAttribute("data-sku") || el.getAttribute("data-item-id") || el.getAttribute("data-add-sku") || "";
+    if (attrSku) return String(attrSku).trim();
+    var onClick = el.getAttribute("onclick") || "";
+    var m = onClick.match(/addToCart\(\s*['"]([^'"]+)['"]\s*\)/);
+    if (m && m[1]) return String(m[1]).trim();
+    return "";
   }
 
-  function resolveTargetItem(el) {
+  function resolveSkuFromCard(el) {
     var cur = el;
     var depth = 0;
-    while (cur && cur !== document.body && depth < 12) {
-      if (cur.getAttribute) {
-        var sku = cur.getAttribute("data-add-sku") || cur.getAttribute("data-item-id") || cur.getAttribute("data-sku");
-        if (sku) return sku;
-      }
-      var found = findItemInText(cur.textContent || "");
+    while (cur && cur !== document.body && depth < 10) {
+      var found = extractSkuFromAttrOrHandler(cur);
       if (found) return found;
+      if (cur.querySelectorAll) {
+        var btns = cur.querySelectorAll("button[onclick*='addToCart'], [data-sku]");
+        if (btns && btns.length > 0) {
+          var s = extractSkuFromAttrOrHandler(btns[0]);
+          if (s) return s;
+        }
+      }
       cur = cur.parentElement;
       depth++;
     }
-    if (selectedItem) return selectedItem;
-    var eng = window.CheerPosCartEngineV140;
-    if (eng && typeof eng.getCatalog === "function") {
-      var list = eng.getCatalog();
-      if (list && list.length > 0) return list[0];
-    }
-    return null;
+    return lastSelectedSku;
   }
 
-  function isAddActionElement(el) {
-    if (!el) return false;
-    var btn = el.closest ? el.closest("button, [role='button'], a, span, div") : el;
-    var target = btn || el;
-    if (target.getAttribute && (target.getAttribute("data-add-sku") || target.getAttribute("data-qadd"))) {
-      return true;
-    }
-    var txt = norm(target.textContent || el.textContent || "");
-    return txt === "ajouter" || txt === "+ ajouter" || (txt.indexOf("ajouter") !== -1 && txt.length <= 24);
-  }
+  document.addEventListener("click", function (ev) {
+    if (typeof window.addToCart !== "function") return;
+    var target = ev.target;
+    if (!target) return;
 
-  function handleInteraction(ev) {
-    var rawTarget = ev.target;
-    if (!rawTarget) return;
-
-    var foundArticle = findItemInText((rawTarget.closest && rawTarget.closest("tr, li, article, [data-item-id], div") ? rawTarget.closest("tr, li, article, [data-item-id], div").textContent : rawTarget.textContent) || "");
-    if (foundArticle) {
-      selectedItem = foundArticle;
+    var cardSku = resolveSkuFromCard(target);
+    if (cardSku) {
+      lastSelectedSku = cardSku;
     }
 
-    if (!isAddActionElement(rawTarget)) return;
+    var btn = target.closest ? target.closest("button, [role='button'], a") : target;
+    var activeEl = btn || target;
+    var txt = norm((activeEl && activeEl.textContent) || target.textContent || "");
+    var isAddBtn = txt === "ajouter" || txt === "+ ajouter" || (txt.indexOf("ajouter") !== -1 && txt.length <= 20);
+
+    if (!isAddBtn) return;
 
     var now = Date.now();
-    if (now - lastAddTs < 80) return;
-    lastAddTs = now;
+    if (now - lastClickTs < 90) return;
+    lastClickTs = now;
 
-    var eng = window.CheerPosCartEngineV140;
-    if (!eng || typeof eng.addItem !== "function") return;
+    var sku = extractSkuFromAttrOrHandler(activeEl) || cardSku || lastSelectedSku;
+    if (!sku) return;
 
-    var itemToAdd = resolveTargetItem(rawTarget);
-    if (!itemToAdd) return;
-
-    if (ev.type === "click") {
+    if (!activeEl.getAttribute || !activeEl.getAttribute("onclick")) {
       ev.preventDefault();
+      window.addToCart(sku);
+      if (typeof window.updateCartUI === "function") {
+        window.updateCartUI();
+      }
     }
-    eng.addItem(itemToAdd, 1);
+  }, true);
 
-    if (window.CheerPosTicketQrV140 && typeof window.CheerPosTicketQrV140.render === "function") {
-      window.CheerPosTicketQrV140.render();
-    }
-  }
-
-  document.addEventListener("pointerdown", handleInteraction, true);
-  document.addEventListener("click", handleInteraction, true);
-
-  var timer = setInterval(function () {
+  var t = setInterval(function () {
     ticks++;
     if (ticks >= MAX_TICKS) {
-      clearInterval(timer);
+      clearInterval(t);
     }
   }, TICK_MS);
 })();
