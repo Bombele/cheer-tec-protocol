@@ -1442,7 +1442,8 @@
 
 
 
-<style id="LEXWALLET_BYBIT_THEME_V129">
+
+<style id="LEXWALLET_BYBIT_THEME_V130">
   :root {
     --bybit-bg: #0b0e11;
     --bybit-surface: #12161c;
@@ -1451,29 +1452,35 @@
     --bybit-text: #eaecef;
     --bybit-muted: #848e9c;
     --bybit-accent: #f7a600;
+    --bybit-green: #00b074;
   }
   html, body {
     background-color: var(--bybit-bg) !important;
     color: var(--bybit-text) !important;
     overflow-x: hidden;
   }
+  .cheer-bound-btn {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
 </style>
-<script id="LEXWALLET_POS_CORE_V129">
+<script id="LEXWALLET_POS_CORE_V130">
 (function () {
   "use strict";
 
-  var MAX_TICKS = 120;
-  var KEY_TX = "CHEER_POS_TICKETS_V129";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V129";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V129";
-  var KEY_CART = "CHEER_POS_ACTIVE_CART_V129";
+  var MAX_TICKS = 150;
+  var KEY_TX = "CHEER_POS_TICKETS_V130";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V130";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V130";
+  var KEY_CART = "CHEER_POS_ACTIVE_CART_V130";
   var TENANT_ID = "CHEER-FLAGSHIP-01";
   var txLock = false;
   var saleMode = "SUR_PLACE";
   var lastTapTs = 0;
-  var lastStatus = "Caisse active — selectionnez un article via + Ajouter";
+  var lastStatus = "Caisse V13.0 active — liaison Article -> Prix -> Panier operationnelle";
 
-  var ITEMS = [
+  var CATALOG = [
     { id: "BUR-BEF-CHED", name: "Burger Boeuf Cheddar (BBQ Smokey)", cat: "Hamburgers", ttc: 11.50, cogs: 3.20, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "CHEDDAR-MATURE", qty: 0.12 }, { sku: "SAUCE-BBQ-SMOKEY", qty: 0.04 }] },
     { id: "BUR-BEF-RACL", name: "Burger Boeuf Raclette", cat: "Hamburgers", ttc: 13.00, cogs: 3.75, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "RACLETTE-FERMIERE", qty: 0.14 }, { sku: "CHEDDAR-MATURE", qty: 0.06 }] },
     { id: "BUR-BEF-GOUDA", name: "Burger Boeuf Gouda Truffe", cat: "Hamburgers", ttc: 13.50, cogs: 3.90, vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }, { sku: "BOEUF-HACHE-150G", qty: 1 }, { sku: "GOUDA-TRUFFE", qty: 0.14 }, { sku: "SAUCE-TRUFFE-HERBES", qty: 0.04 }] },
@@ -1547,6 +1554,11 @@
     "MOZZARELLA-STICKS": [{ lot: "LOT-MS-2611", qty: 280, cost: 0.22 }]
   };
 
+  var ITEM_BY_ID = {};
+  for (var idx = 0; idx < CATALOG.length; idx++) {
+    ITEM_BY_ID[CATALOG[idx].id] = CATALOG[idx];
+  }
+
   function loadJson(k, fb) {
     try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v !== null ? v : fb; } catch (_) { return fb; }
   }
@@ -1554,7 +1566,7 @@
     try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {}
   }
   function normText(s) {
-    return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
   }
   function hashChainStr(s) {
     var h1 = 0x811c9dc5, h2 = 0x01000193;
@@ -1581,38 +1593,70 @@
     saveJson(KEY_AUDIT, auditLog);
   }
 
-  function resolveItemFromElement(el) {
-    var cur = el;
-    var depth = 0;
-    while (cur && cur !== document.body && depth < 9) {
-      var txt = normText(cur.textContent);
-      for (var i = 0; i < ITEMS.length; i++) {
-        var n = normText(ITEMS[i].name);
-        if (n.length > 3 && txt.indexOf(n) !== -1) return ITEMS[i];
-      }
-      var mPrice = String(cur.textContent || "").match(/(\d+[.,]\d{2})\s*(?:EUR|€)/i);
-      if (mPrice) {
-        var lines = String(cur.textContent || "").split(/\n+/).map(function (s) { return s.trim(); }).filter(Boolean);
-        var title = "Article POS";
-        for (var k = 0; k < lines.length; k++) {
-          var low = lines[k].toLowerCase();
-          if (low.indexOf("ajouter") === -1 && low.indexOf("eur") === -1 && lines[k].indexOf("€") === -1 && low.indexOf("ttc") === -1) {
-            title = lines[k];
-            break;
-          }
-        }
-        var price = parseFloat(mPrice[1].replace(",", ".")) || 5.0;
-        return { id: "POS-" + normText(title).slice(0, 12).replace(/\s+/g, "-").toUpperCase(), name: title, cat: "POS", ttc: price, cogs: Number((price * 0.28).toFixed(2)), vatP: 0.12, vatT: 0.06, bom: [{ sku: "PAIN-BRIOCHE", qty: 1 }] };
-      }
-      cur = cur.parentElement;
-      depth++;
+  function findCatalogItemByText(rawTxt) {
+    var norm = normText(rawTxt);
+    if (!norm) return null;
+    for (var i = 0; i < CATALOG.length; i++) {
+      if (normText(CATALOG[i].id) === norm) return CATALOG[i];
     }
-    return ITEMS[0];
+    var best = null;
+    var bestLen = 0;
+    for (var j = 0; j < CATALOG.length; j++) {
+      var cn = normText(CATALOG[j].name);
+      if (cn.length > bestLen && norm.indexOf(cn) !== -1) {
+        best = CATALOG[j];
+        bestLen = cn.length;
+      }
+    }
+    return best;
+  }
+
+  function bindAllExistingAddButtons() {
+    if (!document.body) return;
+    var candidates = document.querySelectorAll("button, [role='button'], a, div, span");
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      if (el.getAttribute("data-cheer-bound") === "1") continue;
+      var txt = String(el.textContent || "").trim();
+      var low = txt.toLowerCase();
+      if (low === "+ ajouter" || low === "ajouter") {
+        var cur = el.parentElement;
+        var matched = null;
+        var depth = 0;
+        while (cur && cur !== document.body && depth < 7) {
+          matched = findCatalogItemByText(cur.textContent);
+          if (matched) break;
+          cur = cur.parentElement;
+          depth++;
+        }
+        if (matched) {
+          el.setAttribute("data-cheer-bound", "1");
+          el.setAttribute("data-cheer-id", matched.id);
+          el.setAttribute("data-cheer-ttc", String(matched.ttc));
+          el.classList.add("cheer-bound-btn");
+          (function (btnEl, itemRef) {
+            var handler = function (ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              addItemToCart(itemRef);
+            };
+            btnEl.addEventListener("pointerup", handler, true);
+            btnEl.addEventListener("click", handler, true);
+          })(el, matched);
+        }
+      }
+    }
+  }
+
+  function emitBus(eventName, payload) {
+    try {
+      window.dispatchEvent(new CustomEvent(eventName, { detail: payload }));
+    } catch (_) {}
   }
 
   function addItemToCart(itemObj) {
     var now = Date.now();
-    if (now - lastTapTs < 120) return;
+    if (now - lastTapTs < 110) return;
     lastTapTs = now;
     if (!itemObj) return;
     var found = false;
@@ -1636,8 +1680,26 @@
       });
     }
     saveJson(KEY_CART, activeCart);
-    lastStatus = "Ajoute au panier : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
-    logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc, cartCount: activeCart.reduce(function (s, x) { return s + Number(x.qty || 0); }, 0) });
+    lastStatus = "Lie & ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " € TTC)";
+    logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc });
+    emitBus("cheer:cart-updated", { cart: activeCart.slice(), totals: getTotals() });
+    renderAll();
+  }
+
+  function updateLineQty(itemId, delta) {
+    for (var i = 0; i < activeCart.length; i++) {
+      if (activeCart[i].id === itemId) {
+        var nextQ = Number(activeCart[i].qty || 0) + Number(delta || 0);
+        if (nextQ <= 0) {
+          activeCart.splice(i, 1);
+        } else {
+          activeCart[i].qty = nextQ;
+        }
+        break;
+      }
+    }
+    saveJson(KEY_CART, activeCart);
+    emitBus("cheer:cart-updated", { cart: activeCart.slice(), totals: getTotals() });
     renderAll();
   }
 
@@ -1645,6 +1707,7 @@
     activeCart = [];
     saveJson(KEY_CART, activeCart);
     lastStatus = "Panier vide";
+    emitBus("cheer:cart-updated", { cart: [], totals: getTotals() });
     renderAll();
   }
 
@@ -1738,11 +1801,12 @@
       saveJson(KEY_CART, activeCart);
       logAudit("TICKET_VALIDATED", { ticketId: tid, ttc: tot.ttc, ht: tot.ht, vat: tot.vat, cogs: tot.cogs, hash: h });
       logAudit("STOCK_DECREMENTED", { ticketId: tid, lots: lotsUsed });
-      lastStatus = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " EUR TTC)";
+      lastStatus = "Ticket valide : " + tid + " (" + tot.ttc.toFixed(2) + " € TTC) — Modules aval mis a jour";
       window.CHEER_POS_TICKETS = tickets.slice();
       window.CHEER_POS_STOCK_LOTS = stockLots;
       window.CHEER_POS_AUDIT_CHAIN = auditLog.slice();
       window.CHEER_LAST_TICKET = rec;
+      emitBus("cheer:ticket-validated", rec);
       renderAll();
     } finally {
       txLock = false;
@@ -1772,44 +1836,44 @@
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="80" height="80" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
   }
 
-  function processEventTarget(ev) {
-    var target = ev.target;
-    if (!target) return;
-    var el = target.closest ? target.closest("button, [role='button'], a, span, div") : target;
-    var raw = String((el && el.textContent) || target.textContent || "").trim().toLowerCase();
-    if (raw === "+ ajouter" || raw === "ajouter" || (raw.indexOf("ajouter") !== -1 && raw.length <= 16)) {
-      ev.preventDefault();
-      addItemToCart(resolveItemFromElement(el || target));
-      return;
-    }
-    if (raw.indexOf("panier / valider") !== -1 || raw.indexOf("valider ticket") !== -1) {
-      ev.preventDefault();
-      validateTicket();
+  function syncNativeBottomBar(tot) {
+    var allNodes = document.querySelectorAll("div, span, p");
+    for (var i = 0; i < allNodes.length; i++) {
+      var n = allNodes[i];
+      if (n.closest && (n.closest("#cheer-cart-bar-v130") || n.closest("#cheer-cart-panel-v130"))) continue;
+      if (n.children.length === 0 && /Articles\s*:\s*\d+/i.test(n.textContent || "")) {
+        n.textContent = "Articles : " + tot.qty + "   " + tot.ttc.toFixed(2) + " € TTC";
+      }
     }
   }
 
   function renderAll() {
     if (!document.body) return;
+    bindAllExistingAddButtons();
     var tot = getTotals();
+    syncNativeBottomBar(tot);
 
-    var bar = document.getElementById("cheer-cart-bar-v129");
+    var bar = document.getElementById("cheer-cart-bar-v130");
     if (!bar) {
       bar = document.createElement("div");
-      bar.id = "cheer-cart-bar-v129";
+      bar.id = "cheer-cart-bar-v130";
       bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#12161c;border-top:2px solid #f7a600;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(bar);
     }
-    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><div style="display:flex;gap:6px;"><button type="button" id="cheer-clear-btn-v129" style="padding:7px 10px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#eaecef;font-weight:600;font-size:11px;cursor:pointer;">Vider</button><button type="button" id="cheer-val-btn-v129" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>';
-    var vb = document.getElementById("cheer-val-btn-v129");
+    bar.innerHTML = '<div>Articles : <strong>' + tot.qty + '</strong> &nbsp; <strong>' + tot.ttc.toFixed(2) + ' € TTC</strong></div><div style="display:flex;gap:6px;"><button type="button" id="cheer-mode-btn-v130" style="padding:7px 9px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#f7a600;font-weight:700;font-size:11px;cursor:pointer;">' + (saleMode === "SUR_PLACE" ? "Sur Place" : "A Emporter") + '</button><button type="button" id="cheer-clear-btn-v130" style="padding:7px 9px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#eaecef;font-weight:600;font-size:11px;cursor:pointer;">Vider</button><button type="button" id="cheer-val-btn-v130" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>';
+
+    var mb = document.getElementById("cheer-mode-btn-v130");
+    if (mb) mb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); saleMode = (saleMode === "SUR_PLACE" ? "A_EMPORTER" : "SUR_PLACE"); renderAll(); };
+    var vb = document.getElementById("cheer-val-btn-v130");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
-    var cb = document.getElementById("cheer-clear-btn-v129");
+    var cb = document.getElementById("cheer-clear-btn-v130");
     if (cb) cb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); clearCart(); };
 
-    var panel = document.getElementById("cheer-cart-panel-v129");
+    var panel = document.getElementById("cheer-cart-panel-v130");
     if (!panel) {
       panel = document.createElement("section");
-      panel.id = "cheer-cart-panel-v129";
-      panel.style.cssText = "margin:10px 10px 76px 10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
+      panel.id = "cheer-cart-panel-v130";
+      panel.style.cssText = "margin:10px 10px 82px 10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(panel);
     }
 
@@ -1823,39 +1887,64 @@
       pnlCogs += Number(tx.cogs_total || 0);
     }
 
+    var quickOptions = "";
+    for (var q = 0; q < CATALOG.length; q++) {
+      quickOptions += '<option value="' + CATALOG[q].id + '">' + CATALOG[q].name + ' — ' + CATALOG[q].ttc.toFixed(2) + ' € TTC</option>';
+    }
+
     var linesHtml = "";
     for (var c = 0; c < activeCart.length; c++) {
       var ci = activeCart[c];
-      linesHtml += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #262d37;font-size:11px;"><span>' + ci.qty + 'x ' + ci.name + '</span><span>' + (ci.qty * ci.ttc).toFixed(2) + ' €</span></div>';
+      linesHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #262d37;font-size:11px;gap:6px;"><span><strong>' + ci.qty + 'x</strong> ' + ci.name + ' (' + ci.ttc.toFixed(2) + ' €)</span><span style="display:flex;align-items:center;gap:4px;"><button type="button" data-dec="' + ci.id + '" style="padding:2px 7px;border-radius:4px;border:1px solid #262d37;background:#181d24;color:#eaecef;cursor:pointer;">-</button><button type="button" data-inc="' + ci.id + '" style="padding:2px 7px;border-radius:4px;border:1px solid #262d37;background:#181d24;color:#eaecef;cursor:pointer;">+</button><strong style="min-width:52px;text-align:right;">' + (ci.qty * ci.ttc).toFixed(2) + ' €</strong></span></div>';
     }
 
     var last = tickets.length > 0 ? tickets[0] : null;
     var lotsStr = last && Array.isArray(last.lot_allocations) ? last.lot_allocations.map(function (x) { return x.sku + "[" + x.lot + ":-" + x.qty + "]"; }).join(", ") : "";
     var lastCard = last ? ('<div style="display:flex;gap:10px;align-items:center;background:#181d24;padding:8px;border-radius:6px;margin-top:8px;"><img src="' + makeQrSvg(last.qr_payload) + '" alt="QR" style="width:76px;height:76px;flex-shrink:0;"/><div style="font-size:11px;min-width:0;"><div><strong>' + last.id + '</strong> • ' + Number(last.total_ttc).toFixed(2) + ' € TTC</div><div style="color:#848e9c;">Hash: ' + last.integrity_hash + '</div><div style="word-break:break-word;margin-top:2px;">Lots: ' + lotsStr + '</div></div></div>') : "";
 
-    panel.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Panier Actif (' + tot.qty + ' art.) • ' + TENANT_ID + '</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div><div style="font-size:11px;color:#f7a600;margin-bottom:6px;">' + lastStatus + '</div>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v129" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & QR</button></div>' + lastCard + '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Audit: ' + auditLog.length + ' entree(s)</div>';
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:#f7a600;">Caisse Active (' + tot.qty + ' art.) • ' + TENANT_ID + '</strong><span>HT: ' + tot.ht.toFixed(2) + ' € • TVA: ' + tot.vat.toFixed(2) + ' € • TTC: ' + tot.ttc.toFixed(2) + ' €</span></div>' +
+      '<div style="font-size:11px;color:#f7a600;margin-bottom:8px;">' + lastStatus + '</div>' +
+      '<div style="display:flex;gap:6px;margin-bottom:8px;"><select id="cheer-direct-select-v130" style="flex:1;padding:6px;border-radius:6px;border:1px solid #262d37;background:#181d24;color:#eaecef;font-size:11px;">' + quickOptions + '</select><button type="button" id="cheer-direct-add-v130" style="padding:6px 12px;border-radius:6px;border:none;background:#f7a600;color:#0b0e11;font-weight:700;font-size:11px;cursor:pointer;">+ Ajouter Direct</button></div>' +
+      (linesHtml || '<div style="color:#848e9c;font-size:11px;">Aucun article dans le panier.</div>') +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:6px;"><span style="font-size:11px;color:#848e9c;">P&L: ' + pnlCount + ' tickets • CA HT ' + pnlHt.toFixed(2) + ' € • COGS ' + pnlCogs.toFixed(2) + ' €</span><button type="button" id="cheer-panel-val-v130" style="padding:6px 12px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:11px;cursor:pointer;">Valider Ticket & Activer Modules</button></div>' +
+      lastCard +
+      '<div style="margin-top:8px;font-size:11px;color:#848e9c;">Historique: ' + tickets.length + ' ticket(s) • Lots actifs: ' + Object.keys(stockLots).length + ' SKU • Audit: ' + auditLog.length + ' entree(s)</div>';
 
-    var pb = document.getElementById("cheer-panel-val-v129");
+    var da = document.getElementById("cheer-direct-add-v130");
+    var ds = document.getElementById("cheer-direct-select-v130");
+    if (da && ds) {
+      da.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var item = ITEM_BY_ID[ds.value] || CATALOG[0];
+        addItemToCart(item);
+      };
+    }
+    var pb = document.getElementById("cheer-panel-val-v130");
     if (pb) pb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
+
+    var decBtns = panel.querySelectorAll("[data-dec]");
+    for (var d = 0; d < decBtns.length; d++) {
+      decBtns[d].onclick = function (e) { e.preventDefault(); e.stopPropagation(); updateLineQty(this.getAttribute("data-dec"), -1); };
+    }
+    var incBtns = panel.querySelectorAll("[data-inc]");
+    for (var u = 0; u < incBtns.length; u++) {
+      incBtns[u].onclick = function (e) { e.preventDefault(); e.stopPropagation(); updateLineQty(this.getAttribute("data-inc"), 1); };
+    }
   }
 
-  document.addEventListener("click", processEventTarget, true);
-  document.addEventListener("touchend", processEventTarget, { capture: true, passive: false });
-
-  window.CheerPosCoreV129 = {
+  window.CheerPosCoreV130 = {
+    catalog: CATALOG.slice(),
     addItem: function (q) {
-      var n = normText(q);
-      for (var i = 0; i < ITEMS.length; i++) {
-        if (normText(ITEMS[i].id) === n || normText(ITEMS[i].name).indexOf(n) !== -1) {
-          addItemToCart(ITEMS[i]);
-          return;
-        }
-      }
-      addItemToCart(ITEMS[0]);
+      var item = ITEM_BY_ID[q] || findCatalogItemByText(q) || CATALOG[0];
+      addItemToCart(item);
     },
+    updateQty: updateLineQty,
     clearCart: clearCart,
     validate: validateTicket,
     getCart: function () { return activeCart.slice(); },
+    getTotals: getTotals,
     getTickets: function () { return tickets.slice(); },
     getStockLots: function () { return stockLots; },
     getAudit: function () { return auditLog.slice(); }
