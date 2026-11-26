@@ -1452,16 +1452,17 @@
 
 
 
-<script id="LEXWALLET_ROUTE_CONTROL_CORE_V138">
+
+<script id="LEXWALLET_ROUTE_CONTROL_CORE_V139">
 (function () {
   "use strict";
 
-  var MAX_RUN_MS = 120000;
-  var startTs = Date.now();
-  var KEY_TX = "CHEER_POS_TICKETS_V138";
-  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V138";
-  var KEY_AUDIT = "CHEER_POS_AUDIT_V138";
-  var KEY_CART = "CHEER_POS_ACTIVE_CART_V138";
+  var MAX_TICKS = 60;
+  var ticks = 0;
+  var KEY_TX = "CHEER_POS_TICKETS_V139";
+  var KEY_STOCK = "CHEER_POS_STOCK_LOTS_V139";
+  var KEY_AUDIT = "CHEER_POS_AUDIT_V139";
+  var KEY_CART = "CHEER_POS_ACTIVE_CART_V139";
   var TENANT_ID = "CHEER-FLAGSHIP-01";
   var txLock = false;
   var saleMode = "SUR_PLACE";
@@ -1550,14 +1551,6 @@
     "MOZZARELLA-STICKS": [{ lot: "LOT-MS-2611", qty: 280, cost: 0.22 }]
   };
 
-  function isCaisseRoute() {
-    var h = String(window.location.hash || "").toLowerCase();
-    var p = String(window.location.pathname || "").toLowerCase();
-    if (h.indexOf("/pos/caisse") !== -1 || p.indexOf("/pos/caisse") !== -1) return true;
-    var b = normText(document.body ? document.body.textContent : "");
-    return b.indexOf("encaissement sur place") !== -1 && b.indexOf("validation ticket") !== -1;
-  }
-
   function loadJson(k, fb) {
     try { var v = JSON.parse(localStorage.getItem(k) || "null"); return v !== null ? v : fb; } catch (_) { return fb; }
   }
@@ -1603,7 +1596,8 @@
           v.indexOf("b.textContent = \"Sync Cloud\"") !== -1 ||
           v.indexOf("AbortController !== \"function\"") !== -1 ||
           v.indexOf("currentTenantId()") !== -1 ||
-          v.indexOf("tx.sale_type || \"-\"") !== -1) {
+          v.indexOf("tx.sale_type || \"-\"") !== -1 ||
+          v.indexOf("Number(tx.total_ttc") !== -1) {
         toRemove.push(node);
       }
     }
@@ -1615,7 +1609,7 @@
   function resolveItemFromElement(el) {
     var cur = el;
     var depth = 0;
-    while (cur && cur !== document.body && depth < 10) {
+    while (cur && cur !== document.body && depth < 12) {
       var txt = normText(cur.textContent);
       for (var i = 0; i < CATALOG.length; i++) {
         var n = normText(CATALOG[i].name);
@@ -1629,7 +1623,7 @@
 
   function addItemToCart(itemObj) {
     var now = Date.now();
-    if (now - lastTapTs < 100) return;
+    if (now - lastTapTs < 80) return;
     lastTapTs = now;
     if (!itemObj) return;
     var found = false;
@@ -1655,7 +1649,7 @@
     saveJson(KEY_CART, activeCart);
     lastStatus = "Ajoute : " + itemObj.name + " (" + Number(itemObj.ttc).toFixed(2) + " EUR TTC)";
     logAudit("ITEM_ADDED", { id: itemObj.id, name: itemObj.name, ttc: itemObj.ttc });
-    syncRouteView();
+    renderCaisse();
   }
 
   function getTotals() {
@@ -1753,7 +1747,7 @@
       window.CHEER_POS_STOCK_LOTS = stockLots;
       window.CHEER_POS_AUDIT_CHAIN = auditLog.slice();
       window.CHEER_LAST_TICKET = rec;
-      syncRouteView();
+      renderCaisse();
     } finally {
       txLock = false;
     }
@@ -1782,15 +1776,15 @@
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + sz + ' ' + sz + '" width="72" height="72" style="background:#fff;padding:4px;border-radius:6px;">' + rects.join("") + "</svg>");
   }
 
-  function syncRouteView() {
+  function renderCaisse() {
     if (!document.body) return;
     scrubStrayTextCode();
 
     var tot = getTotals();
-    var view = document.getElementById("cheer-caisse-view-v138");
+    var view = document.getElementById("cheer-caisse-view-v139");
     if (!view) {
       view = document.createElement("section");
-      view.id = "cheer-caisse-view-v138";
+      view.id = "cheer-caisse-view-v139";
       view.style.cssText = "margin:10px;padding:12px;background:#12161c;border:1px solid #262d37;border-radius:8px;color:#eaecef;font-size:12px;";
       document.body.appendChild(view);
     }
@@ -1815,7 +1809,7 @@
       '<div style="font-size:11px;color:#00b074;margin-bottom:8px;">' + lastStatus + ' (HT ' + tot.ht.toFixed(2) + ' € • TVA ' + tot.vat.toFixed(2) + ' €)</div>' +
       '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px;">' + quickBtns + '</div>' +
       '<div style="background:#181d24;padding:8px;border-radius:6px;margin-bottom:8px;"><strong style="font-size:11px;">Panier actif</strong>' + (linesHtml || '<div style="color:#848e9c;font-size:11px;margin-top:4px;">Aucun article dans le panier.</div>') + '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v138" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;color:#848e9c;">Tickets: ' + tickets.length + ' • Audit: ' + auditLog.length + '</span><button type="button" id="cheer-val-btn-v139" style="padding:7px 14px;border-radius:6px;border:none;background:#00b074;color:#ffffff;font-weight:700;font-size:12px;cursor:pointer;">Panier / Valider</button></div>' +
       lastCard;
 
     var qBtns = view.querySelectorAll("[data-qadd]");
@@ -1830,7 +1824,7 @@
       };
     }
 
-    var vb = document.getElementById("cheer-val-btn-v138");
+    var vb = document.getElementById("cheer-val-btn-v139");
     if (vb) vb.onclick = function (e) { e.preventDefault(); e.stopPropagation(); validateTicket(); };
   }
 
@@ -1850,11 +1844,10 @@
     }
   }, true);
 
-  window.addEventListener("hashchange", syncRouteView);
-  window.addEventListener("popstate", syncRouteView);
+  window.addEventListener("hashchange", renderCaisse);
+  window.addEventListener("popstate", renderCaisse);
 
-  window.CheerRouteControlV138 = {
-    isCaisseRoute: isCaisseRoute,
+  window.CheerRouteControlV139 = {
     addItem: function (q) {
       var n = normText(q);
       for (var i = 0; i < CATALOG.length; i++) {
@@ -1873,17 +1866,15 @@
   };
 
   var timer = setInterval(function () {
-    if (Date.now() - startTs >= MAX_RUN_MS) {
-      clearInterval(timer);
-      return;
-    }
-    syncRouteView();
+    ticks++;
+    renderCaisse();
+    if (ticks >= MAX_TICKS) clearInterval(timer);
   }, 500);
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", syncRouteView);
+    document.addEventListener("DOMContentLoaded", renderCaisse);
   } else {
-    syncRouteView();
+    renderCaisse();
   }
 })();
 </script>
