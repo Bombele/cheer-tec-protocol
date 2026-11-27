@@ -2427,3 +2427,85 @@
   }, TICK_MS);
 })();
 </script>
+
+<script id="LEXWALLET_ROUTE_CATALOG_FIX_V143">
+/* Module alimente : routage #/POS/caisse et visibilite du catalogue dans 2-pos-edge/index.html */
+(function () {
+  "use strict";
+
+  var MAX_TICKS = 30;
+  var ticks = 0;
+
+  function isCaisseRoute() {
+    var h = String(window.location.hash || "").toLowerCase();
+    return h.indexOf("/pos/caisse") !== -1;
+  }
+
+  function findCatalogBlock() {
+    var catEl = document.getElementById("catalog-container");
+    if (catEl && catEl.parentElement && catEl.parentElement !== document.body) {
+      return catEl.parentElement;
+    }
+    if (catEl) return catEl;
+    var all = document.querySelectorAll("div, section");
+    for (var i = 0; i < all.length; i++) {
+      var txt = String(all[i].textContent || "");
+      if (txt.indexOf("Tout (26)") !== -1 && txt.indexOf("Burger Boeuf Cheddar") !== -1 && all[i].children.length >= 2) {
+        return all[i];
+      }
+    }
+    return null;
+  }
+
+  function scrubLeakedCodeText() {
+    if (!document.body) return;
+    var nodes = document.body.querySelectorAll("p, div, span, pre, code");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.children.length === 0) {
+        var t = String(el.textContent || "");
+        if (t.indexOf("rows.push([tx.id") !== -1 && t.indexOf("AbortController") !== -1) {
+          el.textContent = "";
+          el.style.display = "none";
+        }
+      }
+    }
+  }
+
+  function syncRouteView() {
+    scrubLeakedCodeText();
+    var showCaisse = isCaisseRoute();
+    var catBlock = findCatalogBlock();
+    if (catBlock) {
+      catBlock.style.display = showCaisse ? "" : "none";
+    }
+    var caissePanel = document.getElementById("cheer-caisse-panel-v140");
+    if (caissePanel) {
+      caissePanel.style.display = showCaisse ? "block" : "none";
+    }
+    var sticky = document.getElementById("mobile-cart-sticky");
+    if (sticky && !showCaisse) {
+      sticky.classList.add("hidden");
+    }
+  }
+
+  window.addEventListener("hashchange", syncRouteView);
+  document.addEventListener("click", function () {
+    setTimeout(syncRouteView, 40);
+  }, true);
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", syncRouteView);
+  } else {
+    syncRouteView();
+  }
+
+  var timer = setInterval(function () {
+    ticks++;
+    syncRouteView();
+    if (ticks >= MAX_TICKS) {
+      clearInterval(timer);
+    }
+  }, 500);
+})();
+</script>
