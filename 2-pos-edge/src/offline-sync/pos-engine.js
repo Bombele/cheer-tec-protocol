@@ -1,105 +1,159 @@
-/**
- * Cheer Tec Protocol - Point Zero POS Edge Engine
- * Connected to lexwallet.app & Cheer Cheese Catalog
- */
+/* Module alimente : 2-pos-edge/src/frontend/LexWalletPOS.tsx et etat POS synchronise (BUR-BEF-CHED / ACC-FRITES) */
+const MAX_QUEUE_ITEMS = 250;
 
-const fs = require('fs');
-const path = require('path');
+export const DEFAULT_CATALOG = [
+  {
+    sku: "BUR-BEF-CHED",
+    name: "Burger Boeuf Cheddar",
+    price_ht: 11.50,
+    unit_cogs: 3.45,
+    vat_rate: 0.10,
+    lot_code: "LOT-BEF-01",
+  },
+  {
+    sku: "ACC-FRITES",
+    name: "Frites Maison",
+    price_ht: 3.50,
+    unit_cogs: 0.85,
+    vat_rate: 0.10,
+    lot_code: "LOT-FRI-01",
+  },
+];
 
-class POSZeroEngine {
-    constructor(terminalId, tenantId) {
-        this.terminalId = terminalId;
-        this.tenantId = tenantId;
-        this.offlineQueue = [];
-        this.catalog = this.loadCatalog();
-    }
-
-    loadCatalog() {
-        try {
-            const catalogPath = path.join(__dirname, '../../config/cheer-cheese-catalog.json');
-            const rawData = fs.readFileSync(catalogPath, 'utf8');
-            return JSON.parse(rawData);
-        } catch (error) {
-            console.warn("[POS Warning] Catalog not found locally. Initializing empty catalog.");
-            return { categories: [] };
-        }
-    }
-
-    /**
-     * Traite la commande au Point Zéro à partir des SKUs et quantités,
-     * calcule la TVA et déclenche le Pay-Splitter vers delegal.dev.
-     */
-    processCheckout(orderItems) {
-        let subtotalHT = 0;
-        const processedItems = [];
-
-        // Validation et calcul basés sur le catalogue officiel
-        orderItems.forEach(orderItem => {
-            let foundItem = null;
-            for (const cat of this.catalog.categories) {
-                const match = cat.items.find(i => i.sku === orderItem.sku);
-                if (match) {
-                    foundItem = match;
-                    break;
-                }
-            }
-
-            if (foundItem) {
-                const itemTotalHT = foundItem.price_ht * orderItem.qty;
-                subtotalHT += itemTotalHT;
-                processedItems.push({
-                    sku: foundItem.sku,
-                    name: foundItem.name,
-                    price_ht: foundItem.price_ht,
-                    qty: orderItem.qty,
-                    total_ht: itemTotalHT
-                });
-            } else {
-                console.error(`[POS Error] SKU inconnu ou invalide : ${orderItem.sku}`);
-            }
-        });
-
-        const taxRate = this.catalog.tax_rate_standard || 0.20;
-        const totalVAT = subtotalHT * taxRate;
-        const totalTTC = subtotalHT + totalVAT;
-
-        const transaction = {
-            id: `TX-POS-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            terminalId: this.terminalId,
-            tenantId: this.tenantId,
-            timestamp: new Date().toISOString(),
-            items: processedItems,
-            subtotal_ht: subtotalHT,
-            vat: totalVAT,
-            total_ttc: totalTTC,
-            status: "VALIDATED_POINT_ZERO"
-        };
-
-        console.log(`[Point Zero - lexwallet.app] Transaction ${transaction.id} validée. Total TTC : ${totalTTC.toFixed(2)} EUR`);
-        this.dispatchToPaySplitter(transaction);
-        return transaction;
-    }
-
-    async dispatchToPaySplitter(txData) {
-        try {
-            console.log(`[Pay-Splitter Dispatch] Transmission des flux vers le Kernel OS (delegal.dev) [<400ms]...`);
-            // Simulation de l'appel atomique au Pay-Splitter <400ms
-            const splitResult = {
-                status: "SUCCESS",
-                latency_ms: 142,
-                split_breakdown: {
-                    royalty_5_percent: txData.total_ttc * 0.05,
-                    lease_10_percent: txData.total_ttc * 0.10,
-                    operating_85_percent: txData.total_ttc * 0.85
-                }
-            };
-            console.log(`[Kernel OS] Pay-Split atomique exécuté avec succès :`, splitResult);
-            return splitResult;
-        } catch (error) {
-            console.warn(`[Offline Mode] Réseau injoignable. Stockage chiffré de la transaction dans le cache local.`);
-            this.offlineQueue.push(txData);
-        }
-    }
+function round2(n) {
+  return Number((Number(n) || 0).toFixed(2));
 }
 
-module.exports = POSZeroEngine;
+export function createPosEngine(catalog = DEFAULT_CATALOG, meta = {}) {
+  const tenantId = meta.tenantId || "CHEER-FLAGSHIP-01";
+  const adminEmail = meta.adminEmail || "cbltec@proton.me";
+  const itemsBySku = new Map();
+
+  for (const item of catalog) {
+    if (item && item.sku) {
+      itemsBySku.set(String(item.sku).trim(), { ...item });
+    }
+  }
+
+  let cart = [];
+  let tickets = [];
+  let audit = [];
+
+  function findItem(sku) {
+    const key = String(sku || "").trim();
+    return itemsBySku.get(key) || null;
+  }
+
+  function addItem(sku, qty = 1) {
+    const base = findItem(sku);
+    const inc = Math.max(1, Math.floor(Number(qty) || 1));
+    if (!base) return getCart();
+    const existing = cart.find((line) => line.sku === base.sku);
+    if (existing) {
+      existing.qty += inc;
+    } else {
+      cart.push({
+        sku: base.sku,
+        name: base.name,
+        price_ht: round2(base.price_ht),
+        unit_cogs: round2(base.unit_cogs),
+        vat_rate: Number(base.vat_rate) || 0.10,
+        lot_code: base.lot_code || "LOT-STD-01",
+        qty: inc,
+      });
+    }
+    return getCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    return getCart();
+  }
+
+  function getCart() {
+    return cart.map((line) => ({ ...line }));
+  }
+
+  function getTotals() {
+    let subtotalHt = 0;
+    let tvaAmount = 0;
+    let totalTtc = 0;
+    let cogsTotal = 0;
+    let itemCount = 0;
+
+    for (const line of cart) {
+      const qty = Number(line.qty) || 0;
+      const lineHt = round2((Number(line.price_ht) || 0) * qty);
+      const lineVat = round2(lineHt * (Number(line.vat_rate) || 0));
+      const lineTtc = round2(lineHt + lineVat);
+      const lineCogs = round2((Number(line.unit_cogs) || 0) * qty);
+
+      subtotalHt = round2(subtotalHt + lineHt);
+      tvaAmount = round2(tvaAmount + lineVat);
+      totalTtc = round2(totalTtc + lineTtc);
+      cogsTotal = round2(cogsTotal + lineCogs);
+      itemCount += qty;
+    }
+
+    return {
+      itemCount,
+      subtotalHt,
+      tvaAmount,
+      totalTtc,
+      cogsTotal,
+    };
+  }
+
+  function validateTicket(saleType = "sur_place", isTest = false) {
+    const totals = getTotals();
+    if (cart.length === 0 || totals.itemCount <= 0) {
+      return null;
+    }
+    const seq = tickets.length + 1;
+    const ticket = {
+      id: `TKT-${String(seq).padStart(4, "0")}`,
+      createdAt: new Date().toISOString(),
+      tenantId,
+      adminEmail,
+      saleType: saleType === "emporter" ? "emporter" : "sur_place",
+      isTest: Boolean(isTest),
+      items: getCart(),
+      ...totals,
+      qrPayload: `CHEER|${tenantId}|TKT-${String(seq).padStart(4, "0")}|${totals.totalTtc.toFixed(2)}`,
+    };
+
+    tickets.push(ticket);
+    if (tickets.length > MAX_QUEUE_ITEMS) {
+      tickets = tickets.slice(tickets.length - MAX_QUEUE_ITEMS);
+    }
+
+    audit.push({
+      seq: audit.length + 1,
+      ts: ticket.createdAt,
+      tenantId,
+      adminEmail,
+      eventType: isTest ? "TICKET_TEST" : "TICKET_VALIDATED",
+      ticketId: ticket.id,
+      totalTtc: ticket.totalTtc,
+    });
+    if (audit.length > MAX_QUEUE_ITEMS) {
+      audit = audit.slice(audit.length - MAX_QUEUE_ITEMS);
+    }
+
+    clearCart();
+    return ticket;
+  }
+
+  return {
+    tenantId,
+    adminEmail,
+    findItem,
+    addItem,
+    clearCart,
+    getCart,
+    getTotals,
+    validateTicket,
+    getTickets: () => tickets.map((t) => ({ ...t })),
+    getAudit: () => audit.map((a) => ({ ...a })),
+  };
+}
