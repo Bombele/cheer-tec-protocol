@@ -2475,5 +2475,50 @@
 })();
 </script>
 
+<style id="LEXWALLET_HIDE_OLD_CAISSE_STYLE_V152">
+  #view-caisse #catalog-container {
+    display: none !important;
+  }
+</style>
+<script id="LEXWALLET_KEEP_FULL_CAISSE_V152">
+/* Module alimente : 2-pos-edge/index.html (masquer l'ancienne caisse et garder la caisse complete + panier) */
+(function () {
+  "use strict";
+  var MAX_TICKS = 20;
+  var ticks = 0;
+
+  function hideLegacyCatalogInCaisse() {
+    var caisseView = document.getElementById("view-caisse");
+    if (!caisseView) return;
+
+    var oldCat = document.getElementById("catalog-container");
+    if (oldCat) {
+      oldCat.style.display = "none";
+      if (oldCat.parentElement && oldCat.parentElement !== caisseView) {
+        oldCat.parentElement.style.display = "none";
+      }
+    }
+
+    var host = document.getElementById("cheer-menu-v11-host");
+    var isCaisse = String(window.location.hash || "").toLowerCase().indexOf("/pos/caisse") !== -1;
+    if (host) {
+      if (isCaisse && host.parentElement !== caisseView) {
+        caisseView.insertBefore(host, caisseView.firstChild);
+      }
+      host.style.display = isCaisse ? "" : "none";
+    }
+  }
+
+  window.addEventListener("hashchange", hideLegacyCatalogInCaisse);
+  document.addEventListener("DOMContentLoaded", hideLegacyCatalogInCaisse);
+  hideLegacyCatalogInCaisse();
+
+  var iv = setInterval(function () {
+    ticks += 1;
+    hideLegacyCatalogInCaisse();
+    if (ticks >= MAX_TICKS) clearInterval(iv);
+  }, 250);
+})();
+</script>
 </body>
 </html>
