@@ -1,4 +1,4 @@
-# Module alimente : worker/src/index.js (point d'entree edge) et deploiement lexwallet.app (perimetre holding cbltec@proton.me)
+# Module alimente : worker/src/index.js (point d'entree edge unique lexwallet.app / delegal.dev / lextrust.cloud)
 name = "cheer-tec-pos-worker"
 main = "src/index.js"
 compatibility_date = "2026-05-01"
@@ -7,6 +7,7 @@ workers_dev = true
 [vars]
 APP_ENV = "production"
 PRIMARY_DOMAIN = "lexwallet.app"
+DOMAINS_ALLOWED = "lexwallet.app,delegal.dev,lextrust.cloud"
 TENANT_ID = "CHEER-FLAGSHIP-01"
 ADMIN_EMAIL = "cbltec@proton.me"
 MAX_PAYLOAD_BYTES = "131072"
