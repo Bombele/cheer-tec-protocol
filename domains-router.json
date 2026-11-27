@@ -1,22 +1,26 @@
 {
-  "project": "Cheer Tec Protocol",
-  "infrastructure": "Decentralized Sovereign Multi-Domain",
-  "domains": {
-    "pos_edge": {
-      "url": "https://lexwallet.app",
-      "role": "Interface opérateur, POS Edge, bornes tactiles et encaissement"
+  "version": "14.1",
+  "tenant_id": "CHEER-FLAGSHIP-01",
+  "admin_email": "cbltec@proton.me",
+  "worker_entry": "worker/src/index.js",
+  "routes": {
+    "lexwallet.app": {
+      "target": "2-pos-edge/index.html",
+      "default_route": "#/POS/caisse",
+      "api_health": "/health",
+      "api_meta": "/api/pos/meta",
+      "api_sync": "/api/pos/sync",
+      "cache_control": "no-store"
     },
-    "kernel_os": {
-      "url": "https://delegal.dev",
-      "role": "Moteur d'exécution back-end, Pay-Splitter atomique (<400ms) et télémétrie"
+    "delegal.dev": {
+      "target": "/delegal",
+      "vitrine_fallback": "3-vitrine-web/index.html",
+      "cache_control": "no-store"
     },
-    "vitrine_institutional": {
-      "url": "https://lextrust.cloud",
-      "role": "Landing page, architecture de l'écosystème à 8 entités et documentation DoraHacks"
+    "lextrust.cloud": {
+      "target": "/trust",
+      "vitrine_fallback": "3-vitrine-web/index.html",
+      "cache_control": "no-store"
     }
-  },
-  "security": {
-    "tls": "Cloudflare Edge",
-    "state_isolation": "PDA (Program Derived Addresses)"
   }
 }

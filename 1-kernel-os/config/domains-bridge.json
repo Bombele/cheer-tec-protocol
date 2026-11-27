@@ -1,14 +1,18 @@
 {
-  "protocol": "Cheer Tec Protocol",
-  "environment": "production",
-  "gateways": {
-    "telemetry_and_compliance": "https://delegal.dev",
-    "pos_interface_wallet": "https://lexwallet.app",
-    "rwa_registry_vault": "https://lextrust.cloud"
+  "version": "14.1",
+  "primary_domain": "lexwallet.app",
+  "domains": [
+    "lexwallet.app",
+    "delegal.dev",
+    "lextrust.cloud"
+  ],
+  "tenant_id": "CHEER-FLAGSHIP-01",
+  "admin_email": "cbltec@proton.me",
+  "bridge_map": {
+    "lexwallet.app": "2-pos-edge/index.html",
+    "delegal.dev": "3-vitrine-web/index.html",
+    "lextrust.cloud": "3-vitrine-web/index.html"
   },
-  "execution_target": {
-    "engine": "Rust/Anchor",
-    "pay_splitter_latency_ms": 400,
-    "state_isolation": "PDA"
-  }
+  "max_payload_bytes": 131072,
+  "request_timeout_ms": 4000
 }
