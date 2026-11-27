@@ -1,36 +1,99 @@
 {
-  "version": "14.1",
-  "tenant_id": "CHEER-FLAGSHIP-01",
-  "admin_email": "cbltec@proton.me",
+  "brand": "Cheer Cheese",
+  "ecosystem": "Cheer Tec Protocol",
   "currency": "EUR",
+  "tax_rate_standard": 0.20,
   "categories": [
     {
-      "id": "cat-burgers",
-      "title": "Burgers & Signature",
+      "category_id": "CAT-BURGERS",
+      "name": "Burgers Signature",
       "items": [
         {
-          "sku": "BUR-BEF-CHED",
-          "name": "Burger Boeuf Cheddar",
-          "desc": "Steak boeuf, cheddar affiné, sauce maison",
-          "price_ht": 11.50,
-          "unit_cogs": 3.45,
-          "vat_rate": 0.10,
-          "lot_code": "LOT-BEF-01"
+          "sku": "CC-BURG-01",
+          "name": "Cheer Classic Cheese Burger",
+          "description": "Boeuf charolais, cheddar affine, sauce secrete Cheer, pain brioche artisanal",
+          "price_ht": 9.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        },
+        {
+          "sku": "CC-BURG-02",
+          "name": "Cheer Truffle Bacon Burger",
+          "description": "Boeuf, double cheddar, bacon croustillant, creme de truffe noire",
+          "price_ht": 12.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
         }
       ]
     },
     {
-      "id": "cat-accompagnements",
-      "title": "Accompagnements",
+      "category_id": "CAT-BUCKETS",
+      "name": "Buckets & Poultry",
       "items": [
         {
-          "sku": "ACC-FRITES",
-          "name": "Frites Maison",
-          "desc": "Portion croustillante coupée sur place",
+          "sku": "CC-BUCKET-01",
+          "name": "Bucket de Poulet Pane Croustillant (12 pcs)",
+          "description": "Tenders de poulet marines, panure epicee maison, sauce au choix",
+          "price_ht": 16.00,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-STREET",
+      "name": "Street Food Signature (Salchipapa & Pepito)",
+      "items": [
+        {
+          "sku": "CC-STREET-01",
+          "name": "Salchipapa Premium Cheer",
+          "description": "Frites fraiches croustillantes, saucisses artisanales grillees, melange de fromages fondus, sauces",
+          "price_ht": 10.00,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        },
+        {
+          "sku": "CC-STREET-02",
+          "name": "Pepito Traditionnel Venezuelien",
+          "description": "Baguette longue, emince de boeuf ou poulet grille, fromage blanco, sauce ail et salsa rosada",
+          "price_ht": 11.50,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-CHEESE",
+      "name": "Planches & Plateaux de Fromages",
+      "items": [
+        {
+          "sku": "CC-CHEESE-01",
+          "name": "Plateau de Fromages Affines du Terroir",
+          "description": "Selection de 4 fromages affines, confiture de figues, noix et pain aux fruits",
+          "price_ht": 14.00,
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
+        }
+      ]
+    },
+    {
+      "category_id": "CAT-BEVERAGES",
+      "name": "Boissons & Rafraichissements",
+      "items": [
+        {
+          "sku": "CC-BEV-01",
+          "name": "Boisson Artisanale / Limonade Maison",
+          "description": "33cl - Recette artisanale du moment",
           "price_ht": 3.50,
-          "unit_cogs": 0.85,
-          "vat_rate": 0.10,
-          "lot_code": "LOT-FRI-01"
+          "vat_rate": 0.20,
+          "supply_entity": "Supply & Logistics",
+          "active": true
         }
       ]
     }

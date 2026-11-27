@@ -2520,5 +2520,66 @@
   }, 250);
 })();
 </script>
+<script id="LEXWALLET_SKU_DOM_GUARD_V153">
+/* Module alimente : 2-pos-edge/index.html (alignement SKU cheer-cheese-catalog.json et garde-fous DOM contre null) */
+(function () {
+  "use strict";
+
+  var SKU_ALIAS = {
+    "CHEER-BURGER-01": "CC-BURG-01",
+    "BUR-BEF-CHED": "CC-BURG-01",
+    "CHEER-BURGER-02": "CC-BURG-02",
+    "CHEER-BUCKET-01": "CC-BUCKET-01",
+    "CHEER-STREET-01": "CC-STREET-01",
+    "CHEER-STREET-02": "CC-STREET-02",
+    "CHEER-CHEESE-01": "CC-CHEESE-01",
+    "CHEER-BEV-01": "CC-BEV-01"
+  };
+
+  window.LEXWALLET_CANONICAL_SKU = function (sku) {
+    var k = String(sku || "").trim().toUpperCase();
+    return SKU_ALIAS[k] || k;
+  };
+
+  function safeSetVal(id, val) {
+    var el = document.getElementById(id);
+    if (el && "value" in el) el.value = val;
+  }
+
+  function safeSetText(id, txt) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  }
+
+  var SAFE_IDS = [
+    "jur-country",
+    "jur-vat-place",
+    "jur-vat-takeout",
+    "jur-employer-rate",
+    "jur-employee-rate",
+    "jur-currency",
+    "cfg-worker-url",
+    "jur-summary-line",
+    "iot-sensors-grid"
+  ];
+
+  SAFE_IDS.forEach(function (id) {
+    if (!document.getElementById(id)) {
+      var probe = document.createElement("span");
+      probe.id = id;
+      probe.style.display = "none";
+      probe.setAttribute("data-dom-guard", "v153");
+      document.body.appendChild(probe);
+    }
+  });
+
+  window.lexwalletSafeDomCheck = function () {
+    safeSetText("jur-summary-line", document.getElementById("jur-summary-line") ? document.getElementById("jur-summary-line").textContent : "");
+    safeSetVal("jur-currency", document.getElementById("jur-currency") && document.getElementById("jur-currency").value ? document.getElementById("jur-currency").value : "EUR");
+  };
+
+  window.lexwalletSafeDomCheck();
+})();
+</script>
 </body>
 </html>
