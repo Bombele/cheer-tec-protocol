@@ -4717,5 +4717,161 @@
     <script src="./modules/bridge-storage-sync.js" defer></script>
     <script src="./modules/holding-fiscal-guard.js" defer></script>
     <script src="./modules/ops-ledger-guard.js" defer></script>
+
+<script>
+/* CHEER_LOCAL_AUTH_BOOTSTRAP_V1
+ * Alimente : authentification locale (cbltec@proton.me), lexwallet_auth_credentials_v2 et lexwallet_session_v3
+ */
+(() => {
+  "use strict";
+
+  const ADMIN_EMAIL = "cbltec@proton.me";
+  const CRED_KEY = typeof CREDENTIALS_STORE_KEY === "string" ? CREDENTIALS_STORE_KEY : "lexwallet_auth_credentials_v2";
+  const SESS_KEY = typeof SESSION_STATE_KEY === "string" ? SESSION_STATE_KEY : "lexwallet_session_v3";
+
+  function safeStorage() {
+    try {
+      if (typeof window === "undefined" || !window.localStorage) return null;
+      const k = "__cheer_auth_test__";
+      window.localStorage.setItem(k, "1");
+      window.localStorage.removeItem(k);
+      return window.localStorage;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function hashSecret(str) {
+    let h = 2166136261 >>> 0;
+    const s = String(str || "");
+    for (let i = 0; i < s.length; i += 1) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return "fnv1a_" + h.toString(16);
+  }
+
+  function readCreds(ls) {
+    if (!ls) return [];
+    try {
+      const raw = ls.getItem(CRED_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeCreds(ls, list) {
+    if (!ls) return;
+    try {
+      ls.setItem(CRED_KEY, JSON.stringify(list.slice(-50)));
+    } catch (_) {}
+  }
+
+  function persistSession(user) {
+    const ls = safeStorage();
+    const sessionPayload = {
+      authenticated: true,
+      email: user.email,
+      role: user.role || "admin",
+      tenantId: user.tenantId || "cbltec-holding",
+      mode: "local",
+      loginAt: new Date().toISOString()
+    };
+    if (ls) {
+      try {
+        ls.setItem(SESS_KEY, JSON.stringify(sessionPayload));
+      } catch (_) {}
+    }
+    try {
+      window.__LEXWALLET_ACTIVE_SESSION__ = sessionPayload;
+    } catch (_) {}
+    return sessionPayload;
+  }
+
+  const origVerify = typeof window.verifyLocalCredentials === "function" ? window.verifyLocalCredentials : null;
+
+  window.verifyLocalCredentials = async function verifyLocalCredentials(email, password) {
+    const normEmail = String(email || "").trim().toLowerCase();
+    const rawPass = String(password || "");
+    if (!normEmail || !rawPass) return null;
+
+    if (origVerify) {
+      try {
+        const res = await origVerify(normEmail, rawPass);
+        if (res) return res;
+      } catch (_) {}
+    }
+
+    const ls = safeStorage();
+    const creds = readCreds(ls);
+    const passHash = hashSecret(rawPass);
+
+    const matched = creds.find((item) => {
+      if (!item || typeof item !== "object") return false;
+      const itemEmail = String(item.email || "").trim().toLowerCase();
+      if (itemEmail !== normEmail) return false;
+      if (item.passwordHash && item.passwordHash === passHash) return true;
+      if (typeof item.password === "string" && item.password === rawPass) return true;
+      return false;
+    });
+
+    if (matched) {
+      return {
+        email: normEmail,
+        role: matched.role || (normEmail === ADMIN_EMAIL ? "admin" : "operator"),
+        tenantId: matched.tenantId || "cbltec-holding",
+        mode: "local"
+      };
+    }
+
+    // Initialisation locale de secours pour l'administrateur holding si aucun compte n'est encore enregistre
+    if (normEmail === ADMIN_EMAIL && creds.length === 0) {
+      const adminRecord = {
+        email: ADMIN_EMAIL,
+        passwordHash: passHash,
+        role: "admin",
+        tenantId: "cbltec-holding",
+        createdAt: new Date().toISOString()
+      };
+      writeCreds(ls, [adminRecord]);
+      return {
+        email: ADMIN_EMAIL,
+        role: "admin",
+        tenantId: "cbltec-holding",
+        mode: "local_initialized"
+      };
+    }
+
+    return null;
+  };
+
+  if (typeof window.setActiveSession !== "function") {
+    window.setActiveSession = function setActiveSession(user) {
+      const normalized = user && typeof user === "object"
+        ? { ...user, email: String(user.email || ADMIN_EMAIL).trim().toLowerCase() }
+        : { email: ADMIN_EMAIL, role: "admin", tenantId: "cbltec-holding" };
+      persistSession(normalized);
+      const authOverlay = document.getElementById("login-panel") || document.getElementById("auth-modal") || document.getElementById("auth-view");
+      if (authOverlay && authOverlay.classList) {
+        authOverlay.classList.add("hidden");
+      }
+      const headerCtx = document.getElementById("header-context-label");
+      if (headerCtx) {
+        headerCtx.textContent = "Session active : " + normalized.email;
+      }
+      return normalized;
+    };
+  } else {
+    const prevSetSession = window.setActiveSession;
+    window.setActiveSession = function setActiveSessionWrapped(user) {
+      persistSession(user || { email: ADMIN_EMAIL, role: "admin" });
+      return prevSetSession.apply(this, arguments);
+    };
+  }
+})();
+</script>
 </body>
 </html>
