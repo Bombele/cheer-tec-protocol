@@ -828,57 +828,95 @@
         }
 
         async function handleLoginSubmit(event) {
-            event.preventDefault();
-            const email = (document.getElementById('login-email-input').value || '').trim().toLowerCase();
-            const password = document.getElementById('login-password-input').value || '';
+            if (event && typeof event.preventDefault === 'function') {
+                event.preventDefault();
+            }
+            const emailEl = document.getElementById('login-email-input');
+            const passEl = document.getElementById('login-password-input');
             const errEl = document.getElementById('login-error-msg');
             const submitBtn = document.getElementById('login-submit-btn');
-            submitBtn.disabled = true;
+
+            const email = (emailEl && emailEl.value ? emailEl.value : '').trim().toLowerCase();
+            const password = passEl && passEl.value ? passEl.value : '';
+
+            if (errEl) {
+                errEl.classList.add('hidden');
+                errEl.textContent = '';
+            }
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
+            const showError = (msg) => {
+                if (errEl) {
+                    errEl.textContent = msg;
+                    errEl.classList.remove('hidden');
+                }
+            };
 
             try {
-                let authUser = null;
-                const base = getWorkerApiBase();
-                if (base) {
-                    try {
-                        const res = await fetch(`${base}/api/auth/login`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, password })
-                        });
-                        if (res.ok) {
-                            const data = await res.json();
-                            if (data && data.ok && data.user) authUser = data.user;
-                        }
-                    } catch (_) {}
+                if (!email || !password) {
+                    showError('Veuillez saisir votre adresse e-mail et votre mot de passe.');
+                    return;
                 }
 
-                if (!authUser) {
-                    const matched = credentialsStore.find(c => c.email.toLowerCase() === email && c.passHash === hashSecret(password));
-                    if (matched) {
-                        authUser = { email: matched.email, role: matched.role, tenantId: matched.tenantId, label: matched.label };
+                let authUser = null;
+                const base = typeof getWorkerApiBase === 'function' ? getWorkerApiBase() : '';
+                if (base && typeof fetch === 'function') {
+                    try {
+                        const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                        const timer = ctrl ? setTimeout(() => ctrl.abort(), 4000) : null;
+                        try {
+                            const res = await fetch(`${base}/api/auth/login`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email, password }),
+                                ...(ctrl ? { signal: ctrl.signal } : {})
+                            });
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data && data.ok && data.user) {
+                                    authUser = data.user;
+                                }
+                            }
+                        } finally {
+                            if (timer !== null) clearTimeout(timer);
+                        }
+                    } catch (_) {
+                        authUser = null;
                     }
                 }
 
                 if (!authUser) {
-                    errEl.innerText = "Identifiants invalides.";
-                    errEl.classList.remove('hidden');
+                    const localUser = typeof verifyLocalCredentials === 'function'
+                        ? await verifyLocalCredentials(email, password)
+                        : null;
+                    if (localUser) {
+                        authUser = localUser;
+                    }
+                }
+
+                if (!authUser) {
+                    showError('Identifiants invalides ou aucun compte local trouve pour cet e-mail.');
                     return;
                 }
 
-                errEl.classList.add('hidden');
-                document.getElementById('login-password-input').value = '';
-                sessionState = {
-                    authenticated: true,
-                    role: authUser.role,
-                    email: authUser.email,
-                    activeTenantId: authUser.tenantId || 'CHEER-FLAGSHIP-01'
-                };
-                persistLocalOnly();
-                appendAuditEvent('AUTH_LOGIN', `${authUser.role.toUpperCase()} • ${authUser.email}`);
-                updateHeader();
-                navigateRoute(authUser.role === 'holding' ? '/POS/holding-kyc' : '/POS');
+                if (typeof setActiveSession === 'function') {
+                    setActiveSession(authUser);
+                }
+                if (typeof renderSessionHeader === 'function') {
+                    renderSessionHeader();
+                }
+                if (typeof resolveInitialRoute === 'function' && typeof renderRoute === 'function') {
+                    const targetRoute = resolveInitialRoute();
+                    renderRoute(targetRoute);
+                }
+            } catch (err) {
+                showError('Erreur lors de la connexion : ' + (err && err.message ? err.message : 'echec interne'));
             } finally {
-                submitBtn.disabled = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
             }
         }
 
