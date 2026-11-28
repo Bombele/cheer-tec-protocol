@@ -4934,6 +4934,84 @@
   };
 })();
 </script>
+<script id="LEXWALLET_TEMP_LOGIN_BYPASS_V1">
+/* Module alimente : modules/auth-session.js, modules/router.js, modules/routes-visibility.js */
+(function () {
+  "use strict";
+
+  var ADMIN_EMAIL = "cbltec@proton.me";
+  var SESS_KEY = typeof SESSION_STATE_KEY === "string" ? SESSION_STATE_KEY : "lexwallet_session_v3";
+
+  function unlockWorkspaceNow() {
+    var tenantId = "CHEER-FLAGSHIP-01";
+    try {
+      if (typeof sessionState === "object" && sessionState && sessionState.activeTenantId) {
+        tenantId = sessionState.activeTenantId;
+      }
+    } catch (_) {}
+
+    var activeSession = {
+      authenticated: true,
+      email: ADMIN_EMAIL,
+      role: "holding",
+      activeTenantId: tenantId,
+      tenantId: tenantId,
+      bypassLogin: true,
+      issuedAt: Date.now()
+    };
+
+    try {
+      if (typeof sessionState === "object" && sessionState) {
+        sessionState.authenticated = true;
+        sessionState.email = ADMIN_EMAIL;
+        sessionState.role = "holding";
+        sessionState.activeTenantId = tenantId;
+      }
+    } catch (_) {}
+
+    try {
+      window.__LEXWALLET_ACTIVE_SESSION__ = activeSession;
+      if (window.localStorage) {
+        window.localStorage.setItem(SESS_KEY, JSON.stringify(activeSession));
+      }
+    } catch (_) {}
+
+    var homeView = document.getElementById("view-home");
+    if (homeView && homeView.classList) {
+      homeView.classList.add("hidden");
+    }
+
+    var currentHash = String(window.location.hash || "").replace(/^#/, "");
+    var targetRoute = (!currentHash || currentHash === "/") ? "/POS" : (currentHash.startsWith("/") ? currentHash : "/" + currentHash);
+
+    if (typeof updateHeader === "function") {
+      try { updateHeader(); } catch (_) {}
+    }
+    if (typeof renderSessionHeader === "function") {
+      try { renderSessionHeader(activeSession); } catch (_) {}
+    }
+
+    try {
+      if (window.location.hash !== "#" + targetRoute) {
+        window.location.hash = "#" + targetRoute;
+      }
+    } catch (_) {}
+
+    if (typeof renderRoute === "function") {
+      try { renderRoute(targetRoute); } catch (_) {}
+    }
+  }
+
+  window.lexwalletUnlockWorkspace = unlockWorkspaceNow;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", unlockWorkspaceNow);
+  } else {
+    unlockWorkspaceNow();
+  }
+  setTimeout(unlockWorkspaceNow, 50);
+})();
+</script>
 </body>
 </html>
   <script src="modules/auth-session.js"></script>
