@@ -656,3 +656,66 @@
     renderAllViews();
   }
 })();
+
+/* CHEER_POS_CORE_BRIDGE_HOOKED
+ * Alimente : pnl-stocks-bridge.js via cheer:sale_validated et cheer:z_report_closed
+ */
+(() => {
+  "use strict";
+
+  const MAX_EMITS_PER_SESSION = 500;
+  let emitCount = 0;
+  let isEmittingSale = false;
+  let isEmittingZ = false;
+
+  function emitSaleValidated(payload) {
+    if (isEmittingSale || emitCount >= MAX_EMITS_PER_SESSION) return false;
+    isEmittingSale = true;
+    emitCount += 1;
+    try {
+      const detail = payload && typeof payload === "object" ? payload : {};
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent === "function") {
+        window.dispatchEvent(new CustomEvent("cheer:sale_validated", { detail }));
+        return true;
+      }
+      if (window && window.CheerPosBridgeState && typeof window.CheerPosBridgeState.recordSale === "function") {
+        return Boolean(window.CheerPosBridgeState.recordSale(detail));
+      }
+      return false;
+    } finally {
+      isEmittingSale = false;
+    }
+  }
+
+  function emitZReportClosed(payload) {
+    if (isEmittingZ || emitCount >= MAX_EMITS_PER_SESSION) return false;
+    isEmittingZ = true;
+    emitCount += 1;
+    try {
+      const detail = payload && typeof payload === "object" ? payload : { closedAt: new Date().toISOString() };
+      if (typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent === "function") {
+        window.dispatchEvent(new CustomEvent("cheer:z_report_closed", { detail }));
+        return true;
+      }
+      if (window && window.CheerPosBridgeState && typeof window.CheerPosBridgeState.closeZReport === "function") {
+        window.CheerPosBridgeState.closeZReport();
+        return true;
+      }
+      return false;
+    } finally {
+      isEmittingZ = false;
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    const existing = window.CheerPosCoreEvents && typeof window.CheerPosCoreEvents === "object"
+      ? window.CheerPosCoreEvents
+      : {};
+    window.CheerPosCoreEvents = Object.freeze({
+      ...existing,
+      emitSaleValidated,
+      emitZReportClosed,
+      getStats: () => ({ emitCount, maxEmits: MAX_EMITS_PER_SESSION })
+    });
+  }
+})();
