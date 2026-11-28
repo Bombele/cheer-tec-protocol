@@ -4873,5 +4873,104 @@
   }
 })();
 </script>
+
+<script>
+/* CHEER_SESSION_ROUTE_TRANSITION_V1
+ * Alimente : transition post-connexion vers la route active (renderRoute / resolveInitialRoute / lexwallet_session_v3)
+ */
+(() => {
+  "use strict";
+
+  const ADMIN_EMAIL = "cbltec@proton.me";
+  const SESS_KEY = typeof SESSION_STATE_KEY === "string" ? SESSION_STATE_KEY : "lexwallet_session_v3";
+
+  function enterAuthenticatedWorkspace(user) {
+    const email = String((user && user.email) || ADMIN_EMAIL).trim().toLowerCase() || ADMIN_EMAIL;
+    const role = (user && user.role) || (email === ADMIN_EMAIL ? "admin" : "operator");
+    const tenantId = (user && user.tenantId) || "cbltec-holding";
+
+    const sessionData = {
+      authenticated: true,
+      email,
+      role,
+      tenantId,
+      mode: (user && user.mode) || "local",
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      window.__LEXWALLET_ACTIVE_SESSION__ = sessionData;
+      if (window.localStorage) {
+        window.localStorage.setItem(SESS_KEY, JSON.stringify(sessionData));
+      }
+    } catch (_) {}
+
+    const headerCtx = document.getElementById("header-context-label");
+    if (headerCtx) {
+      headerCtx.textContent = "Session active : " + email;
+    }
+
+    const candidateSelectors = [
+      "#login-panel",
+      "#login-view",
+      "#login-section",
+      "#auth-panel",
+      "#auth-view",
+      "#auth-modal",
+      "#auth-gate"
+    ];
+    for (let i = 0; i < candidateSelectors.length; i += 1) {
+      const el = document.querySelector(candidateSelectors[i]);
+      if (el && el.classList) {
+        el.classList.add("hidden");
+      }
+    }
+
+    const formEl = document.getElementById("login-submit-btn");
+    if (formEl && typeof formEl.closest === "function") {
+      const card = formEl.closest("section, div.max-w-md, div.w-full");
+      if (card && card.classList && !card.id) {
+        card.classList.add("hidden");
+      }
+    }
+
+    if (typeof window.renderSessionHeader === "function") {
+      try { window.renderSessionHeader(); } catch (_) {}
+    }
+
+    let target = "/";
+    if (typeof window.resolveInitialRoute === "function") {
+      try {
+        const resolved = window.resolveInitialRoute();
+        if (typeof resolved === "string" && resolved.trim().length > 0) {
+          target = resolved.trim();
+        }
+      } catch (_) {}
+    }
+    if (!target || target === "/" || target === "#/") {
+      target = "/POS";
+    }
+
+    if (typeof window.renderRoute === "function") {
+      try {
+        window.renderRoute(target);
+      } catch (_) {}
+    }
+  }
+
+  window.cheerEnterAuthenticatedWorkspace = enterAuthenticatedWorkspace;
+
+  const origSetSession = typeof window.setActiveSession === "function" ? window.setActiveSession : null;
+  if (origSetSession && !origSetSession.__cheerTransitionWrapped) {
+    const wrapped = function setActiveSessionWithTransition(user) {
+      const res = origSetSession.apply(this, arguments);
+      enterAuthenticatedWorkspace(user || res);
+      return res;
+    };
+    wrapped.__cheerTransitionWrapped = true;
+    window.setActiveSession = wrapped;
+  }
+})();
+</script>
 </body>
 </html>
