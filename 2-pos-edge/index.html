@@ -3675,5 +3675,121 @@
   }, 250);
 })();
 </script>
+<script id="LEXWALLET_DOWNSTREAM_BRIDGE_V160">
+/* Module alimente : 2-pos-edge/index.html (alimentation vues Stocks, P&L et synchronisation Cloudflare Worker) */
+(function () {
+  "use strict";
+  var MAX_TICKS = 12;
+  var ticks = 0;
+  var CONFIGURED_WORKER_URL = "";
+
+  function resolveWorkerBaseUrl() {
+    if (CONFIGURED_WORKER_URL && CONFIGURED_WORKER_URL.trim() !== "") {
+      return CONFIGURED_WORKER_URL.trim().replace(/\/+$/, "");
+    }
+    var inp = document.getElementById("cfg-worker-url");
+    if (inp && inp.value && inp.value.trim() !== "") {
+      return inp.value.trim().replace(/\/+$/, "");
+    }
+    if (typeof window.WORKER_URL === "string" && window.WORKER_URL.trim() !== "") {
+      return window.WORKER_URL.trim().replace(/\/+$/, "");
+    }
+    return "";
+  }
+
+  function renderDownstreamWidgets() {
+    var ledger = { sales: [], stock_movements: [], pnl_entries: [] };
+    try {
+      ledger = JSON.parse(localStorage.getItem("cheer_pos_ledger_v159") || '{"sales":[],"stock_movements":[],"pnl_entries":[]}');
+    } catch (e) {}
+
+    var totalRevTtc = 0;
+    var totalCogs = 0;
+    (ledger.pnl_entries || []).forEach(function (entry) {
+      totalRevTtc += Number(entry.revenue_ttc || 0);
+      totalCogs += Number(entry.cogs || 0);
+    });
+    var totalRevHt = Number((totalRevTtc / 1.21).toFixed(2));
+    var grossMargin = Number((totalRevHt - totalCogs).toFixed(2));
+
+    var pnlHost = document.getElementById("cheer-pnl-v160-summary");
+    var pnlTarget = document.getElementById("view-pnl") || document.getElementById("view-z") || document.getElementById("view-costs");
+    if (pnlTarget) {
+      if (!pnlHost) {
+        pnlHost = document.createElement("div");
+        pnlHost.id = "cheer-pnl-v160-summary";
+        pnlHost.style.cssText = "margin:10px 0;padding:10px 12px;border-radius:10px;background:rgba(15,23,42,0.9);border:1px solid rgba(148,163,184,0.25);font-size:12px;color:#f8fafc;";
+        pnlTarget.insertBefore(pnlHost, pnlTarget.firstChild);
+      }
+      pnlHost.innerHTML = "<strong>P&L Temps Réel (cheer_pos_ledger_v159)</strong> • Ventes : " + (ledger.sales || []).length +
+        " • CA TTC : " + totalRevTtc.toFixed(2) + " € • COGS : " + totalCogs.toFixed(2) +
+        " € • Marge Brute : " + grossMargin.toFixed(2) + " €";
+    }
+
+    var stockHost = document.getElementById("cheer-stock-v160-summary");
+    var stockTarget = document.getElementById("view-stock") || document.getElementById("view-stocks") || document.getElementById("view-supply");
+    if (stockTarget) {
+      if (!stockHost) {
+        stockHost = document.createElement("div");
+        stockHost.id = "cheer-stock-v160-summary";
+        stockHost.style.cssText = "margin:10px 0;padding:10px 12px;border-radius:10px;background:rgba(15,23,42,0.9);border:1px solid rgba(148,163,184,0.25);font-size:12px;color:#f8fafc;";
+        stockTarget.insertBefore(stockHost, stockTarget.firstChild);
+      }
+      var lastMov = (ledger.stock_movements || []).slice(0, 5).map(function (m) {
+        return m.sku + " (" + m.delta_qty + ")";
+      }).join(" • ");
+      stockHost.innerHTML = "<strong>Mouvements Stock POS</strong> • Sorties enregistrées : " + (ledger.stock_movements || []).length +
+        (lastMov ? " • Derniers : " + lastMov : "");
+    }
+  }
+
+  function syncSaleToWorker(saleRecord) {
+    var baseUrl = resolveWorkerBaseUrl();
+    if (!baseUrl) return;
+    var tenantId = saleRecord && saleRecord.tenantId ? saleRecord.tenantId : "CHEER-FLAGSHIP-01";
+    var payload = {
+      tenant: {
+        id: tenantId,
+        name: "Cheer Flagship Bruxelles",
+        admin: "cbltec@proton.me",
+        lastSale: saleRecord,
+        updatedAt: new Date().toISOString()
+      }
+    };
+    var controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var timer = controller ? setTimeout(function () { controller.abort(); }, 6000) : null;
+
+    fetch(baseUrl + "/api/sync/" + encodeURIComponent(tenantId), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller ? controller.signal : undefined
+    }).catch(function () {
+      try {
+        var q = JSON.parse(localStorage.getItem("cheer_worker_sync_queue_v160") || "[]");
+        q.unshift(payload);
+        localStorage.setItem("cheer_worker_sync_queue_v160", JSON.stringify(q.slice(0, 50)));
+      } catch (e) {}
+    }).finally(function () {
+      if (timer) clearTimeout(timer);
+    });
+  }
+
+  window.addEventListener("cheer:sale_validated", function (ev) {
+    renderDownstreamWidgets();
+    syncSaleToWorker(ev && ev.detail ? ev.detail : null);
+  });
+
+  document.addEventListener("DOMContentLoaded", renderDownstreamWidgets);
+  window.addEventListener("hashchange", renderDownstreamWidgets);
+  renderDownstreamWidgets();
+
+  var iv = setInterval(function () {
+    ticks += 1;
+    renderDownstreamWidgets();
+    if (ticks >= MAX_TICKS) clearInterval(iv);
+  }, 250);
+})();
+</script>
 </body>
 </html>
