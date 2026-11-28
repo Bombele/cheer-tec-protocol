@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cheer Tec écosystèmes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brandBlue: "#0f3d7a",
+            brandDark: "#070b14"
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-brandDark text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+  <header class="sticky top-0 z-40 bg-brandBlue text-white border-b border-blue-900/80 shadow">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <a href="#/POS" class="flex items-center gap-2.5 font-mono text-xs sm:text-sm font-bold text-white tracking-wide">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded bg-white text-brandBlue font-black">CT</span>
+        <span>CHEER TEC ÉCOSYSTÈMES</span>
+      </a>
+      <nav class="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+        <a href="#/POS" data-nav-route="/POS" class="px-3 py-1.5 rounded bg-blue-950/70 hover:bg-blue-900 text-white font-semibold transition">Hub POS (#/POS)</a>
+        <a href="#/POS/caisse" data-nav-route="/POS/caisse" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">Caisse (#/POS/caisse)</a>
+        <a href="#/POS/rapport-pnl-z" data-nav-route="/POS/rapport-pnl-z" class="px-3 py-1.5 rounded bg-blue-950/50 hover:bg-blue-900 text-white transition">P&amp;L / Z</a>
+        <a href="#/POS/couts-tresorerie" data-nav-route="/POS/couts-tresorerie" class="px-3 py-1.5 rounded bg-blue-950/50 hover:bg-blue-900 text-white transition">Coûts / Trésorerie</a>
+        <a href="#/POS/stocks-iot-scanners" data-nav-route="/POS/stocks-iot-scanners" class="px-3 py-1.5 rounded bg-blue-950/50 hover:bg-blue-900 text-white transition">Stocks / Lots</a>
+        <a href="#/POS/historique-qr" data-nav-route="/POS/historique-qr" class="px-3 py-1.5 rounded bg-blue-950/50 hover:bg-blue-900 text-white transition">Tickets QR</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-5 space-y-5">
+    <section id="pos-hub-panel" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3 font-mono text-xs">
+        <div>
+          <span class="text-sky-300 font-bold">HUB POS • CHEER-FLAGSHIP-01</span>
+          <span class="text-slate-400 ml-2">Admin : cbltec@proton.me</span>
+        </div>
+        <div id="pos-live-kpi" class="text-emerald-400 font-semibold">Ventes : 0 | CA TTC : 0.00 € | Loyer max : 7.0%</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
+        <a href="#/POS/caisse" class="block bg-slate-950 hover:bg-slate-900 border border-emerald-700/50 rounded-xl p-3.5 transition">
+          <div class="text-emerald-400 font-bold">1. Caisse — Point Zéro</div>
+          <div class="text-slate-300 mt-1">Encaissement, remises/bons, calcul HT/TVA/COGS, ticket &amp; QR.</div>
+        </a>
+        <a href="#/POS/rapport-pnl-z" class="block bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl p-3.5 transition">
+          <div class="text-amber-300 font-bold">2. Rapport P&amp;L &amp; Clôture Z</div>
+          <div class="text-slate-300 mt-1">Agrégation des ventes validées (cheer:sale_validated) en temps réel.</div>
+        </a>
+        <a href="#/POS/couts-tresorerie" class="block bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-xl p-3.5 transition">
+          <div class="text-sky-300 font-bold">3. Coûts, Trésorerie &amp; Stocks</div>
+          <div class="text-slate-300 mt-1">Suivi des charges réelles, plafond loyer ≤ 7% et mouvements matières.</div>
+        </a>
+      </div>
+
+      <div id="pos-downstream-view" class="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300">
+        Vue active : <span id="pos-active-route-label" class="text-amber-300 font-bold">#/POS</span>
+        <div id="pos-downstream-feed" class="mt-2 space-y-1 text-[11px] text-slate-400">En attente d'événements cheer:sale_validated...</div>
+      </div>
+    </section>
+
+    <section id="view-caisse" class="space-y-4">
+      <div id="catalog-container" class="hidden"></div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+      var LEDGER_KEY = "cheer_pos_ledger_v159";
+      var MAX_FEED_LINES = 8;
+
+      function normalizeRoute() {
+        var h = String(window.location.hash || "#/POS").replace(/^#/, "");
+        if (!h || h === "/") return "/POS";
+        return h.charAt(0) === "/" ? h : "/" + h;
+      }
+
+      function readLedgerSummary() {
+        try {
+          var raw = window.localStorage ? window.localStorage.getItem(LEDGER_KEY) : null;
+          if (!raw) return { count: 0, ttc: 0, sales: [] };
+          var parsed = JSON.parse(raw);
+          var sales = Array.isArray(parsed.sales) ? parsed.sales : [];
+          var ttc = 0;
+          for (var i = 0; i < sales.length; i += 1) {
+            ttc = Math.round((ttc + (Number(sales[i].total_ttc) || 0)) * 100) / 100;
+          }
+          return { count: sales.length, ttc: ttc, sales: sales };
+        } catch (_) {
+          return { count: 0, ttc: 0, sales: [] };
+        }
+      }
+
+      function renderShellRoute() {
+        var route = normalizeRoute();
+        var isCaisse = route === "/POS/caisse" || route.indexOf("/POS/caisse/") === 0;
+        var hubEl = document.getElementById("pos-hub-panel");
+        var caisseEl = document.getElementById("view-caisse");
+        var routeLabel = document.getElementById("pos-active-route-label");
+        var kpiEl = document.getElementById("pos-live-kpi");
+        var feedEl = document.getElementById("pos-downstream-feed");
+
+        if (hubEl) hubEl.classList.toggle("hidden", isCaisse);
+        if (caisseEl) caisseEl.classList.toggle("hidden", !isCaisse);
+        if (routeLabel) routeLabel.textContent = "#" + route;
+
+        document.querySelectorAll("[data-nav-route]").forEach(function (link) {
+          var target = link.getAttribute("data-nav-route");
+          var active = target === route || (target === "/POS/caisse" && isCaisse);
+          link.classList.toggle("ring-2", active);
+          link.classList.toggle("ring-amber-300", active);
+        });
+
+        var sum = readLedgerSummary();
+        var rentReserve = Math.round(sum.ttc * 0.07 * 100) / 100;
+        if (kpiEl) {
+          kpiEl.textContent = "Ventes : " + sum.count + " | CA TTC : " + sum.ttc.toFixed(2) + " € | Réserve loyer (≤7%) : " + rentReserve.toFixed(2) + " €";
+        }
+
+        if (feedEl) {
+          if (sum.sales.length === 0) {
+            feedEl.textContent = "Route " + route + " — Aucun ticket enregistré.";
+          } else {
+            feedEl.innerHTML = sum.sales.slice(0, MAX_FEED_LINES).map(function (s) {
+              return "<div class='text-slate-300'>• " + String(s.id || "") + " | " + Number(s.total_ttc || 0).toFixed(2) + " € TTC | " + String(s.saleMode || "sur_place") + "</div>";
+            }).join("");
+          }
+        }
+      }
+
+      window.renderRoute = function (path) {
+        if (path && window.location.hash !== "#" + path) {
+          window.location.hash = "#" + path;
+        }
+        renderShellRoute();
+      };
+
+      window.addEventListener("hashchange", renderShellRoute);
+      window.addEventListener("cheer:sale_validated", renderShellRoute);
+      window.addEventListener("cheer:pos:ticket-validated", renderShellRoute);
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", renderShellRoute);
+      } else {
+        renderShellRoute();
+      }
+    })();
+  </script>
+  <script src="./modules/caisse.js"></script>
+</body>
+</html>
