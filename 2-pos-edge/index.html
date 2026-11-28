@@ -2581,5 +2581,232 @@
   window.lexwalletSafeDomCheck();
 })();
 </script>
+<style id="LEXWALLET_FULL_CAISSE_STYLE_V154">
+  #view-caisse #catalog-container {
+    display: none !important;
+  }
+  #cheer-menu-v11-host {
+    margin: 12px 0 20px 0;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+  }
+  .cc-v154-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+  .cc-v154-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #f8fafc;
+  }
+  .cc-v154-meta {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .cc-v154-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+  .cc-v154-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+  }
+  .cc-v154-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+  .cc-v154-cat {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .cc-v154-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .cc-v154-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: #38bdf8;
+  }
+  .cc-v154-btn {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>
+<script id="LEXWALLET_FULL_CAISSE_RENDER_V154">
+/* Module alimente : 2-pos-edge/index.html (rendu garanti des 28 articles de la caisse complete et ajout panier) */
+(function () {
+  "use strict";
+  var MAX_TICKS = 20;
+  var ticks = 0;
+
+  var ITEMS_28 = [
+    { sku: "CC-BURG-01", cat: "Burgers", name: "Burger Boeuf Cheddar (BBQ Smokey)", ttc: 11.50, cogs: 3.40 },
+    { sku: "CC-BURG-02", cat: "Burgers", name: "Burger Boeuf Raclette", ttc: 13.00, cogs: 3.90 },
+    { sku: "CC-BURG-03", cat: "Burgers", name: "Burger Boeuf Gouda Truffe", ttc: 13.50, cogs: 4.10 },
+    { sku: "CC-BURG-04", cat: "Burgers", name: "Burger Poulet Raclette et Truffe", ttc: 12.90, cogs: 3.80 },
+    { sku: "CC-BURG-05", cat: "Burgers", name: "Burger Poulet Cheddar Blanc Jalapeno", ttc: 12.00, cogs: 3.50 },
+    { sku: "CC-BURG-06", cat: "Burgers", name: "Burger Poulet Mozza Cheddar Cajun", ttc: 12.00, cogs: 3.50 },
+    { sku: "CC-BURG-07", cat: "Burgers", name: "Burger Fish Cheese Blend Sweet Chili", ttc: 11.90, cogs: 3.45 },
+    { sku: "CC-BURG-08", cat: "Burgers", name: "Burger Fish Cheddar et Tartare", ttc: 11.90, cogs: 3.45 },
+    { sku: "CC-DES-01", cat: "Desserts", name: "Cheesecake", ttc: 5.50, cogs: 1.50 },
+    { sku: "CC-DES-02", cat: "Desserts", name: "Cafe Gourmet Cheese Cream", ttc: 4.80, cogs: 1.25 },
+    { sku: "CC-BOI-01", cat: "Boissons", name: "Cheer Lemonade Craft", ttc: 4.00, cogs: 0.90 },
+    { sku: "CC-BOI-02", cat: "Boissons", name: "Cheer Ice Tea", ttc: 4.00, cogs: 0.90 },
+    { sku: "CC-VIN-01", cat: "Vins", name: "Vin Rouge Selection", ttc: 6.00, cogs: 1.80 },
+    { sku: "CC-VIN-02", cat: "Vins", name: "Vin Blanc Selection", ttc: 6.50, cogs: 1.95 },
+    { sku: "CC-VIN-03", cat: "Vins", name: "Vin Rose Selection", ttc: 6.50, cogs: 1.95 },
+    { sku: "CC-MELT-01", cat: "Melts", name: "Garlic Melt", ttc: 8.80, cogs: 2.50 },
+    { sku: "CC-STR-01", cat: "Street Food", name: "Pepito", ttc: 9.50, cogs: 2.80 },
+    { sku: "CC-STR-02", cat: "Street Food", name: "Salchipapa", ttc: 8.90, cogs: 2.60 },
+    { sku: "CC-SAU-01", cat: "Sauces", name: "Sauce BBQ Smokey", ttc: 1.20, cogs: 0.25 },
+    { sku: "CC-SAU-02", cat: "Sauces", name: "Sauce Truffe et Herbes", ttc: 1.80, cogs: 0.45 },
+    { sku: "CC-SAU-03", cat: "Sauces", name: "Sauce Honey-Mustard", ttc: 1.20, cogs: 0.25 },
+    { sku: "CC-SAU-04", cat: "Sauces", name: "Sauce Spicy Buffalo Cajun", ttc: 1.50, cogs: 0.35 },
+    { sku: "CC-SAU-05", cat: "Sauces", name: "Sauce Sweet Chili et Ail", ttc: 1.20, cogs: 0.25 },
+    { sku: "CC-SID-01", cat: "Accompagnements", name: "Frites", ttc: 3.50, cogs: 0.85 },
+    { sku: "CC-SID-02", cat: "Accompagnements", name: "Salade", ttc: 3.90, cogs: 1.00 },
+    { sku: "CC-SID-03", cat: "Accompagnements", name: "Onion Rings", ttc: 4.20, cogs: 1.10 },
+    { sku: "CC-SID-04", cat: "Accompagnements", name: "Chicken Bucket", ttc: 14.50, cogs: 4.30 },
+    { sku: "CC-SID-05", cat: "Accompagnements", name: "Cheese Stick", ttc: 4.80, cogs: 1.25 }
+  ];
+
+  function isCaisseRoute() {
+    var h = String(window.location.hash || "").toLowerCase();
+    return h === "" || h === "#" || h.indexOf("/pos/caisse") !== -1;
+  }
+
+  function addFullItem(sku) {
+    var it = ITEMS_28.find(function (x) { return x.sku === sku; });
+    if (!it) return;
+    if (typeof window.addItemToCart === "function") {
+      try { window.addItemToCart(sku); } catch (e) {}
+    }
+    if (typeof cart !== "undefined" && Array.isArray(cart)) {
+      var ex = cart.find(function (row) { return row.sku === it.sku; });
+      if (ex) {
+        ex.qty = Number(ex.qty || 0) + 1;
+      } else {
+        var priceHt = Number((Number(it.ttc || 0) / 1.21).toFixed(2));
+        cart.push({
+          sku: it.sku,
+          name: it.name,
+          price_ht: priceHt,
+          unit_cogs: Number(it.cogs || 0),
+          baseGroup: "plats_sur_place",
+          recipe: {},
+          qty: 1
+        });
+      }
+      if (typeof updateCartUI === "function") {
+        try { updateCartUI(); } catch (e2) {}
+      }
+    }
+  }
+
+  function renderFullCaisse() {
+    var active = isCaisseRoute();
+    var oldCat = document.getElementById("catalog-container");
+    if (oldCat) oldCat.style.display = "none";
+
+    var caisseView = document.getElementById("view-caisse") || document.querySelector("#app") || document.body;
+    if (!caisseView) return;
+
+    var host = document.getElementById("cheer-menu-v11-host");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "cheer-menu-v11-host";
+      caisseView.appendChild(host);
+    }
+
+    if (!active) {
+      host.style.display = "none";
+      return;
+    }
+
+    host.style.display = "";
+    if (host.getAttribute("data-rendered-v154") === "1") return;
+
+    host.innerHTML = "";
+    var header = document.createElement("div");
+    header.className = "cc-v154-header";
+    header.innerHTML = '<div class="cc-v154-title">Caisse #/POS/caisse • CHEER-FLAGSHIP-01</div><div class="cc-v154-meta">' + ITEMS_28.length + ' articles disponibles</div>';
+    host.appendChild(header);
+
+    var grid = document.createElement("div");
+    grid.className = "cc-v154-grid";
+
+    ITEMS_28.forEach(function (it) {
+      var card = document.createElement("div");
+      card.className = "cc-v154-card";
+
+      var top = document.createElement("div");
+      top.innerHTML = '<div class="cc-v154-cat">' + it.cat + ' • ' + it.sku + '</div><div class="cc-v154-name">' + it.name + '</div>';
+
+      var bot = document.createElement("div");
+      bot.className = "cc-v154-row";
+
+      var price = document.createElement("span");
+      price.className = "cc-v154-price";
+      price.textContent = Number(it.ttc).toFixed(2) + " € TTC";
+
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cc-v154-btn";
+      btn.textContent = "+ Ajouter";
+      btn.addEventListener("click", function () {
+        addFullItem(it.sku);
+      });
+
+      bot.appendChild(price);
+      bot.appendChild(btn);
+      card.appendChild(top);
+      card.appendChild(bot);
+      grid.appendChild(card);
+    });
+
+    host.appendChild(grid);
+    host.setAttribute("data-rendered-v154", "1");
+  }
+
+  window.addEventListener("hashchange", function () {
+    var h = document.getElementById("cheer-menu-v11-host");
+    if (h) h.removeAttribute("data-rendered-v154");
+    renderFullCaisse();
+  });
+  document.addEventListener("DOMContentLoaded", renderFullCaisse);
+  renderFullCaisse();
+
+  var iv = setInterval(function () {
+    ticks += 1;
+    renderFullCaisse();
+    if (ticks >= MAX_TICKS) clearInterval(iv);
+  }, 250);
+})();
+</script>
 </body>
 </html>
